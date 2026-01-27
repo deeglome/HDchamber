@@ -359,7 +359,7 @@ function setCrossSectionButton({button, icon}) {
     } else {
       button.setAttribute("title", "Enable cross-section mode");
     }
-    icon.src = "./icons/cross-section-" + (app.isCrossSectionMode ? "off" : "on") + ".png";
+    icon.src = "./icons/cross_section_view_" + (app.isCrossSectionMode ? "off" : "on") + "_btn.svg";
   });
 }
 

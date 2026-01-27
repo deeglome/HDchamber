@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
       rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
-    <link rel="shortcut icon" href="./icons/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="logo.svg" type="image/x-icon" />
     <script src="https://kit.fontawesome.com/7fe70165d0.js" crossorigin="anonymous"></script>
     <script type="module" defer src="./geolib.js"></script>
     <script type="module" defer src="./app.js"></script>
@@ -20,7 +20,9 @@
   <body>
     <ul class="left buttons">
       <li>
-        <a class="button esc" href="javascript:history.go(-1)"><i class="icon fa-solid fa-angle-left"></i></a>
+        <a class="button esc" href="javascript:history.go(-1)">
+          <img src="icons/back.svg" alt="Go back" class="icon">
+        </a>
       </li>
       <li>
         <button class="button rotation-handler" title="Edit rotations">
@@ -30,7 +32,7 @@
       </li>
       <li class="meshes-handler" title="Select a mesh to render!">
         <button class="button">
-          <i class="icon fa-solid fa-cube"></i>
+          <img src="icons/box_btn.svg" alt="" class="icon">
         </button>
         <ul class="dropmenu"></ul>
       </li>
@@ -57,7 +59,7 @@
       </li>
       <li>
         <button class="button dimensions-handler" title="Select the number of dimensions to render!">
-          <i class="fa-solid fa-d"></i>
+          <img src="icons/dimension_btn.svg" alt="Dimension Button" class="icon">
         </button>
       </li>
       <li>
@@ -67,12 +69,12 @@
       </li>
       <li>
         <button class="button cross-section-mode" title="Enable cross-section mode">
-          <img class="icon" src="icons/cross-section-on.png" alt="Cross-section mode icon" />
+          <img class="icon" src="icons/cross_section_view_on_btn.svg" alt="Cross-section mode icon" />
         </button>
       </li>
       <li>
         <button class="button axes" title="Enable fixed axes">
-          <img class="icon" src="icons/axes.png" alt="Axes icon" />
+          <img class="icon" src="icons/cartesian_axes_view_on_btn.svg" alt="Axes icon" />
         </button>
       </li>
     </ul>
