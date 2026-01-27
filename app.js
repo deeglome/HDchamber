@@ -43,7 +43,7 @@ function zoomOut(threshold) {
   app.renderScale -= threshold;
 }
 
-const THRESHOLD = 5;
+const THRESHOLD = 50;
 
 function addWindowEvents() {
   window.addEventListener("resize", () => {
