@@ -245,12 +245,17 @@ function setPlanes({planes, angularSpeedFactors, options, dropmenu}) {
   });
 }
 
+const MAX_SPEED = 8;
+const MIN_SPEED = -MAX_SPEED;
+
 function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
   planeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const input = button.innerHTML.toLowerCase();
       let rotationPlane = input.slice(0, 2);
       let angularSpeedFactor = prompt(`Enter the angular speed factor for the plane ${rotationPlane}:`) * 1;
+      angularSpeedFactor = Math.min(angularSpeedFactor, MAX_SPEED);
+      angularSpeedFactor = Math.max(angularSpeedFactor, MIN_SPEED);
       let index = planes.indexOf(rotationPlane);
       angularSpeedFactors[index] = angularSpeedFactor;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor;
