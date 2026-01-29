@@ -21,6 +21,7 @@ const app = {
   axesEnabled: false,
   fixedAxes: true,
   lastCoordinateEnabled: false,
+  pause: false
 };
 
 async function fetchWiki() {
@@ -404,6 +405,31 @@ function setLastCoordinateMode() {
   });
 }
 
+/*
+* ============
+* PAUSE BUTTON
+* ============
+*/
+
+function setPauseBtn(){
+  const pauseBtn = document.querySelector(".pause-btn");
+  
+  pauseBtn.addEventListener("click", ()=>{
+    app.pause = !app.pause;
+    let pauseBtnIcon = pauseBtn.querySelector("img");
+
+    if(!app.pause){
+      pauseBtnIcon.src = "icons/pause.svg";
+      pauseBtn.title = "Pause animation";
+      app.initialTime = Date.now();
+      tic(app.meshToRender);
+    } else {
+      pauseBtnIcon.src = "icons/resume.svg";
+      pauseBtn.title = "Resume animation";
+    }
+  });
+}
+
 // RENDER AND TIC
 function humanizeMeshName(technicalName) {
   try {
@@ -495,15 +521,18 @@ function renderEnvironment(input) {
   } else if (!app.fixedAxes && app.axesEnabled) {
     rotatingAxes.render(rotationScope, app.isOrtho, app.renderScale);
   }
-  app.animationId = requestAnimationFrame(() => tic(input));
 }
 
 function tic(input) {
+  if (app.pause)
+    return
+
   app.isRendering = true;
   app.finalTime = Date.now();
   app.angle += (app.angularSpeed * app.deltaTime()) / 1000;
   app.initialTime = app.finalTime;
   renderEnvironment(input);
+  app.animationId = requestAnimationFrame(() => tic(input));
 }
 
 function addGuiHandlers() {
@@ -515,6 +544,7 @@ function addGuiHandlers() {
   setCrossSectionMode();
   setAxesMode();
   setLastCoordinateMode();
+  setPauseBtn();
 }
 
 addWindowEvents();
