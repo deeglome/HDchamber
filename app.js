@@ -63,6 +63,25 @@ function addWindowEvents() {
   });
 }
 
+/*
+*
+* ZOOM IN/OUT BUTTON
+*
+*/
+
+function setZoomInBtn(){
+  const zoomInBtn = document.querySelector(".zoom-in-btn");
+  zoomInBtn.addEventListener("click", ()=>{
+    zoomIn(THRESHOLD);
+  });
+}
+
+function setZoomOutBtn(){
+  const zoomOutBtn = document.querySelector(".zoom-out-btn");
+  zoomOutBtn.addEventListener("click", ()=>{
+    zoomOut(THRESHOLD);
+  });
+}
 
 // PROJECTION MODE
 function setProjectionButton({ button, icon }) {
@@ -545,6 +564,8 @@ function addGuiHandlers() {
   setAxesMode();
   setLastCoordinateMode();
   setPauseBtn();
+  setZoomInBtn();
+  setZoomOutBtn();
 }
 
 addWindowEvents();
