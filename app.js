@@ -254,6 +254,8 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       let index = planes.indexOf(rotationPlane);
       angularSpeedFactors[index] = angularSpeedFactor;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor;
+      app.initialTime = Date.now();
+      tic(app.meshToRender);
     });
   });
 }
@@ -540,17 +542,21 @@ function renderEnvironment(input) {
   } else if (!app.fixedAxes && app.axesEnabled) {
     rotatingAxes.render(rotationScope, app.isOrtho, app.renderScale);
   }
+
+  return rotationScope;
 }
 
 function tic(input) {
   if (app.pause)
-    return
+    return;
 
   app.isRendering = true;
   app.finalTime = Date.now();
   app.angle += (app.angularSpeed * app.deltaTime()) / 1000;
   app.initialTime = app.finalTime;
-  renderEnvironment(input);
+  let rotationScope = renderEnvironment(input);
+  if(rotationScope === 0)
+    return;
   app.animationId = requestAnimationFrame(() => tic(input));
 }
 

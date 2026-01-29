@@ -62,7 +62,7 @@ function rotationScope(planes, angularSpeeds) {
     }
   });
 
-  return scopeIndex + 1;
+  return scopeIndex > 0 ? scopeIndex + 1 : 0;
 }
 
 /**
