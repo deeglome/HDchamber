@@ -60,6 +60,11 @@ legend {
 .buttons :not(:first-child) .button {
   margin-top: 0;
 }
+.small.button{
+  margin: 10px;
+  width: 40px;
+  height: 40px;
+}
 .button .icon,
 button i::before {
   height: 50px;
@@ -67,6 +72,10 @@ button i::before {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.button.small .icon{
+  height: 25px;
+  width: 25px;
 }
 .dropmenu {
   min-width: 300px;
@@ -80,7 +89,6 @@ button i::before {
   position: absolute;
   left: 100px;
   top: 0;
-  width: 100%;
   list-style: none;
   padding: 0px;
   display: flex;
@@ -103,6 +111,18 @@ button i::before {
   border-radius: 3px;
   border: 1px solid #ccc7d1;
   margin: 10px;
+}
+
+.dropmenu .planes,
+.dropmenu .tools{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-left: 0;
+}
+
+.dropmenu .tools .button.small{
+  margin:10px;
 }
 
 main {

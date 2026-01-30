@@ -235,17 +235,18 @@ function setPlanes({planes, angularSpeedFactors, options, dropmenu}) {
   }
   options = document.createElement("ul");
   options.classList.add("rotation-handler-options", "button");
-  dropmenu.innerHTML = "";
+  const planesUl = dropmenu.querySelector("ul.planes");
+  planesUl.innerHTML = "";
 
   planesMap.forEach((value, key) => {
     const rotationPlane = document.createElement("li");
     rotationPlane.classList.add("button", "rotation-plane", key);
     rotationPlane.innerHTML = key.toUpperCase() + " | " + value;
-    dropmenu.appendChild(rotationPlane);
+    planesUl.appendChild(rotationPlane);
   });
 }
 
-const MAX_SPEED = 8;
+const MAX_SPEED = 3;
 const MIN_SPEED = -MAX_SPEED;
 
 function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
@@ -265,8 +266,51 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
   });
 }
 
+function setRandomRotationBtn(handler){
+  const randomBtn = handler.dropmenu.querySelector(".tools .random-btn");
+
+  randomBtn.addEventListener("click", ()=>{
+    handler.planeButtons.forEach((button)=>{
+      console.log("Funzione random!")
+      const input = button.innerHTML.toLowerCase();
+      let rotationPlane = input.slice(0,2);
+      let randomSpeed = Math.round(100 * (Math.random() - Math.random()) * MAX_SPEED) / 100;
+      let index = handler.planes.indexOf(rotationPlane);
+      handler.angularSpeedFactors[index] = randomSpeed;
+      button.innerHTML = rotationPlane.toUpperCase() + " | " + randomSpeed;
+      app.initialTime = Date.now();
+      tic(app.meshToRender);
+    });
+  });
+}
+
+const CLEAN_SPEED = 0;
+
+function setClearRotationsBtn(handler){
+  const randomBtn = handler.dropmenu.querySelector(".tools .clear-btn");
+
+  randomBtn.addEventListener("click", () => {
+    handler.planeButtons.forEach((button) => {
+      console.log("Funzione random!")
+      const input = button.innerHTML.toLowerCase();
+      let rotationPlane = input.slice(0, 2);
+      let index = handler.planes.indexOf(rotationPlane);
+      handler.angularSpeedFactors[index] = CLEAN_SPEED;
+      button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_SPEED;
+      app.initialTime = Date.now();
+      tic(app.meshToRender);
+    });
+  });
+}
+
+function setTools(handler){
+  setRandomRotationBtn(handler);
+  setClearRotationsBtn(handler);
+}
+
 function setPlanesDropmenu(handler) {
   setPlanes(handler);
+  setTools(handler);
   handler.planeButtons = document.querySelectorAll(".button.rotation-plane");
   setPlaneButtons(handler);
 }
