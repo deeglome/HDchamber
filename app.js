@@ -443,21 +443,36 @@ function setCrossSectionMode() {
   app.guiHandlers.crossSection = crossSection;
 }
 
+const FIXED_AXES_SRC = "icons/cartesian_axes_view_locked_btn.svg";
+const ROTATING_AXES_SRC = "icons/cartesian_axes_view_on_btn.svg";
+const AXES_OFF_SRC = "icons/cartesian_axes_view_off_btn.svg";
+
 function setAxesMode() {
   const axesButton = document.querySelector(".axes.button");
+  const axesIcon = axesButton.querySelector(".icon");
   let counter = 0;
   axesButton.addEventListener("click", () => {
     counter++;
-    if (counter % 3 === 0) {
-      app.axesEnabled = false;
-      axesButton.setAttribute("title", "Enable fixed axes");
-    } else if (counter % 3 === 1) {
-      app.axesEnabled = true;
-      app.fixedAxes = true;
-      axesButton.setAttribute("title", "Enable rotating axes");
-    } else if (counter % 3 === 2) {
-      app.fixedAxes = false;
-      axesButton.setAttribute("title", "Disable axes");
+    counter %= 3;
+    switch(counter){
+      case 0:
+        app.axesEnabled = false;
+        axesButton.setAttribute("title", "Enable fixed axes");
+        axesIcon.src = FIXED_AXES_SRC;
+        break;
+      case 1:
+        app.axesEnabled = true;
+        app.fixedAxes = true;
+        axesButton.setAttribute("title", "Enable rotating axes");
+        axesIcon.src = ROTATING_AXES_SRC;
+        break;
+      case 2:
+        app.fixedAxes = false;
+        axesButton.setAttribute("title", "Disable axes");
+        axesIcon.src = AXES_OFF_SRC;
+      default:
+        console.error("Error in axes elaboration!");
+        break;
     }
     console.log(app.axesEnabled, app.fixedAxes);
   });
