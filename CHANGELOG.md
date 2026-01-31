@@ -9,7 +9,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ...
 
+## [1.5.0-beta] - 2026-01-31
+
+## EXTERNAL
+
+### Added
+
+- **Credits** at the bottom right along with version. It also includes a link to HDchamber repo on GitHub.
+
+- **New Pause/Resume button**: now animation can be stopped and resumed with this button.
+
+- **New Zoom In/Out buttons** for better experience in zooming from mobile devices.
+
+- **A maximum and minimum** value for rotation speed (min = -3; max = 3).
+
+- **First rotation tools** in rotation dropmenu:
+  - Generate random rotation
+  - Clear rotation (resets everything to zero).
+
+- **Logic** to update **axes button icons**.
+
+### Changed
+
+- **Font** from Verdana to Chakra Petch.
+
+- **Opacity** of version and credits.
+
+- **Button icons with new ones**: now most of them are "homemade" and with *.svg extension.
+
+- **Logo**
+
+- **Zoom threshold**: now zooming with mouse wheel is more natural and easier.
+
+## INTERNAL
+
+### Fixed
+
+- **Rendering animation**: now tic() function is invoked recursively only when there is an actual rotation. Other features are frozen until next resume, though. 
+
+## [1.4.1-beta] - 2025-07-09
+
+## EXTERNAL
+
+### Changed
+
+- **GUI icons**: perspective/orthogonal view icon, wiki icon, cross section mode icon, last-coordinate mode icon.
+
+- **Wikipage transition**: Introduces a toggleWikipage function to handle showing and hiding the wiki page with a transition effect. Updates the wiki button click handler to use this new function for improved UI behavior.
+
+### Fixed
+
+- **Rotation dropmenu bug**: Using addEventListener('click', ...) was causing multiple event handlers to stack when the script ran more than once, leading to duplicated toggles. This made the dropdown instantly open and close on even-numbered clicks. Replaced it with onclick assignment to ensure only one handler is attached at a time and restore expected toggle behavior.
+
+## [1.4.0-beta] - 2025-07-08
+
+## EXTERNAL
+
+### Added
+
+- **Axes button feature**: now axes button actually works.
+  Added three modes:
+    - Axes off
+    - Axes on and constrained to world
+    - Axes on and constrained to mesh
+
+- **Last-coordinate mode**: it shows the last-coordinate value of every vertex next to each one.
+
+- **Camera handler button (with no feature)**: a button that will control position and orientation of the camera.
+
+- **Technical data**: a panel located at the bottom left of the GUI and shows which hyperplane cuts the mesh with its equation. This panel will be multi-purpose in the future.
+
+- **favicon.ico**
+
+- **Dynamic title**: now it shows the name of the animated mesh and in which number of dimensions is rotating.
+
+- **CSS responsiveness** for mobile devices.
+
+### Changed
+
+- **README.md**: now it also contains the Netlify link, features, currently supported meshes and a guide to download HDchamber locally.
+
+- **Rotation dropmenu**: now all of possible plane buttons are generated and set to 0 and each label is followed by its angular speed value (e.g. "XY | 0.49"). Removed '+' and '-' buttons.
+
+- **Rotation scope logic**: now only planes with non-zero speed are considered.
+
+## INTERNAL
+
+### Changed
+
+- **Code refactoring**: see commits to deepen.
+
+### Removed
+
+- **Hypersphere flatCells**: they were too difficult to implement.
+
 ## [1.3.0-alpha] - 2025-04-17
+
+## EXTERNAL
 
 ### Added
 
@@ -24,6 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New buttons and icons**: added several toolbar buttons for cross-section mode, Wiki panel, and upcoming features like axis display and color mapping. Icons have been included in the icons/ directory and wired to the UI via index.html and CSS transitions.
 
 - **Opacity management for cross-sections**: when cross-section mode is enabled, the background mesh is now rendered with softened opacity using goniometric transitions to enhance depth perception.
+
+## INTERNAL
 
 ### Changed
 
@@ -40,6 +138,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fallback Wiki behavior**: addressed crashes from missing Wiki data by introducing writeDefaultWikiPage() for meshes not yet included in wiki.json.
 
 ## [1.2.0-alpha] - 2025-03-27
+
+## INTERNAL
 
 ### Added
 
@@ -76,21 +176,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-alpha] - 2025-03-02
 
+## EXTERNAL
+
 ### Added
 
 - **Dimension handler button**: a button that allows you to change the number of dimensions in real time. It is located on the right side of the GUI.
 
 - **Rotation handler button**: a button that allows you to manage elementary rotations described by planes (e.g. XY) in real time. You can add new ones, remove them, or change the angular velocity coefficient (which refers to the global variable “angle.” It is located in the left side of the GUI.
 
+### Fixed
+
+- **Coloured rendering logic**: previously it was based on mesh dimensions. But this excluded when the mesh has less dimensions than the world (e.g. a square with XW rotation). Now the logic depends on rotation scope, which is the min size of the sum of the elementary rotations.
+
+## INTERNAL
+
 ### Changed
 
 - **Matrix class**: improved Matrix class and its instance generation. Now Matrix class has Singleton design for a better performance (only one Matrix instance will be created and edited for multiuse).
 
-- **Logic to render with hsl or not**: logic to render with hsl or not: previously the condition was based solely on the number of minimum dimensions in which the mesh can be displayed. But this excludes the case where the mesh has less dimensions than the composition of rotations (e.g. a square to which an XW rotation is applied). Now the logic depends on the nature of the rotations and not on the mesh.
-
 ### Removed
 
-- **Old functions** that handled the creation of matrices such as “rotationsInNthDimension()” and “possibleRotationMainDiagonals().” There is no longer a need to get all possible rotation matrices if one is updated ad hoc via a singleton class instance.
+- **Old functions** that handled the creation of matrices such as “rotationsInNthDimension()” and “possibleRotationMainDiagonals().”
 
 ## [1.0.0-demo] - 2024-08-21
 
@@ -99,6 +205,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Everything!
 
 [unreleased]: https://github.com/dastroort/hdchamber/compare/v1.3.0-alpha...HEAD
+[1.5.0-beta]: https://github.com/dastroort/hdchamber/compare/v1.4.1-beta...v1.5.0-beta
+[1.4.1-beta]: https://github.com/dastroort/hdchamber/compare/v1.4.0-beta...v1.4.1-beta
+[1.4.0-beta]: https://github.com/dastroort/hdchamber/compare/v1.3.0-alpha...v1.4.0-beta
 [1.3.0-alpha]: https://github.com/dastroort/hdchamber/compare/v1.2.0-alpha...v1.3.0-alpha
 [1.2.0-alpha]: https://github.com/dastroort/hdchamber/compare/v1.1.0-alpha...v1.2.0-alpha
 [1.1.0-alpha]: https://github.com/dastroort/hdchamber/compare/v1.0.0...v1.1.0-alpha
