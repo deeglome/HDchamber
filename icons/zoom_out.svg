@@ -124,15 +124,9 @@
        d="m 16.372667,14.168453 c 0.02696,-0.211728 0,-3.12383 0,-3.12383"
        id="path6" />
   </g>
-  <text
-     xml:space="preserve"
-     style="font-weight:500;font-size:16.9333px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';writing-mode:lr-tb;direction:ltr;fill:#ccc7d1;fill-opacity:1;stroke:#ccc7d1;stroke-width:0.926042;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-     x="20.385649"
-     y="18.397772"
-     id="text6"><tspan
-       sodipodi:role="line"
-       id="tspan6"
-       style="font-size:16.9333px;fill:#ccc7d1;fill-opacity:1;stroke-width:0.926042;stroke-dasharray:none"
-       x="20.385649"
-       y="18.397772">-</tspan></text>
+  <path
+     d="m 21.232314,13.385515 h 5.283189 v 1.388531 h -5.283189 z"
+     id="text6"
+     style="font-weight:500;font-size:16.9333px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;stroke:#ccc7d1;stroke-width:0.926042;stroke-linecap:round;stroke-linejoin:round"
+     aria-label="-" />
 </svg>

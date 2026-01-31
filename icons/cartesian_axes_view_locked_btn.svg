@@ -24,15 +24,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
-     inkscape:zoom="6.9384851"
-     inkscape:cx="34.733806"
-     inkscape:cy="48.929989"
+     inkscape:zoom="4.9062499"
+     inkscape:cx="26.089173"
+     inkscape:cy="62.471339"
      inkscape:window-width="1920"
      inkscape:window-height="1029"
      inkscape:window-x="0"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg1"
+     inkscape:current-layer="g2"
      inkscape:lockguides="true" />
   <defs
      id="defs1">
@@ -113,39 +113,21 @@
          id="path4" />
     </g>
   </g>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';writing-mode:lr-tb;direction:ltr;fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-     x="25.757078"
-     y="24.687294"
-     id="text4"><tspan
-       sodipodi:role="line"
-       id="tspan4"
-       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:1.32292"
-       x="25.757078"
-       y="24.687294">y</tspan></text>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';writing-mode:lr-tb;direction:ltr;fill:#ccc7df;fill-opacity:1;stroke:none;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-     x="21.6581"
-     y="8.2997198"
-     id="text5"><tspan
-       sodipodi:role="line"
-       id="tspan5"
-       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7df;fill-opacity:1;stroke:none;stroke-width:1.32292"
-       x="21.6581"
-       y="8.2997198">z</tspan></text>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';writing-mode:lr-tb;direction:ltr;fill:#ccc7df;fill-opacity:1;stroke:none;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-     x="2.6188724"
-     y="22.582933"
-     id="text6"><tspan
-       sodipodi:role="line"
-       id="tspan6"
-       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7df;fill-opacity:1;stroke:none;stroke-width:1.32292"
-       x="2.6188724"
-       y="22.582933">x</tspan></text>
+  <path
+     d="m 31.480551,19.065422 v 7.010407 l -1.095024,1.083734 H 27.58588 l -0.92569,-0.92569 v -0.7112 h 1.049868 v 0.395111 l 0.338667,0.327378 h 1.873957 l 0.508001,-0.496711 v -2.133603 l -1.083735,1.072446 H 27.58588 l -1.095023,-1.095023 v -4.526849 h 1.049867 v 4.199471 l 0.508001,0.508 h 1.083734 l 1.298224,-1.320801 v -3.38667 z"
+     id="text4"
+     style="font-weight:500;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
+     aria-label="y" />
+  <path
+     d="M 22.053212,7.3966078 25.417304,3.5696706 V 3.5470928 H 22.166101 V 2.6778474 h 4.538138 v 0.9031121 l -3.364093,3.8269372 v 0.022578 h 3.364093 v 0.8692453 h -4.651027 z"
+     id="text5"
+     style="font-weight:500;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7df;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
+     aria-label="z" />
+  <path
+     d="m 6.9199434,22.582933 -1.467557,-2.043291 -1.478846,2.043291 H 2.7882059 L 4.8653636,19.726842 2.8446504,16.961061 H 4.029985 l 1.4224014,1.975558 1.4111125,-1.975558 h 1.1853346 l -2.0094243,2.788358 2.0658688,2.833514 z"
+     id="text6"
+     style="font-weight:500;font-size:11.2889px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7df;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
+     aria-label="x" />
   <g
      id="g2"
      transform="matrix(1.3333334,0,0,-1.3333334,-3.1354838,19.670249)">
@@ -175,17 +157,11 @@
        x="-7.9198184"
        y="7.6146164"
        transform="scale(-1,1)" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:5.64444px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';writing-mode:lr-tb;direction:ltr;fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
-       x="-7.7992058"
-       y="12.768311"
+    <path
+       d="M -7.6298726,12.124844 V 11.5096 h 0.524933 v 0.434622 l 0.3555997,0.349956 h 0.8918215 l 0.3047998,-0.299156 V 8.8172024 h 0.5418663 V 12.17 l -0.5983107,0.598311 h -1.3828878 z"
        id="text2"
-       transform="scale(-1,1)"><tspan
-         sodipodi:role="line"
-         id="tspan2"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:5.64444px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:1.32292"
-         x="-7.7992058"
-         y="12.768311">J</tspan></text>
+       style="font-weight:500;font-size:5.64444px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
+       transform="scale(-1,1)"
+       aria-label="J" />
   </g>
 </svg>
