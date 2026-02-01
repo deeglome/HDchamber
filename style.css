@@ -91,7 +91,7 @@ button i::before {
   top: 0;
   list-style: none;
   padding: 0px;
-  display: flex;
+  display: none;
   flex-flow: row wrap;
   justify-content: center;
   align-items: center;
