@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ...
 
+## [1.5.1-beta] - 2026-02-01
+
+## EXTERNAL
+
+## Fixed
+
+- **SVG icons**: converted text in path to preserve font even though it's not downloaded locally.
+
+## INTERNAL
+
+## Removed
+
+- **ESLint** package
+
 ## [1.5.0-beta] - 2026-01-31
 
 ## EXTERNAL
@@ -204,7 +218,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Everything!
 
-[unreleased]: https://github.com/dastroort/hdchamber/compare/v1.3.0-alpha...HEAD
+[unreleased]: https://github.com/dastroort/hdchamber/compare/v1.5.1-beta...HEAD
+[1.5.1-beta]: https://github.com/dastroort/hdchamber/compare/v1.5.0-beta...v1.5.1-beta
 [1.5.0-beta]: https://github.com/dastroort/hdchamber/compare/v1.4.1-beta...v1.5.0-beta
 [1.4.1-beta]: https://github.com/dastroort/hdchamber/compare/v1.4.0-beta...v1.4.1-beta
 [1.4.0-beta]: https://github.com/dastroort/hdchamber/compare/v1.3.0-alpha...v1.4.0-beta
