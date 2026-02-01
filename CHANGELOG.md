@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ...
 
+## [1.5.2-beta] - 2026-02-01
+
+## EXTERNAL
+
+### Fixed
+
+- **Frozen features bug**: now every feature updates the scene, even though there is no rotation or pause is on.
+
+- **Last-Coordinate mode bug**: previously, you could bypass last-coordinate warning by setting a valid dimension and then reduce the number of dimensions, showing NaN values. Now every time you change dimension this mode turns off.
+
+- **Dropmenu bug**: every dropmenu was invisible but clickable at the beginning. Now they're even not clickable by default. You must click on their buttons at first.
+
 ## [1.5.1-beta] - 2026-02-01
 
 ## EXTERNAL
@@ -218,7 +230,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Everything!
 
-[unreleased]: https://github.com/dastroort/hdchamber/compare/v1.5.1-beta...HEAD
+[unreleased]: https://github.com/dastroort/hdchamber/compare/v1.5.2-beta...HEAD
+[1.5.2-beta]: https://github.com/dastroort/hdchamber/compare/v1.5.1-beta...v1.5.2-beta
 [1.5.1-beta]: https://github.com/dastroort/hdchamber/compare/v1.5.0-beta...v1.5.1-beta
 [1.5.0-beta]: https://github.com/dastroort/hdchamber/compare/v1.4.1-beta...v1.5.0-beta
 [1.4.1-beta]: https://github.com/dastroort/hdchamber/compare/v1.4.0-beta...v1.4.1-beta
