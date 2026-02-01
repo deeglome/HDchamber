@@ -1,6 +1,6 @@
 {
   "name": "hdchamber",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "type": "module",
   "description": "HDchamber is a rendering environment built in vanilla JavaScript, where geometric figures from higher dimensions are brought to life. Unveil the mysteries of shapes like Tesseracts, Simplices, Hyperspheres, and more!",
   "main": "app.js",
