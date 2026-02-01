@@ -94,17 +94,11 @@
   <g
      id="g19"
      style="stroke:url(#linearGradient22);stroke-opacity:1">
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:16.933333px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Light';writing-mode:lr-tb;direction:ltr;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.661458;stroke-dasharray:none;stroke-opacity:1"
-       x="24.80504"
-       y="28.776886"
-       id="text11"><tspan
-         sodipodi:role="line"
-         id="tspan11"
-         style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Light';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.661458;stroke-dasharray:none;stroke-opacity:1;font-size:16.933333px"
-         x="24.80504"
-         y="28.776886">HDC</tspan></text>
+    <path
+       d="m 26.244374,16.923553 h 0.982133 v 5.503333 h 6.434666 v -5.503333 h 0.982134 V 28.776886 H 33.661173 V 23.30742 h -6.434666 v 5.469466 h -0.982133 z m 11.277606,0 h 6.620933 l 1.778,1.778 v 8.297333 l -1.778,1.778 H 37.52198 Z m 6.180666,10.9728 1.236133,-1.236134 v -7.636933 l -1.236133,-1.219199 h -5.198533 v 10.092266 z m 4.75827,-0.897467 v -8.297333 l 1.778,-1.778 h 4.944533 l 1.710267,1.710267 v 0.897466 H 55.911582 V 18.93862 l -1.151466,-1.134533 h -4.080933 l -1.236134,1.219199 v 7.636933 l 1.236134,1.236134 h 4.080933 l 1.151466,-1.134534 v -0.592666 h 0.982134 v 0.897466 l -1.710267,1.710267 h -4.944533 z"
+       id="text11"
+       style="font-weight:300;font-size:16.9333px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Light';fill:#ffffff;stroke:none;stroke-width:0.661458"
+       aria-label="HDC" />
     <g
        id="g16"
        style="stroke:url(#linearGradient16)"
@@ -139,33 +133,33 @@
       <g
          id="g1"
          inkscape:label="verts"
-         style="fill:#0000ff">
+         style="fill:#cfb6ff;fill-opacity:1">
         <circle
-           style="fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
+           style="fill:#cfb6ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
            id="path13"
            cx="21.918112"
            cy="27.441017"
            r="0.66145831" />
         <circle
-           style="fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
+           style="fill:#cfb6ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
            id="circle13"
            cx="32.78849"
            cy="7.9910073"
            r="0.66145831" />
         <circle
-           style="fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
+           style="fill:#cfb6ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
            id="circle14"
            cx="22.039564"
            cy="14.841971"
            r="0.66145831" />
         <circle
-           style="fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
+           style="fill:#cfb6ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
            id="circle15"
            cx="12.117478"
            cy="14.487611"
            r="0.66145831" />
         <circle
-           style="fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
+           style="fill:#cfb6ff;fill-opacity:1;stroke:none;stroke-width:0.245625;stroke-dasharray:none;stroke-opacity:1"
            id="circle16"
            cx="16.700537"
            cy="6.2428298"

@@ -86,16 +86,10 @@
   <g
      id="g19"
      style="stroke:url(#linearGradient22);stroke-opacity:1">
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:25.4px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch, Medium';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;writing-mode:lr-tb;direction:ltr;fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:0.661458;stroke-dasharray:none;stroke-opacity:1"
-       x="9.389535"
-       y="24.197739"
-       id="text11"><tspan
-         sodipodi:role="line"
-         id="tspan11"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:25.4px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch, Medium';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:0.661458;stroke-dasharray:none;stroke-opacity:1"
-         x="9.389535"
-         y="24.197739">&lt;</tspan></text>
+    <path
+       d="m 10.481735,18.025539 v -2.3876 l 12.9032,-5.9690001 v 2.3622001 l -10.3124,4.7244 v 0.1524 l 10.3124,4.9276 v 2.3622 z"
+       id="text11"
+       style="font-weight:500;font-size:25.4px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch, Medium';fill:#ccc7d1;stroke:none;stroke-width:0.661458"
+       aria-label="&lt;" />
   </g>
 </svg>

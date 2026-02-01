@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
-     inkscape:zoom="4.9062499"
-     inkscape:cx="26.089173"
-     inkscape:cy="62.471339"
+     inkscape:zoom="9.8124998"
+     inkscape:cx="15.490446"
+     inkscape:cy="34.700638"
      inkscape:window-width="1920"
      inkscape:window-height="1029"
      inkscape:window-x="0"
@@ -131,32 +131,14 @@
   <g
      id="g2"
      transform="matrix(1.3333334,0,0,-1.3333334,-3.1354838,19.670249)">
-    <rect
-       style="fill:#ccc7d1;fill-opacity:1;stroke:#ccc7d1;stroke-width:0.769837;stroke-linecap:round;stroke-linejoin:round"
+    <path
        id="rect1"
-       width="3.1989124"
-       height="2.4051626"
-       x="4.7209063"
-       y="7.6146164" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:5.64444px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';writing-mode:lr-tb;direction:ltr;fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
-       x="4.8415189"
-       y="12.768311"
-       id="text1"><tspan
-         sodipodi:role="line"
-         id="tspan1"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:5.64444px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;fill-opacity:1;stroke:none;stroke-width:1.32292"
-         x="4.8415189"
-         y="12.768311">J</tspan></text>
-    <rect
-       style="fill:#ccc7d1;fill-opacity:1;stroke:#ccc7d1;stroke-width:0.769837;stroke-linecap:round;stroke-linejoin:round"
-       id="rect2"
-       width="3.1989124"
-       height="2.4051626"
-       x="-7.9198184"
-       y="7.6146164"
-       transform="scale(-1,1)" />
+       style="fill:#ccc7d1;stroke:#ccc7d1;stroke-width:0.769837;stroke-linecap:round;stroke-linejoin:round"
+       d="M 4.7209063,7.6146164 H 7.9198186 V 10.019779 H 4.7209063 Z" />
+    <path
+       id="text1"
+       style="font-weight:500;font-size:5.64444px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch Medium';fill:#ccc7d1;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round"
+       d="M 5.6486981 12.768311 L 5.0107526 12.12494 L 5.0107526 11.509473 L 5.5359143 11.509473 L 5.5359143 11.94433 L 5.8913189 12.294309 L 6.7831249 12.294309 L 7.088145 11.995103 L 7.088145 10.019642 L 4.7208478 10.019642 L 4.7208478 7.6147501 L 7.9198771 7.6147501 L 7.9198771 10.019642 L 7.6299723 10.019642 L 7.6299723 12.169898 L 7.0315593 12.768311 L 5.6486981 12.768311 z " />
     <path
        d="M -7.6298726,12.124844 V 11.5096 h 0.524933 v 0.434622 l 0.3555997,0.349956 h 0.8918215 l 0.3047998,-0.299156 V 8.8172024 h 0.5418663 V 12.17 l -0.5983107,0.598311 h -1.3828878 z"
        id="text2"
