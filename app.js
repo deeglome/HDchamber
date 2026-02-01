@@ -38,10 +38,12 @@ const WIKI = await fetchWiki();
 
 function zoomIn(threshold) {
   app.renderScale += threshold;
+  renderEnvironment(app.meshToRender);
 }
 
 function zoomOut(threshold) {
   app.renderScale -= threshold;
+  renderEnvironment(app.meshToRender);
 }
 
 const THRESHOLD = 50;
@@ -51,7 +53,6 @@ function addWindowEvents() {
     GEOLIB.resizeCanvas();
     const h1 = document.querySelector("h1");
     h1.style.textAlign = "center";
-    tic();
   });
 
   window.addEventListener("wheel", (event) => {
@@ -88,6 +89,7 @@ function setProjectionButton({ button, icon }) {
   button.addEventListener("click", () => {
     app.isOrtho = !app.isOrtho;
     icon.src = `./icons/${app.isOrtho ? "perspective" : "ortho"}.png`;
+    renderEnvironment(app.meshToRender);
   });
 }
 
@@ -211,10 +213,9 @@ function setDimensionsButton({button, input}) {
       setRotationHandler();
     }
 
-    if (app.isRendering) {
-      const h1 = document.querySelector("h1");
-      h1.innerHTML = `A ${app.dimensionsToRender}-${input} rotating in ${app.dimensionsToRender}`;
-    }
+    const h1 = document.querySelector("h1");
+    h1.innerHTML = `A ${app.dimensionsToRender}-${input} rotating in ${app.dimensionsToRender}`;
+    renderEnvironment(app.meshToRender);
   });
 }
 
@@ -431,6 +432,7 @@ function setCrossSectionButton({button, icon}) {
       button.setAttribute("title", "Enable cross-section mode");
     }
     icon.src = "./icons/cross_section_view_" + (app.isCrossSectionMode ? "off" : "on") + "_btn.svg";
+    renderEnvironment(app.meshToRender);
   });
 }
 
@@ -451,6 +453,7 @@ function setAxesMode() {
   const axesButton = document.querySelector(".axes.button");
   const axesIcon = axesButton.querySelector(".icon");
   let counter = 0;
+
   axesButton.addEventListener("click", () => {
     counter++;
     counter %= 3;
@@ -474,18 +477,20 @@ function setAxesMode() {
         console.error("Error in axes elaboration!");
         break;
     }
-    console.log(app.axesEnabled, app.fixedAxes);
+    renderEnvironment(app.meshToRender);
   });
 }
 
 function setLastCoordinateMode() {
   const lastCoordinateButton = document.querySelector(".button.last-coordinate-mode");
+
   lastCoordinateButton.addEventListener("click", () => {
     if (app.dimensionsToRender < GEOLIB.COLOR_MAPPING_DIMENSION)
       alert("Cannot enable 'Last Coordinate Mode' without color mapping. Try to select at least " + GEOLIB.COLOR_MAPPING_DIMENSION + " dimensions.");
     else {
       app.lastCoordinateEnabled = !app.lastCoordinateEnabled;
       lastCoordinateButton.setAttribute("title", (app.lastCoordinateEnabled ? "Disable" : "Enable") + " last-coordinate mode");
+      renderEnvironment(app.meshToRender);
     }
   });
 }
