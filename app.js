@@ -210,6 +210,7 @@ function setDimensionsButton({button, input}) {
       alert(`Invalid number of dimensions: ${input}`);
     } else {
       app.dimensionsToRender = input;
+      app.lastCoordinateEnabled = false;
       setRotationHandler();
     }
 
