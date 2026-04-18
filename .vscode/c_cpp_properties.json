@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": ["${default}", "C:\\eigen-3.4.0\\"],
+      "defines": ["_DEBUG", "UNICODE", "_UNICODE"],
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ],
+  "version": 4
+}
