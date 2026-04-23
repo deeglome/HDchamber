@@ -1,5 +1,5 @@
-import * as GEOLIB from "/geolib.js";
-import * as CROSS_SECTION from "/cross-section.js";
+import * as GEOLIB from "./geolib.js";
+import * as CROSS_SECTION from "./cross-section.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
 const app = {
