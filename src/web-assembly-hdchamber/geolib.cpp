@@ -868,12 +868,6 @@ class Hypertorus : public GeometryND {
         }
 };
 
-int main() {
-    //cout << "Hello world!" << endl;
-    printf("hello world!");
-    return 0;
-}
-
 /*
 ============
 == EMBIND ==
