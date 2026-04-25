@@ -1,0 +1,146 @@
+#include<emscripten/bind.h>
+#include "geolib.cpp"
+
+emscripten::val vectorFToJs(vector<float> vec)
+{
+    emscripten::val result = emscripten::val::array();
+    for (int i = 0; i < vec.size(); i++)
+    {
+        result.set(i, vec[i]);
+    }
+    return result;
+}
+
+emscripten::val vectorIToJs(vector<int> vec)
+{
+    emscripten::val result = emscripten::val::array();
+    for (int i = 0; i < vec.size(); i++)
+    {
+        result.set(i, vec[i]);
+    }
+    return result;
+}
+
+/*
+============
+== EMBIND ==
+============
+*/
+
+EMSCRIPTEN_BINDINGS(my_module){
+    // Binding per PointND (VectorXf)
+    emscripten::class_<VectorXf>("PointND")
+        .constructor<int>()
+        .function("size", &VectorXf::size)
+        .function("get", emscripten::optional_override([](const VectorXf& self, int i) {
+            return self(i);
+        }))
+        .function("set", emscripten::optional_override([](VectorXf& self, int i, float val) {
+            self(i) = val;
+        }))
+        .function("toArray", emscripten::optional_override([](const VectorXf& self) {
+            std::vector<float> arr;
+            for(int i = 0; i < self.size(); i++) {
+                arr.push_back(self(i));
+            }
+            return arr;
+        }));
+
+    // Binding per SegmentND
+    emscripten::class_<SegmentND>("SegmentND")
+        .constructor<PointND, PointND>()
+        .property("start", &SegmentND::start)
+        .property("end", &SegmentND::end)
+        .property("n", &SegmentND::n)
+        .function("length", &SegmentND::length)
+        .function("midpoint", &SegmentND::midpoint)
+        .function("extendIn", &SegmentND::extendIn)
+        .function("transform", &SegmentND::transform)
+        .function("coincident", &SegmentND::coincident)
+        .function("project", emscripten::select_overload<void(int)>(&SegmentND::project))
+        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&SegmentND::project));
+
+    // Binding per FaceND
+    emscripten::class_<FaceND>("FaceND")
+        .constructor<vector<SegmentND>>()
+        .property("verts", &FaceND::verts)
+        .property("edges", &FaceND::edges)
+        .property("n", &FaceND::n)
+        .function("bar", &FaceND::bar)
+        .function("transform", &FaceND::transform)
+        .function("scalars", &FaceND::scalars)
+        .function("coincident", &FaceND::coincident)
+        .function("extendIn", &FaceND::extendIn)
+        .function("project", emscripten::select_overload<void(int)>(&FaceND::project))
+        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&FaceND::project));
+
+    // Binding per MatrixXf
+    emscripten::class_<MatrixXf>("MatrixXf")
+        .constructor<int, int>();
+
+    // Binding per GeometryND
+    emscripten::class_<GeometryND>("GeometryND")
+        .constructor<int, vector<PointND>, vector<SegmentND>, vector<FaceND>>()
+        .property("verts", &GeometryND::verts)
+        .property("edges", &GeometryND::edges)
+        .property("faces", &GeometryND::faces)
+        .property("n", &GeometryND::n)
+        .function("bar", &GeometryND::bar)
+        .function("clone", &GeometryND::clone, emscripten::allow_raw_pointers())
+        .function("transform", &GeometryND::transform)
+        .function("extendIn", &GeometryND::extendIn)
+        .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
+        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
+        .function("getBufferVerts", &GeometryND::getBufferVerts)
+        .function("getBufferEdgeIndices", &GeometryND::getBufferEdgeIndices);
+
+    // Binding per Hypercube
+    emscripten::class_<Hypercube, emscripten::base<GeometryND>>("Hypercube")
+        .constructor<int, float>()
+        .function("clone", &Hypercube::clone, emscripten::allow_raw_pointers())
+        .function("getBufferEdgeIndices", &Hypercube::getBufferEdgeIndices);
+
+    // Binding per Simplex
+    emscripten::class_<Simplex, emscripten::base<GeometryND>>("Simplex")
+        .constructor<int, float>()
+        .function("clone", &Simplex::clone, emscripten::allow_raw_pointers());
+
+    // Binding per Orthoplex
+    emscripten::class_<Orthoplex, emscripten::base<GeometryND>>("Orthoplex")
+        .constructor<int, float>()
+        .function("clone", &Orthoplex::clone, emscripten::allow_raw_pointers());
+
+    // Binding per Hypersphere
+    emscripten::class_<Hypersphere, emscripten::base<GeometryND>>("Hypersphere")
+        .constructor<int, float, int>()
+        .function("clone", &Hypersphere::clone, emscripten::allow_raw_pointers());
+
+    // Binding per Hypertorus
+    emscripten::class_<Hypertorus, emscripten::base<GeometryND>>("Hypertorus")
+        .constructor<int, float, float, int>()
+        .function("clone", &Hypertorus::clone, emscripten::allow_raw_pointers());
+
+    // Binding per funzioni utility
+    emscripten::function("origin", &origin);
+    emscripten::function("projectPoint", emscripten::select_overload<PointND(const PointND, int)>(&projectPoint));
+    emscripten::function("projectPointWithCam", emscripten::select_overload<PointND(const PointND, int, float)>(&projectPoint));
+    emscripten::function("extendPoint", &extendPoint);
+    
+    // FIX: Specifica esplicitamente il tipo di ritorno per distance
+    emscripten::function("distance", emscripten::optional_override([](PointND p, PointND q) -> float {
+        return distance(p, q);
+    }));
+    
+    emscripten::function("barFromPoints", &barFromPoints);
+    // emscripten::function("setRotation", &set_rotation);
+    emscripten::function("vectorFToJs", &vectorFToJs);
+    emscripten::function("vectorIToJs", &vectorIToJs);
+
+    // Binding per vector types
+    emscripten::register_vector<float>("VectorFloat");
+    emscripten::register_vector<int>("VectorInt");
+    emscripten::register_vector<PointND>("VectorPointND");
+    emscripten::register_vector<SegmentND>("VectorSegmentND");
+    emscripten::register_vector<FaceND>("VectorFaceND");
+    emscripten::register_vector<std::string>("VectorString");
+}

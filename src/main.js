@@ -1,4 +1,4 @@
-import * as GEOLIB from "./geolib.js";
+import * as GEOLIB from "./geolib_old.js";
 import * as CROSS_SECTION from "./cross-section.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE

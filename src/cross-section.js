@@ -1,4 +1,4 @@
-import * as GEOLIB from "./geolib.js";
+import * as GEOLIB from "./geolib_old.js";
 
 class Hyperplane {
   constructor(normalVector) {

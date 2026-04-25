@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <Eigen/Dense>
 #include <thread>
-// #include <emscripten/bind.h>
 #include <cmath>
 
 using namespace std;
@@ -10,24 +9,11 @@ using namespace Eigen;
 
 #define MAX_N 6
 #define EPS 1e-6
-#define SCREEN_W 24
-#define SCREEN_H 24
-#define SCREEN_N 2
 #define CAM_DIST 3
 
 const string AXIS_IDS = "xyzwvu";
 
 typedef VectorXf PointND;
-
-/* emscripten::val vectorToJs(vector<float> vec)
-{
-    emscripten::val result = emscripten::val::array();
-    for (int i = 0; i < vec.size(); i++)
-    {
-        result.set(i, vec[i]);
-    }
-    return result;
-} */
 
 PointND origin(int n) {
     if(n > MAX_N) throw out_of_range("'n' is out of range.");
@@ -37,13 +23,13 @@ PointND origin(int n) {
 
 PointND projectPoint(const PointND p, int n) {
     if (p.size() < n) throw invalid_argument("'p' has fewer coordinates than required, it can't be projected.");
-    if (p.size() == n) throw invalid_argument("'p' has the same dimensions than required. It's unnecessary to be projected.");
+    if (p.size() == n) return p;
     return p.head(n);
 }
 
 PointND projectPoint(const PointND p, int n, float cam_dist) {
     if (p.size() < n) throw invalid_argument("'p' has fewer coordinates than required, it can't be projected.");
-    if (p.size() == n) throw invalid_argument("'p' has the same dimensions than required. It's unnecessary to be projected.");
+    if (p.size() == n) return p;
    
     float last = p(p.size() - 1);
     float fact = 1 / (cam_dist + last);
@@ -173,11 +159,13 @@ class SegmentND {
         {
             start = projectPoint(start, n);
             end = projectPoint(end, n);
+            this->n = n;
         }
         void project(int n, float cam_dist)
         {
             start = projectPoint(start, n, cam_dist);
             end = projectPoint(end, n, cam_dist);
+            this->n = n;
         }
 };
 
@@ -244,11 +232,13 @@ class FaceND {
         void project(int n){
             for (SegmentND &s : edges) s.project(n);
             for (PointND &v : verts) v = projectPoint(v, n);
+            this->n = n;
         }
 
         void project(int n, float cam_dist){
-            for (SegmentND &s : edges) s.project(n, cam_dist);
             for (PointND &v : verts) v = projectPoint(v, n, cam_dist);
+            for (SegmentND &s : edges) s.project(n, cam_dist);
+            this->n = n;
         }
 
         // Una faccia è uguale/congruente ad un'altra faccia 'f' se essa è sovrapponibile mediante isometrie, trasformazioni che conservano distanze e angoli.
@@ -359,21 +349,21 @@ class GeometryND {
             for(FaceND& f : this->faces) f.project(n);
             for(SegmentND& s : this->edges) s.project(n);
             for(PointND& v : this->verts) v = projectPoint(v, n);
+            this->n = n;
         }
 
         void project(int n, float cam_dist){
             for(FaceND& f : this->faces) f.project(n, cam_dist);
             for(SegmentND& s : this->edges) s.project(n, cam_dist);
             for(PointND& v : this->verts) v = projectPoint(v, n, cam_dist);
+            this->n = n;
         }
 
         vector<float> getBufferVerts(){
             vector<float> result = {};
-            int i=0;
-            for(int j=0; j<this->verts.size(); i++){
+            for(int j=0; j<this->verts.size(); j++){
                 for(int k=0; k<this->n; k++){
-                    result[i] = verts[j](k);
-                    i++;
+                    result.push_back(verts[j](k));
                 }
             }
             return result;
@@ -867,28 +857,3 @@ class Hypertorus : public GeometryND {
             for (SegmentND &s : connectors) edges.push_back(s);
         }
 };
-
-/*
-============
-== EMBIND ==
-============
-*/
-
-/*
-EMSCRIPTEN_BINDINGS(myModule){
-    emscripten::class_<GeometryND>("GeometryND")
-        .constructor<int, vector<PointND>, vector<SegmentND>, vector<FaceND>>()
-        .property("verts", &GeometryND::verts)
-        .property("edges", &GeometryND::edges)
-        .property("faces", &GeometryND::faces)
-        .property("n", &GeometryND::n)
-        .function("bar", &GeometryND::bar)
-        .function("clone", &GeometryND::clone, emscripten::allow_raw_pointers())
-        .function("transform", &GeometryND::transform)
-        .function("extendIn", &GeometryND::extendIn)
-        .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
-        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
-        .function("getBufferVerts", &GeometryND::getBufferVerts)
-        .function("getBufferEdgeIndices", &GeometryND::getBufferEdgeIndices);
-}
-*/
