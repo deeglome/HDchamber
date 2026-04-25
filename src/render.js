@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import createGeolib from './web-assembly-hdchamber/geolib.js'
+import createGeolib from './geolib.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let GEOLIB;
