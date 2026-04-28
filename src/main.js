@@ -1,11 +1,12 @@
 import * as GEOLIB from "./geolib_old.js";
 import * as CROSS_SECTION from "./cross-section.js";
+import { RENDER_FUNCS } from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
-const app = {
+const APP = {
   initialTime: Date.now(),
   finalTime: null,
-  deltaTime: () => app.finalTime - app.initialTime,
+  deltaTime: () => APP.finalTime - APP.initialTime,
   angularSpeed: Math.PI / 4, // rad/s
   dimensionsToRender: 4,
   MIN_DIMENSIONS: 2,
@@ -37,13 +38,13 @@ async function fetchWiki() {
 const WIKI = await fetchWiki();
 
 function zoomIn(threshold) {
-  app.renderScale += threshold;
-  renderEnvironment(app.meshToRender);
+  APP.renderScale += threshold;
+  renderEnvironment(APP.meshToRender);
 }
 
 function zoomOut(threshold) {
-  app.renderScale -= threshold;
-  renderEnvironment(app.meshToRender);
+  APP.renderScale -= threshold;
+  renderEnvironment(APP.meshToRender);
 }
 
 const THRESHOLD = 50;
@@ -87,9 +88,9 @@ function setZoomOutBtn(){
 // PROJECTION MODE
 function setProjectionButton({ button, icon }) {
   button.addEventListener("click", () => {
-    app.isOrtho = !app.isOrtho;
-    icon.src = `./icons/${app.isOrtho ? "perspective" : "ortho"}.png`;
-    renderEnvironment(app.meshToRender);
+    APP.isOrtho = !APP.isOrtho;
+    icon.src = `./icons/${APP.isOrtho ? "perspective" : "ortho"}.png`;
+    renderEnvironment(APP.meshToRender);
   });
 }
 
@@ -99,7 +100,7 @@ function setProjectionMode() {
     icon: document.querySelector(".button.projection-mode .icon"),
   };
   setProjectionButton(projection);
-  app.guiHandlers.projection = projection;
+  APP.guiHandlers.projection = projection;
 }
 
 function isDropmenuOpen(dropmenu) {
@@ -156,12 +157,12 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
   meshButtons = document.querySelectorAll(".button.mesh");
   meshButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      app.meshToRender = button.innerHTML;
-      if (app.meshToRender !== "And so on...") {
-        cancelAnimationFrame(app.animationId);
+      APP.meshToRender = button.innerHTML;
+      if (APP.meshToRender !== "And so on...") {
+        cancelAnimationFrame(APP.animationId);
         uploadWikipage();
         GEOLIB.disableColorLegend();
-        tic(app.meshToRender);
+        RENDER_FUNCS.updateTHREE(APP.meshToRender, APP.dimensionsToRender);
       } else {
         alert("Wait for new meshes!");
       }
@@ -177,7 +178,7 @@ function setMeshSelector() {
   };
   setMeshSelectorDropmenu(meshSelector);
   setMeshSelectorButton(meshSelector);
-  app.guiHandlers.meshSelector = meshSelector;
+  APP.guiHandlers.meshSelector = meshSelector;
 }
 
 function selectMesh(input, dimensions) {
@@ -199,24 +200,24 @@ function selectMesh(input, dimensions) {
 
 // DIMENSIONS HANDLER
 function ValidDimensions(dimensions) {
-  return dimensions >= app.MIN_DIMENSIONS && dimensions <= app.MAX_DIMENSIONS;
+  return dimensions >= APP.MIN_DIMENSIONS && dimensions <= APP.MAX_DIMENSIONS;
 }
 
 function setDimensionsButton({button, input}) {
   button.addEventListener("click", () => {
-    input = prompt(`Enter the number of dimensions of the shape you want to see (${app.MIN_DIMENSIONS}-${app.MAX_DIMENSIONS}):`) * 1;
+    input = prompt(`Enter the number of dimensions of the shape you want to see (${APP.MIN_DIMENSIONS}-${APP.MAX_DIMENSIONS}):`) * 1;
     GEOLIB.disableColorLegend();
     if (!ValidDimensions(input)) {
       alert(`Invalid number of dimensions: ${input}`);
     } else {
-      app.dimensionsToRender = input;
-      app.lastCoordinateEnabled = false;
+      APP.dimensionsToRender = input;
+      APP.lastCoordinateEnabled = false;
       setRotationHandler();
     }
 
     const h1 = document.querySelector("h1");
-    h1.innerHTML = `A ${app.dimensionsToRender}-${input} rotating in ${app.dimensionsToRender}`;
-    renderEnvironment(app.meshToRender);
+    h1.innerHTML = `A ${APP.dimensionsToRender}-${input} rotating in ${APP.dimensionsToRender}`;
+    renderEnvironment(APP.meshToRender);
   });
 }
 
@@ -226,7 +227,7 @@ function setDimensionsHandler() {
     input: null,
   };
   setDimensionsButton(dimensions);
-  app.guiHandlers.dimension = dimensions;
+  APP.guiHandlers.dimension = dimensions;
 }
 
 // ROTATION HANDLER
@@ -262,8 +263,8 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       let index = planes.indexOf(rotationPlane);
       angularSpeedFactors[index] = angularSpeedFactor;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor;
-      app.initialTime = Date.now();
-      tic(app.meshToRender);
+      APP.initialTime = Date.now();
+      //tic(APP.meshToRender);
     });
   });
 }
@@ -280,8 +281,8 @@ function setRandomRotationBtn(handler){
       let index = handler.planes.indexOf(rotationPlane);
       handler.angularSpeedFactors[index] = randomSpeed;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + randomSpeed;
-      app.initialTime = Date.now();
-      tic(app.meshToRender);
+      APP.initialTime = Date.now();
+      //tic(APP.meshToRender);
     });
   });
 }
@@ -299,8 +300,8 @@ function setClearRotationsBtn(handler){
       let index = handler.planes.indexOf(rotationPlane);
       handler.angularSpeedFactors[index] = CLEAN_SPEED;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_SPEED;
-      app.initialTime = Date.now();
-      tic(app.meshToRender);
+      APP.initialTime = Date.now();
+      //tic(APP.meshToRender);
     });
   });
 }
@@ -353,14 +354,14 @@ function setRotationHandler() {
   const rotation = {
     button: document.querySelector(".button.rotation-handler"),
     dropmenu: document.querySelector(".rotation-handler + .dropmenu"),
-    planes: allPossiblePlanes(app.dimensionsToRender),
-    angularSpeedFactors: Array(nCr(app.dimensionsToRender, 2)).fill(0),
+    planes: allPossiblePlanes(APP.dimensionsToRender),
+    angularSpeedFactors: Array(nCr(APP.dimensionsToRender, 2)).fill(0),
     planeButtons: null,
     options: null,
   };
   setPlanesDropmenu(rotation);
   setRotationButton(rotation);
-  app.guiHandlers.rotation = rotation;
+  APP.guiHandlers.rotation = rotation;
 }
 
 // WIKI HANDLER
@@ -397,10 +398,10 @@ function writeDefaultWikipage(container) {
 
 function uploadWikipage() {
   try {
-    app.guiHandlers.wiki.wikipage.replaceChildren();
-    writeMeshWikipage(app.dimensionsToRender + "-" + app.meshToRender, app.guiHandlers.wiki.wikipage);
+    APP.guiHandlers.wiki.wikipage.replaceChildren();
+    writeMeshWikipage(APP.dimensionsToRender + "-" + APP.meshToRender, APP.guiHandlers.wiki.wikipage);
   } catch {
-    writeDefaultWikipage(app.guiHandlers.wiki.wikipage);
+    writeDefaultWikipage(APP.guiHandlers.wiki.wikipage);
   }
 }
 
@@ -420,20 +421,20 @@ function setWikiHandler() {
     meshData: null,
   };
   setWikiButton(wiki);
-  app.guiHandlers.wiki = wiki;
+  APP.guiHandlers.wiki = wiki;
 }
 
 // CROSS SECTION
 function setCrossSectionButton({button, icon}) {
   button.addEventListener("click", () => {
-    app.isCrossSectionMode = !app.isCrossSectionMode;
-    if (app.isCrossSectionMode) {
+    APP.isCrossSectionMode = !APP.isCrossSectionMode;
+    if (APP.isCrossSectionMode) {
       button.setAttribute("title", "Disable cross-section mode");
     } else {
       button.setAttribute("title", "Enable cross-section mode");
     }
-    icon.src = "./icons/cross_section_view_" + (app.isCrossSectionMode ? "off" : "on") + "_btn.svg";
-    renderEnvironment(app.meshToRender);
+    icon.src = "./icons/cross_section_view_" + (APP.isCrossSectionMode ? "off" : "on") + "_btn.svg";
+    renderEnvironment(APP.meshToRender);
   });
 }
 
@@ -443,7 +444,7 @@ function setCrossSectionMode() {
     icon: document.querySelector(".button.cross-section-mode .icon"),
   };
   setCrossSectionButton(crossSection);
-  app.guiHandlers.crossSection = crossSection;
+  APP.guiHandlers.crossSection = crossSection;
 }
 
 const FIXED_AXES_SRC = "icons/cartesian_axes_view_locked_btn.svg";
@@ -460,25 +461,25 @@ function setAxesMode() {
     counter %= 3;
     switch(counter){
       case 0:
-        app.axesEnabled = false;
+        APP.axesEnabled = false;
         axesButton.setAttribute("title", "Enable fixed axes");
         axesIcon.src = FIXED_AXES_SRC;
         break;
       case 1:
-        app.axesEnabled = true;
-        app.fixedAxes = true;
+        APP.axesEnabled = true;
+        APP.fixedAxes = true;
         axesButton.setAttribute("title", "Enable rotating axes");
         axesIcon.src = ROTATING_AXES_SRC;
         break;
       case 2:
-        app.fixedAxes = false;
+        APP.fixedAxes = false;
         axesButton.setAttribute("title", "Disable axes");
         axesIcon.src = AXES_OFF_SRC;
       default:
         console.error("Error in axes elaboration!");
         break;
     }
-    renderEnvironment(app.meshToRender);
+    renderEnvironment(APP.meshToRender);
   });
 }
 
@@ -486,12 +487,12 @@ function setLastCoordinateMode() {
   const lastCoordinateButton = document.querySelector(".button.last-coordinate-mode");
 
   lastCoordinateButton.addEventListener("click", () => {
-    if (app.dimensionsToRender < GEOLIB.COLOR_MAPPING_DIMENSION)
+    if (APP.dimensionsToRender < GEOLIB.COLOR_MAPPING_DIMENSION)
       alert("Cannot enable 'Last Coordinate Mode' without color mapping. Try to select at least " + GEOLIB.COLOR_MAPPING_DIMENSION + " dimensions.");
     else {
-      app.lastCoordinateEnabled = !app.lastCoordinateEnabled;
-      lastCoordinateButton.setAttribute("title", (app.lastCoordinateEnabled ? "Disable" : "Enable") + " last-coordinate mode");
-      renderEnvironment(app.meshToRender);
+      APP.lastCoordinateEnabled = !APP.lastCoordinateEnabled;
+      lastCoordinateButton.setAttribute("title", (APP.lastCoordinateEnabled ? "Disable" : "Enable") + " last-coordinate mode");
+      renderEnvironment(APP.meshToRender);
     }
   });
 }
@@ -506,14 +507,14 @@ function setPauseBtn(){
   const pauseBtn = document.querySelector(".pause-btn");
   
   pauseBtn.addEventListener("click", ()=>{
-    app.pause = !app.pause;
+    APP.pause = !APP.pause;
     let pauseBtnIcon = pauseBtn.querySelector("img");
 
-    if(!app.pause){
+    if(!APP.pause){
       pauseBtnIcon.src = "icons/pause.svg";
       pauseBtn.title = "Pause animation";
-      app.initialTime = Date.now();
-      tic(app.meshToRender);
+      APP.initialTime = Date.now();
+      //tic(APP.meshToRender);
     } else {
       pauseBtnIcon.src = "icons/resume.svg";
       pauseBtn.title = "Resume animation";
@@ -533,18 +534,18 @@ function humanizeMeshName(technicalName) {
 }
 
 function renderCrossSection(mesh, dataDiv) {
-  const zeros = Array(app.dimensionsToRender - 1).fill(0);
+  const zeros = Array(APP.dimensionsToRender - 1).fill(0);
   const hyperplane = new CROSS_SECTION.Hyperplane([...zeros, 1]);
-  const crossSection = hyperplane.crossSectionOfMesh(mesh, app.dimensionsToRender);
+  const crossSection = hyperplane.crossSectionOfMesh(mesh, APP.dimensionsToRender);
   
-  crossSection.render(app.dimensionsToRender - 1, app.isOrtho, app.renderScale, 5, app.lastCoordinateEnabled);
+  crossSection.render(APP.dimensionsToRender - 1, APP.isOrtho, APP.renderScale, 5, APP.lastCoordinateEnabled);
   
   const hyperplaneString = hyperplane.toString();
   
   if (dataDiv.classList.contains("hidden")) dataDiv.classList.remove("hidden");
   dataDiv.innerHTML = "";
   const p = document.createElement("p");
-  switch (app.dimensionsToRender) {
+  switch (APP.dimensionsToRender) {
     case 2:
       p.innerHTML = "Line";
       break;
@@ -559,35 +560,35 @@ function renderCrossSection(mesh, dataDiv) {
 }
 
 function smoothGoniometricTransition(angularSpeed, maxY = 1) {
-  const phase = app.angle - 2 * Math.PI;
+  const phase = APP.angle - 2 * Math.PI;
   const eased = 0.5 * (1 - Math.cos(angularSpeed * phase));
   return Math.min(Math.pow(eased, 3), maxY);
 }
 
-function renderEnvironment(input) {
-  const mesh = selectMesh(input, app.dimensionsToRender);
-  const rotationScope = GEOLIB.rotationScope(app.guiHandlers.rotation.planes, app.guiHandlers.rotation.angularSpeedFactors);
-  const rotatingAxes = new GEOLIB.CartesianAxes(app.dimensionsToRender);
+/* function renderEnvironment(input) {
+  const mesh = selectMesh(input, APP.dimensionsToRender);
+  const rotationScope = GEOLIB.rotationScope(APP.guiHandlers.rotation.planes, APP.guiHandlers.rotation.angularSpeedFactors);
+  const rotatingAxes = new GEOLIB.CartesianAxes(APP.dimensionsToRender);
   if (mesh.nthDimension() < rotationScope) mesh.extendIn(rotationScope);
   GEOLIB.uploadEnvironment();
   // Creo la matrice di rotazione
-  let r = GEOLIB.SingletonMatrix.init(app.dimensionsToRender);
-  if (app.guiHandlers.rotation.planes.length !== app.guiHandlers.rotation.angularSpeedFactors.length)
+  let r = GEOLIB.SingletonMatrix.init(APP.dimensionsToRender);
+  if (APP.guiHandlers.rotation.planes.length !== APP.guiHandlers.rotation.angularSpeedFactors.length)
     throw new Error(
-      `Num of planes and angles must be equal:\nRotation planes: ${app.guiHandlers.rotation.planes} (${app.guiHandlers.rotation.planes.length})\nAngles: ${app.guiHandlers.rotation.angularSpeedFactors} (${app.guiHandlers.rotation.angularSpeedFactors.length})`
+      `Num of planes and angles must be equal:\nRotation planes: ${APP.guiHandlers.rotation.planes} (${APP.guiHandlers.rotation.planes.length})\nAngles: ${APP.guiHandlers.rotation.angularSpeedFactors} (${APP.guiHandlers.rotation.angularSpeedFactors.length})`
     );
   // Calcolo gli angoli di rotazione nell'istante attuale
-  let angles = app.guiHandlers.rotation.angularSpeedFactors.map((factor) => (factor * app.angle) % (2 * Math.PI));
+  let angles = APP.guiHandlers.rotation.angularSpeedFactors.map((factor) => (factor * APP.angle) % (2 * Math.PI));
   // Aggiorno il titolo
   const h1 = document.querySelector("h1");
-  const humanizedInput = humanizeMeshName(`${app.dimensionsToRender}-${input}`);
+  const humanizedInput = humanizeMeshName(`${APP.dimensionsToRender}-${input}`);
   if (rotationScope > 1) h1.innerHTML = `A ${humanizedInput} is rotating in ${rotationScope}D`;
   else h1.innerHTML = `A ${humanizedInput} is static`;
   const title = document.querySelector("title");
   title.innerHTML = "HDchamber | " + h1.innerHTML;
   // Applico la rotazione
-  for (let i = 0; i < app.guiHandlers.rotation.planes.length; i++) {
-    r.set("r", [app.guiHandlers.rotation.planes[i], angles[i]]);
+  for (let i = 0; i < APP.guiHandlers.rotation.planes.length; i++) {
+    r.set("r", [APP.guiHandlers.rotation.planes[i], angles[i]]);
     r.extendIn(rotationScope);
     mesh.transform(r.value);
     rotatingAxes.transform(r.value);
@@ -596,39 +597,39 @@ function renderEnvironment(input) {
   r.destroy();
   // Disegno la mesh
   const dataDiv = document.querySelector(".technical-data");
-  if (app.isCrossSectionMode) {
+  if (APP.isCrossSectionMode) {
     renderCrossSection(mesh, dataDiv);
     const opacity = smoothGoniometricTransition(0.25, 0.5);
-    mesh.render(rotationScope, app.isOrtho, app.renderScale, opacity, false);
+    mesh.render(rotationScope, APP.isOrtho, APP.renderScale, opacity, false);
   } else {
     dataDiv.innerHTML = "";
     if (!dataDiv.classList.contains("hidden")) dataDiv.classList.add("hidden");
-    mesh.render(rotationScope, app.isOrtho, app.renderScale, undefined, app.lastCoordinateEnabled);
+    mesh.render(rotationScope, APP.isOrtho, APP.renderScale, undefined, APP.lastCoordinateEnabled);
   }
   // Rendering assi
-  if (app.axesEnabled && app.fixedAxes) {
-    const fixedAxes = new GEOLIB.CartesianAxes(app.dimensionsToRender);
-    fixedAxes.render(rotationScope, app.isOrtho, app.renderScale);
-  } else if (!app.fixedAxes && app.axesEnabled) {
-    rotatingAxes.render(rotationScope, app.isOrtho, app.renderScale);
+  if (APP.axesEnabled && APP.fixedAxes) {
+    const fixedAxes = new GEOLIB.CartesianAxes(APP.dimensionsToRender);
+    fixedAxes.render(rotationScope, APP.isOrtho, APP.renderScale);
+  } else if (!APP.fixedAxes && APP.axesEnabled) {
+    rotatingAxes.render(rotationScope, APP.isOrtho, APP.renderScale);
   }
 
   return rotationScope;
 }
 
 function tic(input) {
-  if (app.pause)
+  if (APP.pause)
     return;
 
-  app.isRendering = true;
-  app.finalTime = Date.now();
-  app.angle += (app.angularSpeed * app.deltaTime()) / 1000;
-  app.initialTime = app.finalTime;
+  APP.isRendering = true;
+  APP.finalTime = Date.now();
+  APP.angle += (APP.angularSpeed * APP.deltaTime()) / 1000;
+  APP.initialTime = APP.finalTime;
   let rotationScope = renderEnvironment(input);
   if(rotationScope === 0)
     return;
-  app.animationId = requestAnimationFrame(() => tic(input));
-}
+  APP.animationId = requestAnimationFrame(() => tic(input));
+} */
 
 function addGuiHandlers() {
   setProjectionMode();
