@@ -518,6 +518,19 @@ class Simplex : public GeometryND{
             GeometryND* base = GeometryND::clone();
             return static_cast<Simplex*>(base);
         }
+
+        vector<int> getBufferEdgeIndices() override {
+            vector<int> indices;
+            int k = this->verts.size();
+            for(int i=0; i<k-1; i++){
+                for(int j=i+1; j<k; j++){
+                    indices.push_back(i);
+                    indices.push_back(j);
+                }
+            }
+            return indices;
+        }
+
     private:
         vector<PointND> simplexVerts(int n, float edge_len) {
             if(n==1) {
@@ -598,6 +611,21 @@ class Orthoplex : public GeometryND {
             GeometryND* base = GeometryND::clone();
             return static_cast<Orthoplex*>(base);
         }
+
+        vector<int> getBufferEdgeIndices() override {
+            vector<int> indices;
+            int k = this->verts.size();
+            for(int i=0; i<k-1; i++){
+                for(int j=i+1; j<k; j++){
+                    if(this->verts[i] != -this->verts[j]){
+                        indices.push_back(i);
+                        indices.push_back(j);
+                    }
+                }
+            }
+            return indices;
+        }
+
     private:
         vector<PointND> orthoplexVerts(int n, float edge_len){
             float r = edge_len * sqrt(2.0f)/ 2.0f;
@@ -605,10 +633,10 @@ class Orthoplex : public GeometryND {
             verts.reserve(2*n);
 
             for(int axis = 0; axis < n; axis++){
-                for(int s = -1; s <= 1; s += 2){
+                for(int sign = -1; sign <= 1; sign += 2){
                     PointND v(n);
                     for(int j = 0; j < n; j++) v(j) = 0.0f;
-                    v(axis) = s * r;
+                    v(axis) = sign * r;
                     verts.push_back(v);
                 }
             }

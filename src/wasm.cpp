@@ -103,12 +103,16 @@ EMSCRIPTEN_BINDINGS(my_module){
     // Binding per Simplex
     emscripten::class_<Simplex, emscripten::base<GeometryND>>("Simplex")
         .constructor<int, float>()
-        .function("clone", &Simplex::clone, emscripten::allow_raw_pointers());
+        .function("clone", &Simplex::clone, emscripten::allow_raw_pointers())
+        .function("getBufferEdgeIndices", &Simplex::getBufferEdgeIndices);
+
 
     // Binding per Orthoplex
     emscripten::class_<Orthoplex, emscripten::base<GeometryND>>("Orthoplex")
         .constructor<int, float>()
-        .function("clone", &Orthoplex::clone, emscripten::allow_raw_pointers());
+        .function("clone", &Orthoplex::clone, emscripten::allow_raw_pointers())
+        .function("getBufferEdgeIndices", &Orthoplex::getBufferEdgeIndices);
+
 
     // Binding per Hypersphere
     emscripten::class_<Hypersphere, emscripten::base<GeometryND>>("Hypersphere")

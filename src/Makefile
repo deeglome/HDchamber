@@ -26,5 +26,5 @@ test: test.cpp
 	$(GXX) test.cpp -o test -I$(EIGEN)
 	./test
 
-clean: test geolib.wasm geolib.js
+clean:
 	rm ./test ./geolib.wasm ./geolib.js
