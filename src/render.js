@@ -20,7 +20,7 @@ async function init() {
         }
     }
 
-    RENDER_FUNCS.updateTHREE = (appObj, dimensions) => {
+    RENDER_FUNCS.updateTHREE = (appObj, dimensions, isOrtho) => {
         cancelAnimationFrame(animationId);
 
         let objGeo = selectObjGeometry(appObj, dimensions);
@@ -41,9 +41,19 @@ async function init() {
 
         const mesh = new THREE.LineSegments(bufGeo, material);
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10);
-        camera.position.set(2, 3, -1);
-        camera.lookAt(mesh.position);
+        const aspect = window.innerWidth / window.innerHeight;
+        const frustumSize = 2;
+
+        let camera = (isOrtho) ? new THREE.OrthographicCamera(
+            -0.5 * frustumSize * aspect,
+            0.5 * frustumSize * aspect,
+            0.5 * frustumSize,
+            -0.5 * frustumSize,
+            0.1,
+            5
+        ) : new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5);
+
+        camera.position.z += 2;
 
         const scene = new THREE.Scene();
         scene.add(mesh);

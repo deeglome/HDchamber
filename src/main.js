@@ -3,7 +3,7 @@ import * as CROSS_SECTION from "./cross-section.js";
 import { RENDER_FUNCS } from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
-const APP = {
+export const APP = {
   initialTime: Date.now(),
   finalTime: null,
   deltaTime: () => APP.finalTime - APP.initialTime,
@@ -90,7 +90,7 @@ function setProjectionButton({ button, icon }) {
   button.addEventListener("click", () => {
     APP.isOrtho = !APP.isOrtho;
     icon.src = `./icons/${APP.isOrtho ? "perspective" : "ortho"}.png`;
-    renderEnvironment(APP.meshToRender);
+    RENDER_FUNCS.updateTHREE(APP.meshToRender, APP.dimensionsToRender, APP.isOrtho);
   });
 }
 
@@ -217,7 +217,7 @@ function setDimensionsButton({button, input}) {
 
     const h1 = document.querySelector("h1");
     h1.innerHTML = `A ${APP.dimensionsToRender}-${input} rotating in ${APP.dimensionsToRender}`;
-    renderEnvironment(APP.meshToRender);
+    RENDER_FUNCS.updateTHREE(APP.meshToRender, APP.dimensionsToRender, APP.isOrtho);
   });
 }
 
