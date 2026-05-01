@@ -73,33 +73,51 @@ PointND barFromPoints(vector<PointND>& points){
     return g / (float)n;
 }
 
-void set_rotation(MatrixXf* mat, vector<string> planes, vector<float> angles){
+int rotationScope(vector<string> planes){
+    int r = 0;
+
+    for(int i=0; i<planes.size(); i++){
+        if (planes[i].length() != 2)
+            throw invalid_argument("Invalid length of a plane.");
+        if (planes[i][0] == planes[i][1])
+            throw invalid_argument("Indexes can't be equal.");
+        
+        int weight1 = ((int)AXIS_IDS.find(planes[i][0]));
+        int weight2 = ((int)AXIS_IDS.find(planes[i][1]));
+
+        if(weight1 > r) r = weight1;
+        if(weight2 > r) r = weight2;
+    }
+    return r ? r+1 : 0;
+}
+
+MatrixXf createRotationMatrix(vector<string> planes, vector<float> angles){
     if(planes.size()!=angles.size()) throw invalid_argument("Number of planes and angles must be the same.");
-    mat->setIdentity();
-    int n = mat->rows();
+    
+    int n = rotationScope(planes);
+    MatrixXf R = MatrixXf::Identity(n, n);
     
     for(int k=0; k<planes.size(); k++){
-        MatrixXf part = MatrixXf::Identity(n,n);
+        MatrixXf partialR = MatrixXf::Identity(n,n);
 
-        if (planes[k].length() != 2)
-            throw invalid_argument("Invalid length of a plane.");
-        if (planes[k][0] == planes[k][1])
-            throw invalid_argument("Indexes can't be equal.");
         if((int)AXIS_IDS.find(planes[k][0]) >= n || (int)AXIS_IDS.find(planes[k][1]) >= n){
             int idx = ((int)AXIS_IDS.find(planes[k][0]) > k-1) ? 0 : 1;
             throw invalid_argument("Cannot operate with dimension '"+string(1, planes[k][idx])+"' in "+to_string(n)+" dimensions.");
         }
+
         int i = (int)AXIS_IDS.find(planes[k][0]);
         int j = (int)AXIS_IDS.find(planes[k][1]);
         float cos_a = cos(angles[k]) < EPS ? 0 : cos(angles[k]);
         float sin_a = sin(angles[k]) < EPS ? 0 : sin(angles[k]);
-        part(k,k) = cos_a;
-        part(k,j) = -sin_a;
-        part(j,k) = sin_a;
-        part(j,j) = cos_a;
 
-        *mat *= part;
+        partialR(i,i) = cos_a;
+        partialR(i,j) = -sin_a;
+        partialR(j,i) = sin_a;
+        partialR(j,j) = cos_a;
+
+        R = partialR * R;
     }
+    return R;
 }
 
 class SegmentND {
@@ -407,8 +425,7 @@ class Hypercube : public GeometryND {
         ) {}
 
         Hypercube* clone() override {
-            GeometryND* base = GeometryND::clone();
-            return static_cast<Hypercube*>(base);
+            return new Hypercube(*this);
         }
 
         vector<int> getBufferEdgeIndices() override {
@@ -515,8 +532,7 @@ class Simplex : public GeometryND{
         ) {}
 
         Simplex* clone() override {
-            GeometryND* base = GeometryND::clone();
-            return static_cast<Simplex*>(base);
+            return new Simplex(*this);
         }
 
         vector<int> getBufferEdgeIndices() override {
@@ -608,8 +624,7 @@ class Orthoplex : public GeometryND {
         ) {}
 
         Orthoplex* clone() override {
-            GeometryND* base = GeometryND::clone();
-            return static_cast<Orthoplex*>(base);
+            return new Orthoplex(*this);
         }
 
         vector<int> getBufferEdgeIndices() override {
@@ -701,8 +716,7 @@ class Hypersphere : public GeometryND {
         ) {}
 
         Hypersphere* clone() override {
-            GeometryND *base = GeometryND::clone();
-            return static_cast<Hypersphere*>(base);
+            return new Hypersphere(*this);
         }
 
     private:
@@ -829,8 +843,8 @@ class Hypertorus : public GeometryND {
         ) {}
 
         Hypertorus *clone() override {
-            GeometryND *base = GeometryND::clone();
-            return static_cast<Hypertorus*>(base);
+            printf("Hypertorus::clone() called.");
+            return new Hypertorus(*this);
         }
 
     private:
@@ -859,7 +873,7 @@ class Hypertorus : public GeometryND {
             float stepAngle = M_PI / subdivs;
             for(int i=0;i<2*subdivs;i++){
                 MatrixXf R(n,n);
-                set_rotation(&R,{stamp},{stepAngle});
+                // set_rotation(&R,{stamp},{stepAngle});
                 slice.transform(R);
                 
                 for(PointND& v : slice.verts) verts.push_back(v);

@@ -2824,9 +2824,23 @@ var __emval_create_invoker = (argCount, argTypesPtr, kind) => {
   return emval_addMethodCaller(createNamedFunction(functionName, invokerFunction));
 };
 
+var __emval_get_property = (handle, key) => {
+  handle = Emval.toValue(handle);
+  key = Emval.toValue(key);
+  return Emval.toHandle(handle[key]);
+};
+
+var __emval_incref = handle => {
+  if (handle > 9) {
+    emval_handles[handle + 1] += 1;
+  }
+};
+
 var __emval_invoke = (caller, handle, methodName, destructorsRef, args) => emval_methodCallers[caller](handle, methodName, destructorsRef, args);
 
 var __emval_new_array = () => Emval.toHandle([]);
+
+var __emval_new_cstring = v => Emval.toHandle(getStringOrSymbol(v));
 
 var __emval_run_destructors = handle => {
   var destructors = Emval.toValue(handle);
@@ -3141,11 +3155,11 @@ var _fflush = makeInvalidEarlyAccess("_fflush");
 
 var _strerror = makeInvalidEarlyAccess("_strerror");
 
-var _sbrk = makeInvalidEarlyAccess("_sbrk");
-
 var _emscripten_stack_get_end = makeInvalidEarlyAccess("_emscripten_stack_get_end");
 
 var _emscripten_stack_get_base = makeInvalidEarlyAccess("_emscripten_stack_get_base");
+
+var _sbrk = makeInvalidEarlyAccess("_sbrk");
 
 var _emscripten_get_sbrk_ptr = makeInvalidEarlyAccess("_emscripten_get_sbrk_ptr");
 
@@ -3189,9 +3203,9 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports["__getTypeName"] != "undefined", "missing Wasm export: __getTypeName");
   assert(typeof wasmExports["fflush"] != "undefined", "missing Wasm export: fflush");
   assert(typeof wasmExports["strerror"] != "undefined", "missing Wasm export: strerror");
-  assert(typeof wasmExports["sbrk"] != "undefined", "missing Wasm export: sbrk");
   assert(typeof wasmExports["emscripten_stack_get_end"] != "undefined", "missing Wasm export: emscripten_stack_get_end");
   assert(typeof wasmExports["emscripten_stack_get_base"] != "undefined", "missing Wasm export: emscripten_stack_get_base");
+  assert(typeof wasmExports["sbrk"] != "undefined", "missing Wasm export: sbrk");
   assert(typeof wasmExports["emscripten_get_sbrk_ptr"] != "undefined", "missing Wasm export: emscripten_get_sbrk_ptr");
   assert(typeof wasmExports["setThrew"] != "undefined", "missing Wasm export: setThrew");
   assert(typeof wasmExports["_emscripten_tempret_set"] != "undefined", "missing Wasm export: _emscripten_tempret_set");
@@ -3213,9 +3227,9 @@ function assignWasmExports(wasmExports) {
   ___getTypeName = createExportWrapper("__getTypeName", 1);
   _fflush = createExportWrapper("fflush", 1);
   _strerror = createExportWrapper("strerror", 1);
-  _sbrk = createExportWrapper("sbrk", 1);
   _emscripten_stack_get_end = wasmExports["emscripten_stack_get_end"];
   _emscripten_stack_get_base = wasmExports["emscripten_stack_get_base"];
+  _sbrk = createExportWrapper("sbrk", 1);
   _emscripten_get_sbrk_ptr = wasmExports["emscripten_get_sbrk_ptr"];
   _setThrew = createExportWrapper("setThrew", 2);
   __emscripten_tempret_set = createExportWrapper("_emscripten_tempret_set", 1);
@@ -3261,8 +3275,11 @@ var wasmImports = {
   /** @export */ _embind_register_void: __embind_register_void,
   /** @export */ _emval_create_invoker: __emval_create_invoker,
   /** @export */ _emval_decref: __emval_decref,
+  /** @export */ _emval_get_property: __emval_get_property,
+  /** @export */ _emval_incref: __emval_incref,
   /** @export */ _emval_invoke: __emval_invoke,
   /** @export */ _emval_new_array: __emval_new_array,
+  /** @export */ _emval_new_cstring: __emval_new_cstring,
   /** @export */ _emval_run_destructors: __emval_run_destructors,
   /** @export */ _emval_set_property: __emval_set_property,
   /** @export */ alignfault,
@@ -3270,6 +3287,7 @@ var wasmImports = {
   /** @export */ fd_close: _fd_close,
   /** @export */ fd_seek: _fd_seek,
   /** @export */ fd_write: _fd_write,
+  /** @export */ invoke_fi,
   /** @export */ invoke_fii,
   /** @export */ invoke_ii,
   /** @export */ invoke_iii,
@@ -3365,6 +3383,17 @@ function invoke_vi(index, a1) {
   var sp = stackSave();
   try {
     getWasmTableEntry(index)(a1);
+  } catch (e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_fi(index, a1) {
+  var sp = stackSave();
+  try {
+    return getWasmTableEntry(index)(a1);
   } catch (e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;

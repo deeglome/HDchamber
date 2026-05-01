@@ -20,26 +20,23 @@ async function init() {
         }
     }
 
+    function R(planes, angles){
+        return GEOLIB.createRotationMatrix(
+            GEOLIB.JsToVectorS(planes),
+            GEOLIB.JsToVectorF(angles)
+        );
+    }
+
     RENDER_FUNCS.updateTHREE = (appObj, dimensions, isOrtho) => {
         cancelAnimationFrame(animationId);
 
         let objGeo = selectObjGeometry(appObj, dimensions);
         let indices = new Uint16Array(GEOLIB.vectorIToJs(objGeo.getBufferEdgeIndices()));
 
-        objGeo.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
-        let vertices = new Float32Array(GEOLIB.vectorFToJs(objGeo.getBufferVerts())); 
-
-        // Geometry
-        const bufGeo = new THREE.BufferGeometry();
-        bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
-
         const material = new THREE.LineBasicMaterial({
             color: 0x00ff00,
             linewidth: 1
         });
-
-        const mesh = new THREE.LineSegments(bufGeo, material);
 
         const aspect = window.innerWidth / window.innerHeight;
         const frustumSize = 2;
@@ -55,9 +52,6 @@ async function init() {
 
         camera.position.z += 2;
 
-        const scene = new THREE.Scene();
-        scene.add(mesh);
-
         const renderer = new THREE.WebGLRenderer();
 
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -70,8 +64,27 @@ async function init() {
         renderer.domElement.classList.add('renderer');
         document.body.appendChild(renderer.domElement);
 
+        // let dR = R(planes, omega * dt);
+        const dR = R(["xy", "zw", "yw", "yz"], [0.02, 0.01, -0.01, 0.03]);
+
         function tic(){
             controls.update();
+
+            objGeo.transform(dR);
+            let proj = objGeo.clone();
+            proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+            let vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
+
+            // Geometry
+            const bufGeo = new THREE.BufferGeometry();
+            bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
+
+            const mesh = new THREE.LineSegments(bufGeo, material);
+
+            const scene = new THREE.Scene();
+            scene.add(mesh);
+
             renderer.render(scene, camera);
             animationId = requestAnimationFrame(tic);
         }

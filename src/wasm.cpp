@@ -21,6 +21,28 @@ emscripten::val vectorIToJs(vector<int> vec)
     return result;
 }
 
+vector<float> JsToVectorF(emscripten::val jsArray)
+{
+    vector<float> result;
+    int length = jsArray["length"].as<int>();
+    for (int i = 0; i < length; i++)
+    {
+        result.push_back(jsArray[i].as<float>());
+    }
+    return result;
+}
+
+vector<string> JsToVectorS(emscripten::val jsArray)
+{
+    vector<string> result;
+    int length = jsArray["length"].as<int>();
+    for (int i = 0; i < length; i++)
+    {
+        result.push_back(jsArray[i].as<string>());
+    }
+    return result;
+}
+
 /*
 ============
 == EMBIND ==
@@ -86,7 +108,6 @@ EMSCRIPTEN_BINDINGS(my_module){
         .property("faces", &GeometryND::faces)
         .property("n", &GeometryND::n)
         .function("bar", &GeometryND::bar)
-        .function("clone", &GeometryND::clone, emscripten::allow_raw_pointers())
         .function("transform", &GeometryND::transform)
         .function("extendIn", &GeometryND::extendIn)
         .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
@@ -97,32 +118,40 @@ EMSCRIPTEN_BINDINGS(my_module){
     // Binding per Hypercube
     emscripten::class_<Hypercube, emscripten::base<GeometryND>>("Hypercube")
         .constructor<int, float>()
-        .function("clone", &Hypercube::clone, emscripten::allow_raw_pointers())
+        .function("clone", emscripten::optional_override([](Hypercube& self) -> Hypercube* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers())
         .function("getBufferEdgeIndices", &Hypercube::getBufferEdgeIndices);
 
     // Binding per Simplex
     emscripten::class_<Simplex, emscripten::base<GeometryND>>("Simplex")
         .constructor<int, float>()
-        .function("clone", &Simplex::clone, emscripten::allow_raw_pointers())
+        .function("clone", emscripten::optional_override([](Simplex& self) -> Simplex* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers())
         .function("getBufferEdgeIndices", &Simplex::getBufferEdgeIndices);
-
 
     // Binding per Orthoplex
     emscripten::class_<Orthoplex, emscripten::base<GeometryND>>("Orthoplex")
         .constructor<int, float>()
-        .function("clone", &Orthoplex::clone, emscripten::allow_raw_pointers())
+        .function("clone", emscripten::optional_override([](Orthoplex& self) -> Orthoplex* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers())
         .function("getBufferEdgeIndices", &Orthoplex::getBufferEdgeIndices);
-
 
     // Binding per Hypersphere
     emscripten::class_<Hypersphere, emscripten::base<GeometryND>>("Hypersphere")
         .constructor<int, float, int>()
-        .function("clone", &Hypersphere::clone, emscripten::allow_raw_pointers());
+        .function("clone", emscripten::optional_override([](Hypersphere& self) -> Hypersphere* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers());
 
     // Binding per Hypertorus
     emscripten::class_<Hypertorus, emscripten::base<GeometryND>>("Hypertorus")
         .constructor<int, float, float, int>()
-        .function("clone", &Hypertorus::clone, emscripten::allow_raw_pointers());
+        .function("clone", emscripten::optional_override([](Hypertorus& self) -> Hypertorus* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers());
 
     // Binding per funzioni utility
     emscripten::function("origin", &origin);
@@ -136,9 +165,11 @@ EMSCRIPTEN_BINDINGS(my_module){
     }));
     
     emscripten::function("barFromPoints", &barFromPoints);
-    // emscripten::function("setRotation", &set_rotation);
+    emscripten::function("createRotationMatrix", &createRotationMatrix);
     emscripten::function("vectorFToJs", &vectorFToJs);
     emscripten::function("vectorIToJs", &vectorIToJs);
+    emscripten::function("JsToVectorF", &JsToVectorF);
+    emscripten::function("JsToVectorS", &JsToVectorS);
 
     // Binding per vector types
     emscripten::register_vector<float>("VectorFloat");
