@@ -11,12 +11,12 @@ let animationId;
 async function init() {
     GEOLIB = await createGeolib();
 
-    function selectObjGeometry(mesh, dimensions){
-        switch(mesh){
-            case "Hypercube": return new GEOLIB.Hypercube(dimensions, 1.0); break;
-            case "Simplex": return new GEOLIB.Simplex(dimensions, 1.0); break;
-            case "Orthoplex": return new GEOLIB.Orthoplex(dimensions, 1.0); break;
-            default: throw Error("Invalid input entered:", mesh);
+    function selectObjGeometry(app){
+        switch(app.selectedObj){
+            case "Hypercube": return new GEOLIB.Hypercube(app.dimensions, 1.0); break;
+            case "Simplex": return new GEOLIB.Simplex(app.dimensions, 1.0); break;
+            case "Orthoplex": return new GEOLIB.Orthoplex(app.dimensions, 1.0); break;
+            default: throw Error("Invalid input entered:", app.selectedObj); break;
         }
     }
 
@@ -27,10 +27,10 @@ async function init() {
         );
     }
 
-    RENDER_FUNCS.updateTHREE = (appObj, dimensions, isOrtho) => {
+    RENDER_FUNCS.updateTHREE = (app) => {
         cancelAnimationFrame(animationId);
 
-        let objGeo = selectObjGeometry(appObj, dimensions);
+        let objGeo = selectObjGeometry(app);
         let indices = new Uint16Array(GEOLIB.vectorIToJs(objGeo.getBufferEdgeIndices()));
 
         const material = new THREE.LineBasicMaterial({
@@ -41,7 +41,7 @@ async function init() {
         const aspect = window.innerWidth / window.innerHeight;
         const frustumSize = 2;
 
-        let camera = (isOrtho) ? new THREE.OrthographicCamera(
+        let camera = (app.isOrtho) ? new THREE.OrthographicCamera(
             -0.5 * frustumSize * aspect,
             0.5 * frustumSize * aspect,
             0.5 * frustumSize,

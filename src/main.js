@@ -3,26 +3,25 @@ import * as CROSS_SECTION from "./cross-section.js";
 import { RENDER_FUNCS } from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
-export const APP = {
+const APP = {
   initialTime: Date.now(),
   finalTime: null,
   deltaTime: () => APP.finalTime - APP.initialTime,
   angularSpeed: Math.PI / 4, // rad/s
-  dimensionsToRender: 4,
+  dimensions: 4,
   MIN_DIMENSIONS: 2,
   MAX_DIMENSIONS: 6,
   angle: 0,
   isRendering: false,
   guiHandlers: {},
   animationId: {},
-  meshToRender: null,
+  selectedObj: null,
   isCrossSectionMode: false,
   renderScale: GEOLIB.DEFAULT_RENDER_SCALE,
   isOrtho: false,
   axesEnabled: false,
   fixedAxes: true,
-  lastCoordinateEnabled: false,
-  pause: false
+  lastCoordinateEnabled: false
 };
 
 async function fetchWiki() {
@@ -39,12 +38,12 @@ const WIKI = await fetchWiki();
 
 function zoomIn(threshold) {
   APP.renderScale += threshold;
-  renderEnvironment(APP.meshToRender);
+  renderEnvironment(APP.selectedObj);
 }
 
 function zoomOut(threshold) {
   APP.renderScale -= threshold;
-  renderEnvironment(APP.meshToRender);
+  renderEnvironment(APP.selectedObj);
 }
 
 const THRESHOLD = 50;
@@ -90,7 +89,7 @@ function setProjectionButton({ button, icon }) {
   button.addEventListener("click", () => {
     APP.isOrtho = !APP.isOrtho;
     icon.src = `./icons/${APP.isOrtho ? "perspective" : "ortho"}.png`;
-    RENDER_FUNCS.updateTHREE(APP.meshToRender, APP.dimensionsToRender, APP.isOrtho);
+    RENDER_FUNCS.updateTHREE(APP);
   });
 }
 
@@ -157,12 +156,12 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
   meshButtons = document.querySelectorAll(".button.mesh");
   meshButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      APP.meshToRender = button.innerHTML;
-      if (APP.meshToRender !== "And so on...") {
+      APP.selectedObj = button.innerHTML;
+      if (APP.selectedObj !== "And so on...") {
         cancelAnimationFrame(APP.animationId);
         uploadWikipage();
         GEOLIB.disableColorLegend();
-        RENDER_FUNCS.updateTHREE(APP.meshToRender, APP.dimensionsToRender);
+        RENDER_FUNCS.updateTHREE(APP);
       } else {
         alert("Wait for new meshes!");
       }
@@ -210,14 +209,14 @@ function setDimensionsButton({button, input}) {
     if (!ValidDimensions(input)) {
       alert(`Invalid number of dimensions: ${input}`);
     } else {
-      APP.dimensionsToRender = input;
+      APP.dimensions = input;
       APP.lastCoordinateEnabled = false;
       setRotationHandler();
     }
 
     const h1 = document.querySelector("h1");
-    h1.innerHTML = `A ${APP.dimensionsToRender}-${input} rotating in ${APP.dimensionsToRender}`;
-    RENDER_FUNCS.updateTHREE(APP.meshToRender, APP.dimensionsToRender, APP.isOrtho);
+    h1.innerHTML = `A ${APP.dimensions}-${input} rotating in ${APP.dimensions}`;
+    RENDER_FUNCS.updateTHREE(APP);
   });
 }
 
@@ -264,7 +263,7 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       angularSpeedFactors[index] = angularSpeedFactor;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor;
       APP.initialTime = Date.now();
-      //tic(APP.meshToRender);
+      //tic(APP.selectedObj);
     });
   });
 }
@@ -282,7 +281,7 @@ function setRandomRotationBtn(handler){
       handler.angularSpeedFactors[index] = randomSpeed;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + randomSpeed;
       APP.initialTime = Date.now();
-      //tic(APP.meshToRender);
+      //tic(APP.selectedObj);
     });
   });
 }
@@ -301,7 +300,7 @@ function setClearRotationsBtn(handler){
       handler.angularSpeedFactors[index] = CLEAN_SPEED;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_SPEED;
       APP.initialTime = Date.now();
-      //tic(APP.meshToRender);
+      //tic(APP.selectedObj);
     });
   });
 }
@@ -354,8 +353,8 @@ function setRotationHandler() {
   const rotation = {
     button: document.querySelector(".button.rotation-handler"),
     dropmenu: document.querySelector(".rotation-handler + .dropmenu"),
-    planes: allPossiblePlanes(APP.dimensionsToRender),
-    angularSpeedFactors: Array(nCr(APP.dimensionsToRender, 2)).fill(0),
+    planes: allPossiblePlanes(APP.dimensions),
+    angularSpeedFactors: Array(nCr(APP.dimensions, 2)).fill(0),
     planeButtons: null,
     options: null,
   };
@@ -399,7 +398,7 @@ function writeDefaultWikipage(container) {
 function uploadWikipage() {
   try {
     APP.guiHandlers.wiki.wikipage.replaceChildren();
-    writeMeshWikipage(APP.dimensionsToRender + "-" + APP.meshToRender, APP.guiHandlers.wiki.wikipage);
+    writeMeshWikipage(APP.dimensions + "-" + APP.selectedObj, APP.guiHandlers.wiki.wikipage);
   } catch {
     writeDefaultWikipage(APP.guiHandlers.wiki.wikipage);
   }
@@ -434,7 +433,7 @@ function setCrossSectionButton({button, icon}) {
       button.setAttribute("title", "Enable cross-section mode");
     }
     icon.src = "./icons/cross_section_view_" + (APP.isCrossSectionMode ? "off" : "on") + "_btn.svg";
-    renderEnvironment(APP.meshToRender);
+    renderEnvironment(APP.selectedObj);
   });
 }
 
@@ -479,7 +478,7 @@ function setAxesMode() {
         console.error("Error in axes elaboration!");
         break;
     }
-    renderEnvironment(APP.meshToRender);
+    renderEnvironment(APP.selectedObj);
   });
 }
 
@@ -487,12 +486,12 @@ function setLastCoordinateMode() {
   const lastCoordinateButton = document.querySelector(".button.last-coordinate-mode");
 
   lastCoordinateButton.addEventListener("click", () => {
-    if (APP.dimensionsToRender < GEOLIB.COLOR_MAPPING_DIMENSION)
+    if (APP.dimensions < GEOLIB.COLOR_MAPPING_DIMENSION)
       alert("Cannot enable 'Last Coordinate Mode' without color mapping. Try to select at least " + GEOLIB.COLOR_MAPPING_DIMENSION + " dimensions.");
     else {
       APP.lastCoordinateEnabled = !APP.lastCoordinateEnabled;
       lastCoordinateButton.setAttribute("title", (APP.lastCoordinateEnabled ? "Disable" : "Enable") + " last-coordinate mode");
-      renderEnvironment(APP.meshToRender);
+      renderEnvironment(APP.selectedObj);
     }
   });
 }
@@ -507,14 +506,14 @@ function setPauseBtn(){
   const pauseBtn = document.querySelector(".pause-btn");
   
   pauseBtn.addEventListener("click", ()=>{
-    APP.pause = !APP.pause;
+    APP.isRendering = !APP.isRendering;
     let pauseBtnIcon = pauseBtn.querySelector("img");
 
-    if(!APP.pause){
+    if(!APP.isRendering){
       pauseBtnIcon.src = "icons/pause.svg";
       pauseBtn.title = "Pause animation";
       APP.initialTime = Date.now();
-      //tic(APP.meshToRender);
+      //tic(APP.selectedObj);
     } else {
       pauseBtnIcon.src = "icons/resume.svg";
       pauseBtn.title = "Resume animation";
@@ -534,18 +533,18 @@ function humanizeMeshName(technicalName) {
 }
 
 function renderCrossSection(mesh, dataDiv) {
-  const zeros = Array(APP.dimensionsToRender - 1).fill(0);
+  const zeros = Array(APP.dimensions - 1).fill(0);
   const hyperplane = new CROSS_SECTION.Hyperplane([...zeros, 1]);
-  const crossSection = hyperplane.crossSectionOfMesh(mesh, APP.dimensionsToRender);
+  const crossSection = hyperplane.crossSectionOfMesh(mesh, APP.dimensions);
   
-  crossSection.render(APP.dimensionsToRender - 1, APP.isOrtho, APP.renderScale, 5, APP.lastCoordinateEnabled);
+  crossSection.render(APP.dimensions - 1, APP.isOrtho, APP.renderScale, 5, APP.lastCoordinateEnabled);
   
   const hyperplaneString = hyperplane.toString();
   
   if (dataDiv.classList.contains("hidden")) dataDiv.classList.remove("hidden");
   dataDiv.innerHTML = "";
   const p = document.createElement("p");
-  switch (APP.dimensionsToRender) {
+  switch (APP.dimensions) {
     case 2:
       p.innerHTML = "Line";
       break;
@@ -566,13 +565,13 @@ function smoothGoniometricTransition(angularSpeed, maxY = 1) {
 }
 
 /* function renderEnvironment(input) {
-  const mesh = selectMesh(input, APP.dimensionsToRender);
+  const mesh = selectMesh(input, APP.dimensions);
   const rotationScope = GEOLIB.rotationScope(APP.guiHandlers.rotation.planes, APP.guiHandlers.rotation.angularSpeedFactors);
-  const rotatingAxes = new GEOLIB.CartesianAxes(APP.dimensionsToRender);
+  const rotatingAxes = new GEOLIB.CartesianAxes(APP.dimensions);
   if (mesh.nthDimension() < rotationScope) mesh.extendIn(rotationScope);
   GEOLIB.uploadEnvironment();
   // Creo la matrice di rotazione
-  let r = GEOLIB.SingletonMatrix.init(APP.dimensionsToRender);
+  let r = GEOLIB.SingletonMatrix.init(APP.dimensions);
   if (APP.guiHandlers.rotation.planes.length !== APP.guiHandlers.rotation.angularSpeedFactors.length)
     throw new Error(
       `Num of planes and angles must be equal:\nRotation planes: ${APP.guiHandlers.rotation.planes} (${APP.guiHandlers.rotation.planes.length})\nAngles: ${APP.guiHandlers.rotation.angularSpeedFactors} (${APP.guiHandlers.rotation.angularSpeedFactors.length})`
@@ -581,7 +580,7 @@ function smoothGoniometricTransition(angularSpeed, maxY = 1) {
   let angles = APP.guiHandlers.rotation.angularSpeedFactors.map((factor) => (factor * APP.angle) % (2 * Math.PI));
   // Aggiorno il titolo
   const h1 = document.querySelector("h1");
-  const humanizedInput = humanizeMeshName(`${APP.dimensionsToRender}-${input}`);
+  const humanizedInput = humanizeMeshName(`${APP.dimensions}-${input}`);
   if (rotationScope > 1) h1.innerHTML = `A ${humanizedInput} is rotating in ${rotationScope}D`;
   else h1.innerHTML = `A ${humanizedInput} is static`;
   const title = document.querySelector("title");
@@ -608,7 +607,7 @@ function smoothGoniometricTransition(angularSpeed, maxY = 1) {
   }
   // Rendering assi
   if (APP.axesEnabled && APP.fixedAxes) {
-    const fixedAxes = new GEOLIB.CartesianAxes(APP.dimensionsToRender);
+    const fixedAxes = new GEOLIB.CartesianAxes(APP.dimensions);
     fixedAxes.render(rotationScope, APP.isOrtho, APP.renderScale);
   } else if (!APP.fixedAxes && APP.axesEnabled) {
     rotatingAxes.render(rotationScope, APP.isOrtho, APP.renderScale);
@@ -618,7 +617,7 @@ function smoothGoniometricTransition(angularSpeed, maxY = 1) {
 }
 
 function tic(input) {
-  if (APP.pause)
+  if (APP.isRendering)
     return;
 
   APP.isRendering = true;
