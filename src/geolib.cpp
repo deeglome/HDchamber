@@ -107,8 +107,8 @@ MatrixXf createRotationMatrix(vector<string> planes, vector<float> angles){
 
         int i = (int)AXIS_IDS.find(planes[k][0]);
         int j = (int)AXIS_IDS.find(planes[k][1]);
-        float cos_a = cos(angles[k]) < EPS ? 0 : cos(angles[k]);
-        float sin_a = sin(angles[k]) < EPS ? 0 : sin(angles[k]);
+        float cos_a = abs(cos(angles[k])) < EPS ? 0 : cos(angles[k]);
+        float sin_a = abs(sin(angles[k])) < EPS ? 0 : sin(angles[k]);
 
         partialR(i,i) = cos_a;
         partialR(i,j) = -sin_a;

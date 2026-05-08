@@ -4,14 +4,16 @@ import { RENDER_FUNCS } from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
 const APP = {
-  initialTime: Date.now(),
+  initialTime: null,
   finalTime: null,
   deltaTime: () => APP.finalTime - APP.initialTime,
-  angularSpeed: Math.PI / 4, // rad/s
+  k: Math.PI / 4, // rad/s
   dimensions: 4,
   MIN_DIMENSIONS: 2,
   MAX_DIMENSIONS: 6,
-  angle: 0,
+  theta: [],
+  omega: [],
+  planes: [],
   isRendering: false,
   guiHandlers: {},
   animationId: {},
@@ -248,7 +250,7 @@ function setPlanes({planes, angularSpeedFactors, options, dropmenu}) {
   });
 }
 
-const MAX_SPEED = 3;
+const MAX_SPEED = 4;
 const MIN_SPEED = -MAX_SPEED;
 
 function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
@@ -259,11 +261,13 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       let angularSpeedFactor = prompt(`Enter the angular speed factor for the plane ${rotationPlane}:`) * 1;
       angularSpeedFactor = Math.min(angularSpeedFactor, MAX_SPEED);
       angularSpeedFactor = Math.max(angularSpeedFactor, MIN_SPEED);
+      angularSpeedFactor *= APP.k;
       let index = planes.indexOf(rotationPlane);
       angularSpeedFactors[index] = angularSpeedFactor;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor;
+      button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor / APP.k;
       APP.initialTime = Date.now();
-      //tic(APP.selectedObj);
+      APP.omega = angularSpeedFactors;
+      RENDER_FUNCS.updateTHREE(APP);
     });
   });
 }
@@ -281,7 +285,8 @@ function setRandomRotationBtn(handler){
       handler.angularSpeedFactors[index] = randomSpeed;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + randomSpeed;
       APP.initialTime = Date.now();
-      //tic(APP.selectedObj);
+      APP.omega = handler.angularSpeedFactors;
+      RENDER_FUNCS.updateTHREE(APP);
     });
   });
 }
@@ -289,9 +294,9 @@ function setRandomRotationBtn(handler){
 const CLEAN_SPEED = 0;
 
 function setClearRotationsBtn(handler){
-  const randomBtn = handler.dropmenu.querySelector(".tools .clear-btn");
+  const clearBtn = handler.dropmenu.querySelector(".tools .clear-btn");
 
-  randomBtn.addEventListener("click", () => {
+  clearBtn.addEventListener("click", () => {
     handler.planeButtons.forEach((button) => {
       console.log("Funzione random!")
       const input = button.innerHTML.toLowerCase();
@@ -300,7 +305,8 @@ function setClearRotationsBtn(handler){
       handler.angularSpeedFactors[index] = CLEAN_SPEED;
       button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_SPEED;
       APP.initialTime = Date.now();
-      //tic(APP.selectedObj);
+      APP.omega = handler.angularSpeedFactors;
+      RENDER_FUNCS.updateTHREE(APP);
     });
   });
 }
@@ -360,7 +366,8 @@ function setRotationHandler() {
   };
   setPlanesDropmenu(rotation);
   setRotationButton(rotation);
-  APP.guiHandlers.rotation = rotation;
+  APP.omega = rotation.angularSpeedFactors;
+  APP.planes = rotation.planes;
 }
 
 // WIKI HANDLER

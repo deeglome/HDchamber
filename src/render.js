@@ -28,6 +28,7 @@ async function init() {
     }
 
     RENDER_FUNCS.updateTHREE = (app) => {
+        app.initialTime = Date.now();
         cancelAnimationFrame(animationId);
 
         let objGeo = selectObjGeometry(app);
@@ -64,13 +65,32 @@ async function init() {
         renderer.domElement.classList.add('renderer');
         document.body.appendChild(renderer.domElement);
 
-        // let dR = R(planes, omega * dt);
-        const dR = R(["xy", "zw", "yw", "yz"], [0.02, 0.01, -0.01, 0.03]);
+        function error(val, ref){
+            return Math.abs(val - ref) / ref;
+        }
+
+        let dt = 0.1;
+        let d_theta = app.omega.map(o => o * dt);
+        let dR = R(app.planes, d_theta);
+        app.initialTime = Date.now();
 
         function tic(){
             controls.update();
 
+            app.finalTime = Date.now();
+            let next_dt = app.deltaTime() / 1000;
+
+            console.log(app.omega);
+            if(error(next_dt, dt) > 0.20){
+                console.log("Aggiorno dR!");
+                dt = next_dt;
+                d_theta = app.omega.map(o => o * dt);
+                dR = R(app.planes, d_theta);
+            }
+
             objGeo.transform(dR);
+            app.initialTime = app.finalTime;
+        
             let proj = objGeo.clone();
             proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
             let vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
