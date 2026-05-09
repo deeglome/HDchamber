@@ -493,6 +493,37 @@ class Hypercube : public GeometryND {
         }
 
         vector<FaceND> hypercubeFaces(int n, vector<PointND> verts){
+            vector<FaceND> faces;
+
+            for(int i=0; i<n-1; i++){
+                for(int j=i+1; j<n; j++){
+                    for(int k=0; k<verts.size(); k++){
+                        if( !(k & (1<<i)) && !(k & (1<<j)) ){
+                            vector<PointND> quartet = {
+                                verts[k],
+                                verts[k + (1<<i)],
+                                verts[k + (1<<j)],
+                                verts[k + (1<<i) + (1<<j)]
+                            };
+
+                            FaceND f_new = FaceND(quartet);
+                            bool found = false;
+
+                            for(FaceND& f : faces){
+                                if(f.coincident(f_new)){
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if(!found) faces.push_back(f_new);
+                        }
+                    }
+                }
+            }
+            return faces;
+        }
+
+        /* vector<FaceND> hypercubeFaces(int n, vector<PointND> verts){
             if(n==2) return {verts};
             vector<FaceND> faces;
             const vector<vector<PointND>> QRTS = combinations(verts, 4);
@@ -520,6 +551,7 @@ class Hypercube : public GeometryND {
             }
             return shared_idxs==n-2;
         }
+        */
 };
 
 class Simplex : public GeometryND{
