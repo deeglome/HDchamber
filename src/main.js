@@ -3,6 +3,9 @@ import * as CROSS_SECTION from "./cross-section.js";
 import { RENDER_FUNCS } from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
+const MIN_DIMENSION = 2;
+const MAX_DIMENSION = 6;
+
 const APP = {
   initialTime: null,
   finalTime: null,
@@ -343,9 +346,9 @@ function sortPlanes(coords) {
   };
 }
 
-function nCr(n, r) {
-  if (r === 0 || r === n) return 1;
-  return nCr(n - 1, r - 1) + nCr(n - 1, r);
+function nRots(n) {
+  if( n < 0 ) throw new Error("Invalid n:", n);
+  return n * (n-1) / 2;
 }
 
 function setRotationButton({button, dropmenu}) {
@@ -360,7 +363,7 @@ function setRotationHandler() {
     button: document.querySelector(".button.rotation-handler"),
     dropmenu: document.querySelector(".rotation-handler + .dropmenu"),
     planes: allPossiblePlanes(APP.dimensions),
-    angularSpeedFactors: Array(nCr(APP.dimensions, 2)).fill(0),
+    angularSpeedFactors: Array(nRots(APP.dimensions)).fill(0),
     planeButtons: null,
     options: null,
   };

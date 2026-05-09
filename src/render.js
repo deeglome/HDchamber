@@ -27,43 +27,62 @@ async function init() {
         );
     }
 
-    RENDER_FUNCS.updateTHREE = (app) => {
-        app.initialTime = Date.now();
-        cancelAnimationFrame(animationId);
-
-        let objGeo = selectObjGeometry(app);
-        let indices = new Uint16Array(GEOLIB.vectorIToJs(objGeo.getBufferEdgeIndices()));
-
-        const material = new THREE.LineBasicMaterial({
+    const bufGeo = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({
             color: 0x00ff00,
             linewidth: 1
-        });
+    });
 
-        const aspect = window.innerWidth / window.innerHeight;
-        const frustumSize = 2;
+    const mesh = new THREE.LineSegments(bufGeo, material);
+    const scene = new THREE.Scene();
+    scene.add(mesh);
 
-        let camera = (app.isOrtho) ? new THREE.OrthographicCamera(
-            -0.5 * frustumSize * aspect,
-            0.5 * frustumSize * aspect,
-            0.5 * frustumSize,
-            -0.5 * frustumSize,
-            0.1,
-            5
-        ) : new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5);
+    const aspect = window.innerWidth / window.innerHeight;
+    const frustumSize = 2;
+    const oCamera = new THREE.OrthographicCamera(
+        -0.5 * frustumSize * aspect,
+        0.5 * frustumSize * aspect,
+        0.5 * frustumSize,
+        -0.5 * frustumSize,
+        0.1,
+        5
+    );
+    oCamera.position.z = CAM_DIST;
 
-        camera.position.z += 2;
+    const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5);
+    pCamera.position.z = CAM_DIST;
 
-        const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearAlpha(0);
+    renderer.domElement.classList.add('renderer');
+    document.body.appendChild(renderer.domElement);
 
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.update();
+    const oControls = new OrbitControls(oCamera, renderer.domElement);
+    const pControls = new OrbitControls(pCamera, renderer.domElement);
 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearAlpha(0);
+    RENDER_FUNCS.updateTHREE = (app) => {
+        cancelAnimationFrame(animationId);
 
-        document.querySelector(".renderer")?.remove();
-        renderer.domElement.classList.add('renderer');
-        document.body.appendChild(renderer.domElement);
+        console.time('selectObjGeometry')
+        let objGeo = selectObjGeometry(app);
+        console.timeEnd('selectObjGeometry')
+
+        console.time('clone');
+        let proj = objGeo.clone();
+        console.timeEnd('clone');
+
+        console.time('project')
+        proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+        console.timeEnd('project')
+        let vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
+        bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
+
+        const indices = new Uint16Array(GEOLIB.vectorIToJs(objGeo.getBufferEdgeIndices()));
+        bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
+
+        let camera = (app.isOrtho) ? oCamera : pCamera;
+        let controls = (app.isOrtho) ? oControls : pControls;
 
         function error(val, ref){
             return Math.abs(val - ref) / ref;
@@ -80,7 +99,6 @@ async function init() {
             app.finalTime = Date.now();
             let next_dt = app.deltaTime() / 1000;
 
-            console.log(app.omega);
             if(error(next_dt, dt) > 0.20){
                 console.log("Aggiorno dR!");
                 dt = next_dt;
@@ -91,19 +109,13 @@ async function init() {
             objGeo.transform(dR);
             app.initialTime = app.finalTime;
         
-            let proj = objGeo.clone();
+            proj = objGeo.clone();
             proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
-            let vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
+            vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
 
             // Geometry
-            const bufGeo = new THREE.BufferGeometry();
-            bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-            bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
-
-            const mesh = new THREE.LineSegments(bufGeo, material);
-
-            const scene = new THREE.Scene();
-            scene.add(mesh);
+            bufGeo.attributes.position.array.set(vertices);
+            bufGeo.attributes.position.needsUpdate = true;
 
             renderer.render(scene, camera);
             animationId = requestAnimationFrame(tic);
