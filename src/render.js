@@ -27,6 +27,10 @@ async function init() {
         );
     }
 
+    let cachedObjGeo = null;
+    let cachedType = null;
+    let cachedDimensions = null;
+
     const bufGeo = new THREE.BufferGeometry();
     const material = new THREE.LineBasicMaterial({
             color: 0x00ff00,
@@ -64,8 +68,18 @@ async function init() {
     RENDER_FUNCS.updateTHREE = (app) => {
         cancelAnimationFrame(animationId);
 
+        // It will be computed only if dimension or type has been changed.
+        if(app.selectedObj !== cachedType || app.dimensions !== cachedDimensions){
+            cachedObjGeo = selectObjGeometry(app);
+            cachedType = app.selectedObj;
+            cachedDimensions = app.dimensions;
+            
+            const indices = new Uint16Array(GEOLIB.vectorIToJs(cachedObjGeo.getBufferEdgeIndices()));
+            bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
+        }
+
         console.time('selectObjGeometry')
-        let objGeo = selectObjGeometry(app);
+        let objGeo = cachedObjGeo;
         console.timeEnd('selectObjGeometry')
 
         console.time('clone');
