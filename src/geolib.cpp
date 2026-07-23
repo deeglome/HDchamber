@@ -64,12 +64,13 @@ void print_point(const PointND p, string label = "", int digs = 2) {
 }
 
 PointND barFromPoints(vector<PointND>& points){
-    int n = points[0].size();
+    int k = points[0].size();
     for(auto& p : points){
-        if(p.size()!=n) throw invalid_argument("Every point must have the same number of dimensions.");
+        if(p.size()!=k) throw invalid_argument("Every point must have the same number of dimensions.");
     }
-    PointND g = PointND::Zero(n);
+    PointND g = PointND::Zero(k);
     for(auto& p : points) g += p;
+    int n = points.size();
     return g / (float)n;
 }
 
@@ -581,41 +582,30 @@ class Simplex : public GeometryND{
 
     private:
         vector<PointND> simplexVerts(int n, float edge_len) {
-            if(n==1) {
-                PointND p(n), q(n);
-                p << +edge_len/2;
-                q << -edge_len/2;
-                return {p, q};
-            } else {
-                vector<PointND> oldSimplex = Simplex::simplexVerts(n - 1, edge_len);
-                PointND oldBarycenter = barFromPoints(oldSimplex);
+            PointND start = PointND::Zero(n);
+            PointND end = PointND::Zero(n);
+            start(0) = -.5 * edge_len;
+            end(0) = .5 * edge_len;
+            vector<PointND> simplex = {start, end};
+            
+            for(int i=2; i<=n; i++){
+                PointND bar = barFromPoints(simplex);
+                PointND next = PointND::Zero(n);
 
-                float dist = distance(oldBarycenter, oldSimplex[0]);
-                float newCoord = sqrt(edge_len*edge_len - dist*dist);
-
-                PointND newVertex(n);
-                for(int i=0; i<oldBarycenter.size(); i++)
-                    newVertex(i) = oldBarycenter(i);
-                newVertex(n-1) = newCoord;
-
-                vector<PointND> simplex = oldSimplex;
-                simplex.push_back(newVertex);
-
-                for (auto &v : simplex) {
-                    if (v.size() > n)
-                        throw invalid_argument("A point has too many coordinates");
-                    if (v.size() < n)
-                        v = extendPoint(v, n);
+                for(int k=0; k<i-1; k++){
+                    next(k) = bar(k);
                 }
-
-                PointND t_vector = -barFromPoints(simplex);
-
-                for (auto &v : simplex) {
-                    v += t_vector;
+                
+                float dist_v0_bar = distance(start, bar);
+                next(i-1) = sqrt(edge_len * edge_len - dist_v0_bar * dist_v0_bar);
+                simplex.push_back(next);
+                bar = barFromPoints(simplex);
+                
+                for(PointND& v : simplex){
+                    v -= bar;
                 }
-
-                return simplex;
             }
+            return simplex;
         }
 
         vector<SegmentND> simplexEdges(int dimensions, const vector<PointND> &vertices) {
