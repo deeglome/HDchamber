@@ -147,6 +147,7 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
   meshesMap.set("Hypercube", GEOLIB.Hypercube);
   meshesMap.set("Simplex", GEOLIB.Simplex);
   meshesMap.set("Hypersphere", GEOLIB.Hypersphere);
+  meshesMap.set("LowHypersphere", GEOLIB.LowHypersphere);
   meshesMap.set("Torus", GEOLIB.Torus);
   meshesMap.set("Orthoplex", GEOLIB.Orthoplex);
   meshesMap.set("And so on...", null);
