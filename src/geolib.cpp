@@ -162,6 +162,11 @@ class SegmentND {
             end = mat * end;
         }
 
+        void translate(const PointND& t){
+            start += t;
+            end += t;
+        }
+
         bool coincident(const SegmentND s){
             return this->start.isApprox(s.start) && this->end.isApprox(s.end) || this->start.isApprox(s.end) && this->end.isApprox(s.start);
         }
@@ -215,6 +220,11 @@ class FaceND {
         void transform(const MatrixXf& mat){
             for(SegmentND& s : this->edges) s.transform(mat);
             for(PointND& p : this->verts) p = mat * p;
+        }
+
+        void translate(const PointND& t){
+            for(SegmentND& s : this->edges) s.translate(t);
+            for(PointND& p : this->verts) p += t;
         }
 
         // Restituisce un vettore dei singoli prodotti scalari tra edges consecutivi.
@@ -356,6 +366,12 @@ class GeometryND {
             for(FaceND& f : this->faces) f.transform(mat);
             for(SegmentND& s : this->edges) s.transform(mat);
             for(PointND& p : this->verts) p = mat * p;
+        }
+
+        void translate(const PointND& t){
+            for(FaceND& f : this->faces) f.translate(t);
+            for(SegmentND& s : this->edges) s.translate(t);
+            for(PointND& p : this->verts) p += t;
         }
 
         void extendIn(int n){
