@@ -17,6 +17,7 @@ async function init() {
             case "Simplex": return new GEOLIB.Simplex(app.dimensions, 1.0); break;
             case "Orthoplex": return new GEOLIB.Orthoplex(app.dimensions, 1.0); break;
             case "LowHypersphere": return new GEOLIB.LowHypersphere(app.dimensions, 1.0, 32); break;
+            case "LowHypertorus": return new GEOLIB.LowHypertorus(app.dimensions, 1.0, 0.2, 8, 16); break;
             default: throw Error("Invalid input entered:", app.selectedObj); break;
         }
     }

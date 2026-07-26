@@ -900,8 +900,7 @@ class LowHypersphere : public GeometryND {
             }
             return indices;
         }
-    
-    private:
+
         static vector<PointND> lowHypersphereVerts(int n, float radius, int subdivs) {
             vector<PointND> verts;
             for(int i=0; i<n-1; i++) {
@@ -1019,5 +1018,110 @@ class Hypertorus : public GeometryND {
                 }
             }
             for (SegmentND &s : connectors) edges.push_back(s);
+        }
+};
+
+class LowHypertorus : public GeometryND {
+    public:
+        int subdivs_R;
+        int subdivs_r;
+
+        LowHypertorus(int n, float Radius, float r_tube, int subdivs_R, int subdivs_r) : GeometryND(
+            n,
+            lowHypertorusVerts(n, Radius, r_tube, subdivs_R, subdivs_r),
+            lowHypertorusEdges(lowHypertorusVerts(n, Radius, r_tube, subdivs_R, subdivs_r), subdivs_R, subdivs_r)
+        ) {
+            this->subdivs_R = subdivs_R;
+            this->subdivs_r = subdivs_r;
+        }
+
+        LowHypertorus *clone() override {
+            printf("LowHypertorus::clone() called.");
+            return new LowHypertorus(*this);
+        }
+
+        vector<int> getBufferEdgeIndices() override {
+            vector<int> indices;
+            int n = verts[0].size();
+            int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
+            int t = this->subdivs_R * section_size;
+            
+            for(int s=0; s<t; s+=section_size) {
+                for(int c=s; c <= s + section_size - this->subdivs_r; c+=this->subdivs_r) {
+                    for(int v=c; v < c - 1 + this->subdivs_r; v++) {
+                        indices.push_back(v);
+                        indices.push_back(v + 1);
+                    }
+                    indices.push_back(c + this->subdivs_r - 1);
+                    indices.push_back(c);
+                }
+            }
+
+            for(int c=t; c<=verts.size(); c+=this->subdivs_r){
+                for(int v=c; v < c - 1 + this->subdivs_r; v++) {
+                    indices.push_back(v);
+                    indices.push_back(v + 1);
+                }
+                indices.push_back(c + this->subdivs_r - 1);
+                indices.push_back(c);
+            }
+            return indices;
+        }
+    
+    private:
+        vector<PointND> lowHypertorusVerts(int n, float Radius, float r_tube, int subdivs_R, int subdivs_r){
+            vector<PointND> verts;
+            LowHypersphere slice(n-1, r_tube, subdivs_r);
+            slice.extendIn(n);
+            string plane = string(1, 'y') + string(1, AXIS_IDS[n-1]);
+            MatrixXf R1 = createRotationMatrix(n, {plane}, {M_PI/2});
+            slice.transform(R1);
+            PointND t = PointND::Zero(n);
+            t(0) = Radius;
+            slice.translate(t);
+            float d_theta = 2.0 * M_PI / static_cast<float>(subdivs_R);
+            MatrixXf R2 = createRotationMatrix(n, {"xy"}, {d_theta});
+
+            for(int i=0; i<subdivs_R; i++){
+                verts.insert(verts.end(), slice.verts.begin(), slice.verts.end());
+                slice.transform(R2);
+            }
+
+            for(int axis = 0; axis < n-1; axis++){
+                for(int sign = -1; sign <= 1; sign += 2){
+                    PointND r = PointND::Zero(n);
+                    r(axis) = sign * r_tube;
+                    r = R1 * r;
+                    PointND uR = t / Radius;
+                    vector<PointND> c = LowHypersphere::circleVerts(n, Radius + r.dot(uR), "xy", subdivs_r);
+                    if(r.dot(t) < EPS && r.dot(t) > -EPS)
+                        for(PointND& v : c) v += r;
+                    verts.insert(verts.end(), c.begin(), c.end());
+                }
+            }
+
+            return verts;
+        }
+
+        static vector<SegmentND> lowHypertorusEdges(const vector<PointND> &verts, int subdivs_R, int subdivs_r) {
+            vector<SegmentND> edges;
+            int n = verts[0].size();
+            int k = verts.size();
+            int section_size = (n-1) * (n-2) / 2 * subdivs_r;
+
+            for(int i=0; i+section_size <= subdivs_R * section_size; i+=section_size) {
+                vector<SegmentND> section_edges = LowHypersphere::lowHypersphereEdges(
+                    vector<PointND>(verts.begin() + i, verts.begin() + i + section_size),
+                    subdivs_r
+                );
+                edges.insert(edges.end(), section_edges.begin(), section_edges.end());
+            }
+
+            for(int i = subdivs_R * section_size; i+subdivs_R<k; i+=subdivs_R) {
+                vector<PointND> c = vector<PointND>(verts.begin() + i, verts.begin() + i + subdivs_R);
+                vector<SegmentND> c_edges = LowHypersphere::circleEdges(c);
+                edges.insert(edges.end(), c_edges.begin(), c_edges.end());
+            }
+            return edges;
         }
 };
