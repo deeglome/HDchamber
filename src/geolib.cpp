@@ -842,9 +842,9 @@ class Hypersphere : public GeometryND {
 
         static vector<SegmentND> circleEdges(const vector<PointND> &verts) {
             vector<SegmentND> edges;
-            int n = verts.size();
-            for (int v = 0; v < n; v++) {
-                if (v == n - 1) edges.push_back(SegmentND(verts[v], verts[0]));
+            int circle_size = verts.size();
+            for (int v = 0; v < circle_size; v++) {
+                if (v == circle_size - 1) edges.push_back(SegmentND(verts[v], verts[0]));
                 else edges.push_back(SegmentND(verts[v], verts[v + 1]));
             }
             return edges;
@@ -873,7 +873,7 @@ class Hypersphere : public GeometryND {
 
 class LowHypersphere : public GeometryND {
     public:
-    int subdivs;
+        int subdivs;
 
         LowHypersphere(int n, float radius, int subdivs) : GeometryND(
             n,
@@ -889,14 +889,14 @@ class LowHypersphere : public GeometryND {
 
         vector<int> getBufferEdgeIndices() override {
             vector<int> indices;
-            int k = this->verts.size();
-            for(int i=0; i + this->subdivs <= k; i+=this->subdivs) {
-                for(int j=i; j < i - 1 + this->subdivs; j++) {
-                    indices.push_back(j);
-                    indices.push_back(j + 1);
+            int geo_size = this->verts.size();
+            for(int c=0; c + this->subdivs <= geo_size; c+=this->subdivs) {
+                for(int v=c; v < this->subdivs - 1 + c; v++) {
+                    indices.push_back(v);
+                    indices.push_back(v + 1);
                 }
-                indices.push_back(i + this->subdivs - 1);
-                indices.push_back(i);
+                indices.push_back(c + this->subdivs - 1);
+                indices.push_back(c);
             }
             return indices;
         }
@@ -905,9 +905,9 @@ class LowHypersphere : public GeometryND {
             vector<PointND> verts;
             for(int i=0; i<n-1; i++) {
                 for(int j=i+1; j<n; j++) {
-                    char x = AXIS_IDS[i];
-                    char y = AXIS_IDS[j];
-                    string plane = string(1,x) + string(1,y);
+                    char x_i = AXIS_IDS[i];
+                    char x_j = AXIS_IDS[j];
+                    string plane = string(1,x_i) + string(1,x_j);
                     vector<PointND> c = circleVerts(n, radius, plane, subdivs);
                     verts.insert(verts.end(), c.begin(), c.end());
                 }
@@ -917,39 +917,38 @@ class LowHypersphere : public GeometryND {
 
         static vector<PointND> circleVerts(int n, float radius, string plane, int subdivs){
             std::vector<PointND> points;
-            float d_theta = 2.0 * M_PI / static_cast<float>(subdivs);
+            int i = AXIS_IDS.find(plane[0]);
+            int j = AXIS_IDS.find(plane[1]);
 
-            for (float theta = 0; theta < 2.0 * M_PI; theta += d_theta) {
-                int x = AXIS_IDS.find(plane[0]);
-                int y = AXIS_IDS.find(plane[1]);
-
+            for (int k=0; k<subdivs; k++) {
+                float theta = k * (2.0 * M_PI / subdivs);
                 PointND newPoint = PointND::Zero(n);
-                newPoint(x) = radius * std::cos(theta);
-                newPoint(y) = radius * std::sin(theta);
-
+                newPoint(i) = radius * std::cos(theta);
+                newPoint(j) = radius * std::sin(theta);
                 points.push_back(newPoint);
             }
             return points;
         }
 
-        static vector<SegmentND> lowHypersphereEdges(const vector<PointND> &verts, int subdivs) {
+        static vector<SegmentND> lowHypersphereEdges(const vector<PointND> &lhs_verts, int subdivs) {
             vector<SegmentND> edges;
+            int lhs_size = lhs_verts.size();
 
-            for(int i=0; i+subdivs<verts.size(); i+=subdivs) {
-                vector<PointND> c = vector<PointND>(verts.begin() + i, verts.begin() + i + subdivs);
+            for(int c_i=0; c_i + subdivs <= lhs_size; c_i+=subdivs) {
+                vector<PointND> c = vector<PointND>(lhs_verts.begin() + c_i, lhs_verts.begin() + c_i + subdivs);
                 vector<SegmentND> c_edges = circleEdges(c);
                 edges.insert(edges.end(), c_edges.begin(), c_edges.end());
             }
             return edges;
         }
 
-        static vector<SegmentND> circleEdges(const vector<PointND> &verts) {
+        static vector<SegmentND> circleEdges(const vector<PointND> &circle) {
             vector<SegmentND> edges;
-            int n = verts.size();
+            int c_size = circle.size();
 
-            for (int v = 0; v < n; v++) {
-                if (v == n - 1) edges.push_back(SegmentND(verts[v], verts[0]));
-                else edges.push_back(SegmentND(verts[v], verts[v + 1]));
+            for (int v = 0; v < c_size; v++) {
+                if (v == c_size - 1) edges.push_back(SegmentND(circle[v], circle[0]));
+                else edges.push_back(SegmentND(circle[v], circle[v + 1]));
             }
             return edges;
         }
@@ -1042,7 +1041,6 @@ class LowHypertorus : public GeometryND {
 
         vector<int> getBufferEdgeIndices() override {
             vector<int> indices;
-            int n = verts[0].size();
             int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
             int t = this->subdivs_R * section_size;
             
@@ -1057,12 +1055,12 @@ class LowHypertorus : public GeometryND {
                 }
             }
 
-            for(int c=t; c<=verts.size(); c+=this->subdivs_r){
-                for(int v=c; v < c - 1 + this->subdivs_r; v++) {
+            for(int c=t; c<=verts.size() - this->subdivs_R; c+=this->subdivs_R){
+                for(int v=c; v < c - 1 + this->subdivs_R; v++) {
                     indices.push_back(v);
                     indices.push_back(v + 1);
                 }
-                indices.push_back(c + this->subdivs_r - 1);
+                indices.push_back(c + this->subdivs_R - 1);
                 indices.push_back(c);
             }
             return indices;
@@ -1093,7 +1091,7 @@ class LowHypertorus : public GeometryND {
                     r(axis) = sign * r_tube;
                     r = R1 * r;
                     PointND uR = t / Radius;
-                    vector<PointND> c = LowHypersphere::circleVerts(n, Radius + r.dot(uR), "xy", subdivs_r);
+                    vector<PointND> c = LowHypersphere::circleVerts(n, Radius + r.dot(uR), "xy", subdivs_R);
                     if(r.dot(t) < EPS && r.dot(t) > -EPS)
                         for(PointND& v : c) v += r;
                     verts.insert(verts.end(), c.begin(), c.end());
