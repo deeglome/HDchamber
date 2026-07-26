@@ -24,5 +24,7 @@ dist-ssr
 *.sw?
 
 # Debug files and executable files
+geolib.js
+geolib.wasm
 test.cpp
 test
