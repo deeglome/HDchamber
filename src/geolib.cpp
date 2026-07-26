@@ -92,10 +92,9 @@ int rotationScope(vector<string> planes){
     return r ? r+1 : 0;
 }
 
-MatrixXf createRotationMatrix(vector<string> planes, vector<float> angles){
+MatrixXf createRotationMatrix(int n, vector<string> planes, vector<float> angles){
     if(planes.size()!=angles.size()) throw invalid_argument("Number of planes and angles must be the same.");
     
-    int n = rotationScope(planes);
     MatrixXf R = MatrixXf::Identity(n, n);
     
     for(int k=0; k<planes.size(); k++){

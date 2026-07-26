@@ -21,8 +21,9 @@ async function init() {
         }
     }
 
-    function R(planes, angles){
+    function R(dimensions, planes, angles){
         return GEOLIB.createRotationMatrix(
+            dimensions,
             GEOLIB.JsToVectorS(planes),
             GEOLIB.JsToVectorF(angles)
         );
@@ -105,7 +106,7 @@ async function init() {
 
         let dt = 0.1;
         let d_theta = app.omega.map(o => o * dt);
-        let dR = R(app.planes, d_theta);
+        let dR = R(app.dimensions, app.planes, d_theta);
         app.initialTime = Date.now();
 
         function tic(){
@@ -118,7 +119,7 @@ async function init() {
                 console.log("Aggiorno dR!");
                 dt = next_dt;
                 d_theta = app.omega.map(o => o * dt);
-                dR = R(app.planes, d_theta);
+                dR = R(app.dimensions, app.planes, d_theta);
             }
 
             objGeo.transform(dR);
