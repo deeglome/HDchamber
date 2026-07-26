@@ -1123,3 +1123,68 @@ class LowHypertorus : public GeometryND {
             return edges;
         }
 };
+
+class LowHyperspherinder : public GeometryND {
+    public:
+        int subdivs_r;
+        int subdivs_h;
+        LowHyperspherinder(int n, float radius, float height, int subdivs_r, int subdivs_h) : GeometryND(
+            n,
+            lowHyperspherinderVerts(n, radius, height, subdivs_r, subdivs_h),
+            lowHyperspherinderEdges(lowHyperspherinderVerts(n, radius, height, subdivs_r, subdivs_h), subdivs_r, subdivs_h)
+        ) {
+            this->subdivs_r = subdivs_r;
+            this->subdivs_h = subdivs_h;
+        }
+
+        LowHyperspherinder *clone() override {
+            return new LowHyperspherinder(*this);
+        }
+
+        vector<int> getBufferEdgeIndices() override {
+            vector<int> indices;
+            int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
+
+            for(int s=0; s<this->subdivs_h; s++) {
+                for(int c=s*section_size; c <= (s+1)*section_size - this->subdivs_r; c+=this->subdivs_r) {
+                    for(int v=c; v < c - 1 + this->subdivs_r; v++) {
+                        indices.push_back(v);
+                        indices.push_back(v + 1);
+                    }
+                    indices.push_back(c + this->subdivs_r - 1);
+                    indices.push_back(c);
+                }
+            }
+
+            for(int h=0; h<section_size; h++){
+                for(int v=h; v < this->verts.size() - section_size; v+=section_size){
+                    indices.push_back(v);
+                    indices.push_back(v + section_size);
+                }
+            }
+            return indices;
+        }
+
+    private:
+        vector<PointND> lowHyperspherinderVerts(int n, float radius, float height, int subdivs_r, int subdivs_h){
+            vector<PointND> verts;
+            LowHypersphere slice(n-1, radius, subdivs_r);
+            slice.extendIn(n);
+            PointND t0 = PointND::Zero(n);
+            t0(n-1) = -height/2;
+            slice.translate(t0);
+            PointND t = PointND::Zero(n);
+            t(n-1) = height / static_cast<float>(subdivs_h);
+
+            for(int i=0; i<subdivs_h; i++){
+                verts.insert(verts.end(), slice.verts.begin(), slice.verts.end());
+                slice.translate(t);
+            }
+            return verts;
+        }
+
+        vector<SegmentND> lowHyperspherinderEdges(const vector<PointND> &verts, int subdivs_r, int subdivs_h){
+            vector<SegmentND> edges;
+            return edges;
+        }
+};

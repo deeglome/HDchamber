@@ -169,6 +169,14 @@ EMSCRIPTEN_BINDINGS(my_module){
         }), emscripten::allow_raw_pointers())
         .function("getBufferEdgeIndices", &LowHypertorus::getBufferEdgeIndices);
 
+    // Binding per LowHyperspherinder
+    emscripten::class_<LowHyperspherinder, emscripten::base<GeometryND>>("LowHyperspherinder")
+        .constructor<int, float, float, int, int>()
+        .function("clone", emscripten::optional_override([](LowHyperspherinder& self) -> LowHyperspherinder* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers())
+        .function("getBufferEdgeIndices", &LowHyperspherinder::getBufferEdgeIndices);
+
     // Binding per funzioni utility
     emscripten::function("origin", &origin);
     emscripten::function("projectPoint", emscripten::select_overload<PointND(const PointND, int)>(&projectPoint));
