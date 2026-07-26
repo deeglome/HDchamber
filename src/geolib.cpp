@@ -166,6 +166,12 @@ class SegmentND {
             end += t;
         }
 
+        void scale(const PointND& s){
+            if(s.size() != n) throw invalid_argument("Scale vector must have the same number of dimensions as the segment.");
+            start = start.cwiseProduct(s);
+            end = end.cwiseProduct(s);
+        }
+
         bool coincident(const SegmentND s){
             return this->start.isApprox(s.start) && this->end.isApprox(s.end) || this->start.isApprox(s.end) && this->end.isApprox(s.start);
         }
@@ -224,6 +230,12 @@ class FaceND {
         void translate(const PointND& t){
             for(SegmentND& s : this->edges) s.translate(t);
             for(PointND& p : this->verts) p += t;
+        }
+
+        void scale(const PointND& s){
+            if(s.size() != n) throw invalid_argument("Scale vector must have the same number of dimensions as the face.");
+            for(SegmentND& seg : this->edges) seg.scale(s);
+            for(PointND& p : this->verts) p = p.cwiseProduct(s);
         }
 
         // Restituisce un vettore dei singoli prodotti scalari tra edges consecutivi.
@@ -371,6 +383,12 @@ class GeometryND {
             for(FaceND& f : this->faces) f.translate(t);
             for(SegmentND& s : this->edges) s.translate(t);
             for(PointND& p : this->verts) p += t;
+        }
+
+        void scale(const PointND& s){
+            for(FaceND& f : this->faces) f.scale(s);
+            for(SegmentND& seg : this->edges) seg.scale(s);
+            for(PointND& p : this->verts) p = p.cwiseProduct(s);
         }
 
         void extendIn(int n){
