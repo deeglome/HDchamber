@@ -1,13 +1,19 @@
 * {
-  color: #ccc7d1;
+  --text-color: #88ffdd;
+  --bg-color1: #18222d;
+  --bg-color2: #0d1216;
+  color: var(--text-color);
   font-family: "Chakra Petch", sans-serif;
   transition: all 0.25s ease-in-out;
+}
+svg, path{
+  fill: var(--text-color);
 }
 body {
   margin: 0;
   height: 100vh;
   overflow: hidden;
-  background: no-repeat radial-gradient(#252736, #0e0e14);
+  background: no-repeat radial-gradient(var(--bg-color1), var(--bg-color2));
 }
 h1,
 legend {
@@ -46,7 +52,7 @@ legend {
   align-items: center;
   width: 65px;
   height: 65px;
-  border: 1px solid #ccc7d1;
+  border: 2px solid var(--text-color);
   border-radius: 5px;
   text-decoration: none;
   opacity: 0.45;
@@ -54,7 +60,7 @@ legend {
 }
 .button:hover {
   opacity: 1;
-  scale: 1.1;
+  scale: 1.05;
   background-color: rgba(0, 0, 0, 0.3);
 }
 .buttons :not(:first-child) .button {
@@ -73,6 +79,17 @@ button i::before {
   justify-content: center;
   align-items: center;
 }
+.icon{
+  background-color: var(--text-color);
+  mask-image: var(--icon-url);
+  -webkit-mask-image: var(--icon-url);
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+}
 .button.small .icon{
   height: 25px;
   width: 25px;
@@ -85,7 +102,7 @@ button i::before {
   background-color: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
   border-radius: 3px;
-  border: 1px solid #ccc7d166;
+  border: 1px solid var(--text-color);
   transform: translateY(-10px);
   opacity: 0;
   transition: transform 0.3s ease-in-out, opacity 0.1s ease-in-out;
@@ -112,7 +129,7 @@ button i::before {
   text-align: center;
   padding: 8px;
   border-radius: 3px;
-  border: 1px solid #ccc7d1;
+  border: 1px solid var(--text-color);
   margin: 10px;
 }
 
@@ -138,7 +155,7 @@ legend * {
 }
 .legend-bar {
   margin-top: 3px;
-  border: 1px solid #ccc7d1c0;
+  border: 1px solid var(--text-color);
   height: 10px;
   max-width: 300px;
   border-radius: 3px;
@@ -150,11 +167,11 @@ legend * {
   width: 400px;
   position: absolute;
   top: 0px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--text-color);
   border-top-color: transparent;
   left: 100%;
   top: -25px;
-  background: no-repeat linear-gradient(to bottom, #0e0e14bb, #252736bb);
+  background: no-repeat linear-gradient(to bottom, var(--bg-color1), var(--bg-color2));
   backdrop-filter: blur(5px);
   transition: 0.8s;
   z-index: 2;

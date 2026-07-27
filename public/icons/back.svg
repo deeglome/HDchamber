@@ -7,7 +7,7 @@
    viewBox="0 0 33.866666 33.866666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="back.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -25,13 +25,13 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      inkscape:zoom="3.9880822"
-     inkscape:cx="43.88074"
-     inkscape:cy="87.134613"
-     inkscape:window-width="1920"
-     inkscape:window-height="1029"
+     inkscape:cx="44.131488"
+     inkscape:cy="87.00924"
+     inkscape:window-width="1062"
+     inkscape:window-height="986"
      inkscape:window-x="0"
-     inkscape:window-y="27"
-     inkscape:window-maximized="1"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
      inkscape:current-layer="g19"
      inkscape:lockguides="true" />
   <defs
@@ -89,7 +89,7 @@
     <path
        d="m 10.481735,18.025539 v -2.3876 l 12.9032,-5.9690001 v 2.3622001 l -10.3124,4.7244 v 0.1524 l 10.3124,4.9276 v 2.3622 z"
        id="text11"
-       style="font-weight:500;font-size:25.4px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch, Medium';fill:#ccc7d1;stroke:none;stroke-width:0.661458"
+       style="font-weight:500;font-size:25.4px;font-family:'Chakra Petch';-inkscape-font-specification:'Chakra Petch, Medium';fill:#ccc7d1;stroke:none;stroke-width:0.661458;fill-opacity:1"
        aria-label="&lt;" />
   </g>
 </svg>

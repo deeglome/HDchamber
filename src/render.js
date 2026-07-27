@@ -3,8 +3,9 @@ import createGeolib from './geolib.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let GEOLIB;
-const THREE_DIMENSIONS = 3
-const CAM_DIST = 3
+const THREE_DIMENSIONS = 3;
+const CAM_DIST = 3;
+const MAIN_COLOR = 0x88ffdd;
 export const RENDER_FUNCS = {};
 let animationId;
 
@@ -38,7 +39,7 @@ async function init() {
 
     const bufGeo = new THREE.BufferGeometry();
     const material = new THREE.LineBasicMaterial({
-            color: 0x00ff00,
+            color: MAIN_COLOR,
             linewidth: 1
     });
 

@@ -11,7 +11,7 @@ const APP = {
   finalTime: null,
   deltaTime: () => APP.finalTime - APP.initialTime,
   k: Math.PI / 4, // rad/s
-  dimensions: 4,
+  dimensions: 3,
   MIN_DIMENSIONS: 2,
   MAX_DIMENSIONS: 6,
   theta: [],
