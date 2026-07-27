@@ -147,6 +147,7 @@ class SegmentND {
         void extendIn(int n){
             this->start = extendPoint(this->start, n);
             this->end = extendPoint(this->end, n);
+            this->n = n;
         }
 
         /* void print() {
@@ -267,6 +268,7 @@ class FaceND {
         void extendIn(int n){
             for(SegmentND& s : edges) s.extendIn(n);
             for(PointND& v : verts) v = extendPoint(v, n);
+            this->n = n;
         }
 
         void project(int n){
@@ -395,6 +397,7 @@ class GeometryND {
             for(FaceND& f : faces) f.extendIn(n);
             for(SegmentND& s : edges) s.extendIn(n);
             for(PointND& v : verts) v = extendPoint(v, n);
+            this->n = n;
         }
 
         void project(int n){
@@ -1164,7 +1167,7 @@ class LowHyperspherinder : public GeometryND {
             int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
 
             for(int s=0; s<this->subdivs_h; s++) {
-                for(int c=s*section_size; c <= (s+1)*section_size - this->subdivs_r; c+=this->subdivs_r) {
+                for(int c=s*section_size; c <= (s+2)*section_size - this->subdivs_r; c+=this->subdivs_r) {
                     for(int v=c; v < c - 1 + this->subdivs_r; v++) {
                         indices.push_back(v);
                         indices.push_back(v + 1);
@@ -1194,7 +1197,7 @@ class LowHyperspherinder : public GeometryND {
             PointND t = PointND::Zero(n);
             t(n-1) = height / static_cast<float>(subdivs_h);
 
-            for(int i=0; i<subdivs_h; i++){
+            for(int i=0; i<=subdivs_h; i++){
                 verts.insert(verts.end(), slice.verts.begin(), slice.verts.end());
                 slice.translate(t);
             }
