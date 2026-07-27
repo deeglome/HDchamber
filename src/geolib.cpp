@@ -1209,3 +1209,74 @@ class LowHyperspherinder : public GeometryND {
             return edges;
         }
 };
+
+class LowHypercone : public GeometryND {
+    public:
+        int subdivs_r;
+        int subdivs_h;
+        LowHypercone(int n, float radius, float height, int subdivs_r, int subdivs_h) : GeometryND(
+            n,
+            lowHyperconeVerts(n, radius, height, subdivs_r, subdivs_h),
+            lowHyperconeEdges(lowHyperconeVerts(n, radius, height, subdivs_r, subdivs_h), subdivs_r, subdivs_h)
+        ) {
+            this->subdivs_r = subdivs_r;
+            this->subdivs_h = subdivs_h;
+        }
+
+        LowHypercone *clone() override {
+            return new LowHypercone(*this);
+        }
+
+        vector<int> getBufferEdgeIndices() override {
+            vector<int> indices;
+            int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
+
+            for(int s=0; s<this->subdivs_h; s++) {
+                for(int c=s*section_size; c <= (s+1)*section_size - this->subdivs_r; c+=this->subdivs_r) {
+                    for(int v=c; v < c - 1 + this->subdivs_r; v++) {
+                        indices.push_back(v);
+                        indices.push_back(v + 1);
+                    }
+                    indices.push_back(c + this->subdivs_r - 1);
+                    indices.push_back(c);
+                }
+            }
+
+            for(int h=0; h<section_size; h++){
+                for(int v=h; v < this->verts.size() - section_size; v+=section_size){
+                    indices.push_back(v);
+                    indices.push_back(v + section_size);
+                }
+            }
+            return indices;
+        }
+
+    private:
+        vector<PointND> lowHyperconeVerts(int n, float radius, float height, int subdivs_r, int subdivs_h){
+            vector<PointND> verts;
+            LowHypersphere slice0(n-1, radius, subdivs_r);
+            slice0.extendIn(n);
+            LowHypersphere slice = *(slice0.clone());
+            PointND hpcone_bar = PointND::Zero(n);
+            hpcone_bar(n-1) = height/3;
+            slice.translate(-hpcone_bar);
+            PointND t = PointND::Zero(n);
+
+            for(int i=0; i<=subdivs_h; i++){
+                float x = i / static_cast<float>(subdivs_h);
+                PointND s = PointND::Ones(n) * (1 - x);
+                slice.scale(s);
+                t(n-1) = height * i / static_cast<float>(subdivs_h);
+                slice.translate(t);
+                verts.insert(verts.end(), slice.verts.begin(), slice.verts.end());
+                slice = *(slice0.clone());
+                slice.translate(-hpcone_bar);
+            }
+            return verts;
+        }
+
+        vector<SegmentND> lowHyperconeEdges(const vector<PointND> &verts, int subdivs_r, int subdivs_h){
+            vector<SegmentND> edges;
+            return edges;
+        }
+};

@@ -146,12 +146,13 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
   const meshesMap = new Map();
   meshesMap.set("Hypercube", GEOLIB.Hypercube);
   meshesMap.set("Simplex", GEOLIB.Simplex);
+  meshesMap.set("Orthoplex", GEOLIB.Orthoplex);
   meshesMap.set("Hypersphere", GEOLIB.Hypersphere);
   meshesMap.set("LowHypersphere", GEOLIB.LowHypersphere);
   meshesMap.set("Torus", GEOLIB.Torus);
   meshesMap.set("LowHypertorus", GEOLIB.LowHypertorus);
   meshesMap.set("LowHyperspherinder", GEOLIB.LowHyperspherinder);
-  meshesMap.set("Orthoplex", GEOLIB.Orthoplex);
+  meshesMap.set("LowHypercone", GEOLIB.LowHypercone);
   meshesMap.set("And so on...", null);
 
   meshesMap.keys().forEach((key) => {
