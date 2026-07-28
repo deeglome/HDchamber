@@ -149,7 +149,7 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
   meshesMap.set("Orthoplex", GEOLIB.Orthoplex);
   meshesMap.set("Hypersphere", GEOLIB.Hypersphere);
   meshesMap.set("LowHypersphere", GEOLIB.LowHypersphere);
-  meshesMap.set("Torus", GEOLIB.Torus);
+  meshesMap.set("Hypertorus", GEOLIB.Hypertorus);
   meshesMap.set("LowHypertorus", GEOLIB.LowHypertorus);
   meshesMap.set("LowHyperspherinder", GEOLIB.LowHyperspherinder);
   meshesMap.set("LowHypercone", GEOLIB.LowHypercone);
@@ -170,7 +170,10 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
         cancelAnimationFrame(APP.animationId);
         uploadWikipage();
         GEOLIB.disableColorLegend();
+        console.time('updateTHREE')
         RENDER_FUNCS.updateTHREE(APP);
+        updateTitle();
+        console.timeEnd('updateTHREE')
       } else {
         alert("Wait for new meshes!");
       }
@@ -226,6 +229,7 @@ function setDimensionsButton({button, input}) {
     const h1 = document.querySelector("h1");
     h1.innerHTML = `A ${APP.dimensions}-${input} rotating in ${APP.dimensions}`;
     RENDER_FUNCS.updateTHREE(APP);
+    updateTitle();
   });
 }
 
@@ -275,6 +279,7 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       APP.initialTime = Date.now();
       APP.omega = angularSpeedFactors;
       RENDER_FUNCS.updateTHREE(APP);
+      updateTitle();
     });
   });
 }
@@ -414,7 +419,10 @@ function writeDefaultWikipage(container) {
 function uploadWikipage() {
   try {
     APP.guiHandlers.wiki.wikipage.replaceChildren();
-    writeMeshWikipage(APP.dimensions + "-" + APP.selectedObj, APP.guiHandlers.wiki.wikipage);
+    let filteredName = APP.selectedObj;
+    if(filteredName.includes('Low'))
+      filteredName = filteredName.replace('Low', '');
+    writeMeshWikipage(APP.dimensions + "-" + filteredName, APP.guiHandlers.wiki.wikipage);
   } catch {
     writeDefaultWikipage(APP.guiHandlers.wiki.wikipage);
   }
@@ -578,6 +586,20 @@ function smoothGoniometricTransition(angularSpeed, maxY = 1) {
   const phase = APP.angle - 2 * Math.PI;
   const eased = 0.5 * (1 - Math.cos(angularSpeed * phase));
   return Math.min(Math.pow(eased, 3), maxY);
+}
+
+function updateTitle(){
+  const rotationScope = GEOLIB.rotationScope(APP.planes, APP.omega);
+  const h1 = document.querySelector("h1");
+  let filteredName = APP.selectedObj;
+  if(filteredName.includes('Low'))
+    filteredName = filteredName.replace('Low', '');
+  const humanizedInput = humanizeMeshName(`${APP.dimensions}-${filteredName}`);
+  if (rotationScope > 1) h1.innerHTML = `A ${humanizedInput} is rotating in ${rotationScope}D`;
+  else h1.innerHTML = `A ${humanizedInput} is static`;
+  const title = document.querySelector("title");
+  title.innerHTML = "HDchamber | " + h1.innerHTML;
+  console.timeEnd('updateTHREE')
 }
 
 /* function renderEnvironment(input) {

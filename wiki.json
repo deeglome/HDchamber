@@ -160,21 +160,21 @@
     "dimensions": 6
   },
   {
-    "technicalName": "2-Torus",
+    "technicalName": "2-Hypertorus",
     "commonName": "Annulus",
     "description": "An annulus is a ring-shaped geometric figure. It consists of the region bounded between two concentric circles, essentially creating a \"donut-like\" shape. The inner circle defines the hollow center, while the outer circle forms the external boundary.",
     "dimensions": 2
   },
   {
-    "technicalName": "3-Torus",
+    "technicalName": "3-Hypertorus",
     "commonName": "Torus",
     "description": "A torus is a three-dimensional geometric shape resembling a donut or inner tube. It is defined as the surface formed by revolving a circle around an axis outside of itself. Mathematically, it's described by two radii: the radius of the circular cross-section and the distance from the center of the torus to the axis of rotation. Its unique topology makes it fascinating for mathematics, physics, and even design!",
     "dimensions": 3
   },
   {
-    "technicalName": "4-Torus",
+    "technicalName": "4-Hypertorus",
     "commonName": "Spherical Torus",
-    "description": "The 4-Torus, or the spherical torus, is a four-dimensional object that generalizes the concept of a torus to higher dimensions. It can be thought of as a Cartesian product of two 2-spheres. The 4-torus's complex structure, involving intricate relationships between its components, is significant in various branches of mathematics, including topology and algebraic geometry, and finds applications in theoretical physics, particularly in string theory.",
+    "description": "The 4-Hypertorus, or the spherical torus, is a four-dimensional object that generalizes the concept of a torus to higher dimensions. It can be thought of as a Cartesian product of two 2-spheres. The 4-Hypertorus's complex structure, involving intricate relationships between its components, is significant in various branches of mathematics, including topology and algebraic geometry, and finds applications in theoretical physics, particularly in string theory.",
     "dimensions": 4,
     "properties": {
       "eulerCharacteristic": "not found",
@@ -182,14 +182,14 @@
     }
   },
   {
-    "technicalName": "5-Torus",
-    "commonName": "5-Torus",
+    "technicalName": "5-Hypertorus",
+    "commonName": "5-Hypertorus",
     "description": "Not yet.",
     "dimensions": 5
   },
   {
-    "technicalName": "6-Torus",
-    "commonName": "6-Torus",
+    "technicalName": "6-Hypertorus",
+    "commonName": "6-Hypertorus",
     "description": "Not yet.",
     "dimensions": 6
   },
