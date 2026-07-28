@@ -1065,7 +1065,7 @@ class LowHypertorus : public GeometryND {
             int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
             int t = this->subdivs_R * section_size;
             
-            for(int s=0; s<t; s+=section_size) {
+            for(int s=0; s<t && section_size!=0; s+=section_size) {
                 for(int c=s; c <= s + section_size - this->subdivs_r; c+=this->subdivs_r) {
                     for(int v=c; v < c - 1 + this->subdivs_r; v++) {
                         indices.push_back(v);
@@ -1101,10 +1101,11 @@ class LowHypertorus : public GeometryND {
             float d_theta = 2.0 * M_PI / static_cast<float>(subdivs_R);
             MatrixXf R2 = createRotationMatrix(n, {"xy"}, {d_theta});
 
-            for(int i=0; i<subdivs_R; i++){
-                verts.insert(verts.end(), slice.verts.begin(), slice.verts.end());
-                slice.transform(R2);
-            }
+            if(n>2)
+                for(int i=0; i<subdivs_R; i++){
+                    verts.insert(verts.end(), slice.verts.begin(), slice.verts.end());
+                    slice.transform(R2);
+                }
 
             for(int axis = 0; axis < n-1; axis++){
                 for(int sign = -1; sign <= 1; sign += 2){
@@ -1128,7 +1129,7 @@ class LowHypertorus : public GeometryND {
             int k = verts.size();
             int section_size = (n-1) * (n-2) / 2 * subdivs_r;
 
-            for(int i=0; i+section_size <= subdivs_R * section_size; i+=section_size) {
+            for(int i=0; i+section_size <= subdivs_R * section_size && section_size!=0; i+=section_size) {
                 vector<SegmentND> section_edges = LowHypersphere::lowHypersphereEdges(
                     vector<PointND>(verts.begin() + i, verts.begin() + i + section_size),
                     subdivs_r
