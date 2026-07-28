@@ -93,7 +93,7 @@ function setZoomOutBtn(){
 function setProjectionButton({ button, icon }) {
   button.addEventListener("click", () => {
     APP.isOrtho = !APP.isOrtho;
-    icon.src = `./icons/${APP.isOrtho ? "perspective" : "ortho"}.png`;
+    icon.style.setProperty('--icon-url', `url('/icons/${APP.isOrtho ? "perspective" : "ortho"}.png')`);
     RENDER_FUNCS.updateTHREE(APP);
   });
 }
@@ -448,7 +448,7 @@ function setCrossSectionButton({button, icon}) {
     } else {
       button.setAttribute("title", "Enable cross-section mode");
     }
-    icon.src = "./icons/cross_section_view_" + (APP.isCrossSectionMode ? "off" : "on") + "_btn.svg";
+    icon.style.setProperty('--icon-url', `url('/icons/cross_section_view_${APP.isCrossSectionMode ? "off" : "on"}_btn.svg')`);
     renderEnvironment(APP.selectedObj);
   });
 }
@@ -462,9 +462,9 @@ function setCrossSectionMode() {
   APP.guiHandlers.crossSection = crossSection;
 }
 
-const FIXED_AXES_SRC = "icons/cartesian_axes_view_locked_btn.svg";
-const ROTATING_AXES_SRC = "icons/cartesian_axes_view_on_btn.svg";
-const AXES_OFF_SRC = "icons/cartesian_axes_view_off_btn.svg";
+const FIXED_AXES_SRC = "/icons/cartesian_axes_view_locked_btn.svg";
+const ROTATING_AXES_SRC = "/icons/cartesian_axes_view_on_btn.svg";
+const AXES_OFF_SRC = "/icons/cartesian_axes_view_off_btn.svg";
 
 function setAxesMode() {
   const axesButton = document.querySelector(".axes.button");
@@ -478,18 +478,18 @@ function setAxesMode() {
       case 0:
         APP.axesEnabled = false;
         axesButton.setAttribute("title", "Enable fixed axes");
-        axesIcon.src = FIXED_AXES_SRC;
+        axesIcon.style.setProperty('--icon-url', `url('${FIXED_AXES_SRC}')`);
         break;
       case 1:
         APP.axesEnabled = true;
         APP.fixedAxes = true;
         axesButton.setAttribute("title", "Enable rotating axes");
-        axesIcon.src = ROTATING_AXES_SRC;
+        axesIcon.style.setProperty('--icon-url', `url('${ROTATING_AXES_SRC}')`);
         break;
       case 2:
         APP.fixedAxes = false;
         axesButton.setAttribute("title", "Disable axes");
-        axesIcon.src = AXES_OFF_SRC;
+        axesIcon.style.setProperty('--icon-url', `url('${AXES_OFF_SRC}')`);
       default:
         console.error("Error in axes elaboration!");
         break;
@@ -526,12 +526,12 @@ function setPauseBtn(){
     let pauseBtnIcon = pauseBtn.querySelector("img");
 
     if(!APP.isRendering){
-      pauseBtnIcon.src = "icons/pause.svg";
+      pauseBtnIcon.style.setProperty('--icon-url', `url('/icons/pause.svg')`);
       pauseBtn.title = "Pause animation";
       APP.initialTime = Date.now();
       //tic(APP.selectedObj);
     } else {
-      pauseBtnIcon.src = "icons/resume.svg";
+      pauseBtnIcon.style.setProperty('--icon-url', `url('/icons/resume.svg')`);
       pauseBtn.title = "Resume animation";
     }
   });
