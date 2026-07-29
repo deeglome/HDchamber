@@ -6,6 +6,7 @@ let GEOLIB;
 const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
 const MAIN_COLOR = 0x88ffdd;
+const AXIS_LEN = 1;
 export const RENDER_FUNCS = {};
 let animationId;
 
@@ -33,11 +34,26 @@ async function init() {
         );
     }
 
+    function createAxes(dimensions, axisLength){
+        const axes = new GEOLIB.AxesND(dimensions, axisLength);
+        if(dimensions >= THREE_DIMENSIONS){
+            axes.projectWithCam(dimensions, CAM_DIST);
+        } else {
+            axes.extendIn(dimensions);
+        }
+        let indices = new Uint16Array(GEOLIB.vectorIToJs(axes.getBufferEdgeIndices()));
+        let vertices = new Float32Array(GEOLIB.vectorFToJs(axes.getBufferVerts()));
+        return {cppObj: axes, indices, vertices};
+    }
+
     let cachedObjGeo = null;
+    let cachedAxesGeo = null;
     let cachedType = null;
     let cachedDimensions = null;
+    let cachedIndices = null;
 
     const bufGeo = new THREE.BufferGeometry();
+    const bufAxes = new THREE.BufferGeometry();
     const material = new THREE.LineBasicMaterial({
             color: MAIN_COLOR,
             linewidth: 1
@@ -45,7 +61,6 @@ async function init() {
 
     const mesh = new THREE.LineSegments(bufGeo, material);
     const scene = new THREE.Scene();
-    scene.add(mesh);
 
     const aspect = window.innerWidth / window.innerHeight;
     const frustumSize = 2;
@@ -72,16 +87,22 @@ async function init() {
     const pControls = new OrbitControls(pCamera, renderer.domElement);
 
     RENDER_FUNCS.updateTHREE = (app) => {
+        console.time('cancel')
         cancelAnimationFrame(animationId);
+        console.timeEnd('cancel')
+
+        scene.clear();
+        scene.add(mesh);
 
         // It will be computed only if dimension or type has been changed.
         if(app.selectedObj !== cachedType || app.dimensions !== cachedDimensions){
+            console.time('cachedGeo')
             cachedObjGeo = selectObjGeometry(app);
+            console.timeEnd('cachedGeo')
+            cachedAxesGeo = new GEOLIB.AxesND(app.dimensions, AXIS_LEN);
             cachedType = app.selectedObj;
             cachedDimensions = app.dimensions;
-            
-            const indices = new Uint16Array(GEOLIB.vectorIToJs(cachedObjGeo.getBufferEdgeIndices()));
-            bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
+            cachedIndices = new Uint16Array(GEOLIB.vectorIToJs(cachedObjGeo.getBufferEdgeIndices()));
         }
 
         console.time('selectObjGeometry')
@@ -92,17 +113,33 @@ async function init() {
         let proj = objGeo.clone();
         console.timeEnd('clone');
 
-        console.time('project')
-        proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
-        console.timeEnd('project')
+        console.log(app.dimensions, THREE_DIMENSIONS)
+        if(app.dimensions >= THREE_DIMENSIONS){
+            console.time('project')
+            proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+            console.timeEnd('project')
+        } else {
+            proj.extendIn(THREE_DIMENSIONS);
+        }
+
+        console.time('vertices')
         let vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
+        console.timeEnd('vertices')
+        console.time('setVertices')
         bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
+        console.timeEnd('setVertices')
 
-        const indices = new Uint16Array(GEOLIB.vectorIToJs(objGeo.getBufferEdgeIndices()));
+        console.time('indices')
+        let indices = cachedIndices;
+        console.timeEnd('indices')
+        console.time('setIndex')
         bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
+        console.timeEnd('setIndex')
 
+        console.time('set camera and controls')
         let camera = (app.isOrtho) ? oCamera : pCamera;
         let controls = (app.isOrtho) ? oControls : pControls;
+        console.timeEnd('set camera and controls')
 
         function error(val, ref){
             return Math.abs(val - ref) / ref;
@@ -113,6 +150,17 @@ async function init() {
         let dR = R(app.dimensions, app.planes, d_theta);
         app.initialTime = Date.now();
 
+        let fixedAxes = createAxes(app.dimensions, AXIS_LEN);
+        bufAxes.setAttribute('position', new THREE.BufferAttribute(fixedAxes.vertices, THREE_DIMENSIONS));
+        bufAxes.setIndex(new THREE.BufferAttribute(fixedAxes.indices, 1));
+        let rotatingAxes = cachedAxesGeo;
+
+        if(app.axesMode !== "off"){    
+            const axesMesh = new THREE.LineSegments(bufAxes, material);
+            scene.add(axesMesh);
+        }
+
+        console.time('declare tic()')
         function tic(){
             controls.update();
 
@@ -130,17 +178,38 @@ async function init() {
             app.initialTime = app.finalTime;
         
             proj = objGeo.clone();
-            proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
-            vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts())); 
+
+            if(app.dimensions >= THREE_DIMENSIONS)
+                proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+            else
+                proj.extendIn(THREE_DIMENSIONS);
+            vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts()));
+            
+            rotatingAxes.transform(dR);
+
+            let projAxes = rotatingAxes.clone();
+            if(app.dimensions >= THREE_DIMENSIONS){
+                projAxes.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+            } else {
+                projAxes.extendIn(THREE_DIMENSIONS);
+            }
 
             // Geometry
             bufGeo.attributes.position.array.set(vertices);
             bufGeo.attributes.position.needsUpdate = true;
 
+            if(app.axesMode === "rotating"){
+                bufAxes.attributes.position.array.set(new Float32Array(GEOLIB.vectorFToJs(projAxes.getBufferVerts())));
+                bufAxes.attributes.position.needsUpdate = true;
+            }
+
             renderer.render(scene, camera);
             animationId = requestAnimationFrame(tic);
         }
+        console.timeEnd('declare tic()')
+        console.time('tic()')
         tic();
+        console.timeEnd('tic()')
     }
 }
 

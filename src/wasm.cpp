@@ -115,6 +115,14 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("getBufferVerts", &GeometryND::getBufferVerts)
         .function("getBufferEdgeIndices", &GeometryND::getBufferEdgeIndices);
 
+    // Binding per AxesND
+    emscripten::class_<AxesND, emscripten::base<GeometryND>>("AxesND")
+        .constructor<int, float>()
+        .function("clone", emscripten::optional_override([](AxesND& self) -> AxesND* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers())
+        .function("getBufferEdgeIndices", &AxesND::getBufferEdgeIndices);
+
     // Binding per Hypercube
     emscripten::class_<Hypercube, emscripten::base<GeometryND>>("Hypercube")
         .constructor<int, float>()

@@ -452,6 +452,54 @@ class GeometryND {
         }
 };
 
+class AxesND : public GeometryND {
+    public:
+        AxesND(int n, float axis_len) : GeometryND(
+            n,
+            axesVerts(n, axis_len),
+            axesEdges(axesVerts(n, axis_len)),
+            {}
+        ) {}
+
+        AxesND* clone() override {
+            return new AxesND(*this);
+        }
+
+        vector<int> getBufferEdgeIndices(){
+            vector<int> indices;
+
+            for(int i=0; i<this->verts.size(); i+=2){
+                indices.push_back(i);
+                indices.push_back(i+1);
+            }
+            return indices;
+        }
+
+    private:
+        vector<PointND> axesVerts(int n, float axis_len){
+            vector<PointND> verts;
+
+            for(int i=0; i<n; i++){
+                PointND origin = PointND::Zero(n);
+                verts.push_back(origin);
+                PointND axis_i = origin;
+                axis_i(i) = axis_len;
+                verts.push_back(axis_i);
+            }
+            return verts;
+        }
+
+        vector<SegmentND> axesEdges(const vector<PointND> &verts){
+            vector<SegmentND> axes;
+
+            for(int i=0; i<verts.size(); i+=2){
+                axes.push_back(SegmentND(verts[i], verts[i+1]));
+            }
+            return axes;
+        }
+
+};
+
 class Hypercube : public GeometryND {
     public:
         Hypercube(int n, float edge_len) : GeometryND(

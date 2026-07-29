@@ -24,8 +24,7 @@ const APP = {
   isCrossSectionMode: false,
   renderScale: GEOLIB.DEFAULT_RENDER_SCALE,
   isOrtho: false,
-  axesEnabled: false,
-  fixedAxes: true,
+  axesMode: "off",
   lastCoordinateEnabled: false
 };
 
@@ -484,25 +483,24 @@ function setAxesMode() {
     counter %= 3;
     switch(counter){
       case 0:
-        APP.axesEnabled = false;
+        APP.axesMode = "off";
         axesButton.setAttribute("title", "Enable fixed axes");
         axesIcon.style.setProperty('--icon-url', `url('${FIXED_AXES_SRC}')`);
         break;
       case 1:
-        APP.axesEnabled = true;
-        APP.fixedAxes = true;
+        APP.axesMode = "fixed";
         axesButton.setAttribute("title", "Enable rotating axes");
         axesIcon.style.setProperty('--icon-url', `url('${ROTATING_AXES_SRC}')`);
         break;
       case 2:
-        APP.fixedAxes = false;
+        APP.axesMode = "rotating";
         axesButton.setAttribute("title", "Disable axes");
         axesIcon.style.setProperty('--icon-url', `url('${AXES_OFF_SRC}')`);
       default:
         console.error("Error in axes elaboration!");
         break;
     }
-    renderEnvironment(APP.selectedObj);
+    RENDER_FUNCS.updateTHREE(APP);
   });
 }
 
