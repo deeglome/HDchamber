@@ -297,10 +297,10 @@ function setRandomRotationBtn(handler){
       button.innerHTML = rotationPlane.toUpperCase() + " | " + randomSpeed;
       APP.initialTime = Date.now();
       APP.omega = handler.angularSpeedFactors;
-      console.time('updateTHREE');
-      RENDER_FUNCS.updateTHREE(APP);
-      console.timeEnd('updateTHREE')
     });
+    console.time('updateTHREE');
+    RENDER_FUNCS.updateTHREE(APP);
+    console.timeEnd('updateTHREE')
   });
 }
 

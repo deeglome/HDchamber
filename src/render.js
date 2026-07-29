@@ -6,7 +6,15 @@ let GEOLIB;
 const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
 const MAIN_COLOR = 0x88ffdd;
-const AXIS_LEN = 1;
+const AXIS_LEN = 2;
+const AXES_PALETTE = [
+    0x0000ff,
+    0xff0000,
+    0x00ff00,
+    0xff00ff,
+    0xf0f000,
+    0xffbbaa
+];
 export const RENDER_FUNCS = {};
 let animationId;
 
@@ -43,7 +51,19 @@ async function init() {
         }
         let indices = new Uint16Array(GEOLIB.vectorIToJs(axes.getBufferEdgeIndices()));
         let vertices = new Float32Array(GEOLIB.vectorFToJs(axes.getBufferVerts()));
-        return {cppObj: axes, indices, vertices};
+        let colors = generateAxesColors(dimensions);
+        return {cppObj: axes, indices, vertices, colors};
+    }
+
+    function generateAxesColors(dimensions) {
+        const colors = [];
+        for (let i = 0; i < dimensions; i++) {
+            const color = new THREE.Color().setHex(AXES_PALETTE[i]);
+            // ogni asse ha 2 vertici (origine_i, versore_i) → stesso colore per entrambi
+            colors.push(color.r, color.g, color.b);
+            colors.push(color.r, color.g, color.b);
+        }
+        return new Float32Array(colors);
     }
 
     let cachedObjGeo = null;
@@ -55,8 +75,13 @@ async function init() {
     const bufGeo = new THREE.BufferGeometry();
     const bufAxes = new THREE.BufferGeometry();
     const material = new THREE.LineBasicMaterial({
-            color: MAIN_COLOR,
-            linewidth: 1
+        color: MAIN_COLOR,
+        linewidth: 1
+    });
+
+    const axesMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        linewidth: 1
     });
 
     const mesh = new THREE.LineSegments(bufGeo, material);
@@ -152,11 +177,12 @@ async function init() {
 
         let fixedAxes = createAxes(app.dimensions, AXIS_LEN);
         bufAxes.setAttribute('position', new THREE.BufferAttribute(fixedAxes.vertices, THREE_DIMENSIONS));
+        bufAxes.setAttribute('color', new THREE.BufferAttribute(fixedAxes.colors, 3));
         bufAxes.setIndex(new THREE.BufferAttribute(fixedAxes.indices, 1));
         let rotatingAxes = cachedAxesGeo;
 
         if(app.axesMode !== "off"){    
-            const axesMesh = new THREE.LineSegments(bufAxes, material);
+            const axesMesh = new THREE.LineSegments(bufAxes, axesMaterial);
             scene.add(axesMesh);
         }
 
