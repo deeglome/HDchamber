@@ -22,7 +22,7 @@ const APP = {
   animationId: {},
   selectedObj: null,
   isCrossSectionMode: false,
-  renderScale: GEOLIB.DEFAULT_RENDER_SCALE,
+  camera: {position: null, zoom: 1.00},
   isOrtho: false,
   axesMode: "off",
   lastCoordinateEnabled: false
@@ -40,31 +40,15 @@ async function fetchWiki() {
 
 const WIKI = await fetchWiki();
 
-function zoomIn(threshold) {
-  APP.renderScale += threshold;
-  renderEnvironment(APP.selectedObj);
-}
-
-function zoomOut(threshold) {
-  APP.renderScale -= threshold;
-  renderEnvironment(APP.selectedObj);
-}
-
-const THRESHOLD = 50;
+const THRESHOLD = 0.20; // 50%
+const MAX_ZOOM = 3.00;
+const MIN_ZOOM = MAX_ZOOM / 10;
 
 function addWindowEvents() {
   window.addEventListener("resize", () => {
     GEOLIB.resizeCanvas();
     const h1 = document.querySelector("h1");
     h1.style.textAlign = "center";
-  });
-
-  window.addEventListener("wheel", (event) => {
-    if (event.deltaY < 0) {
-      zoomIn(THRESHOLD);
-    } else {
-      zoomOut(THRESHOLD);
-    }
   });
 }
 
@@ -77,14 +61,16 @@ function addWindowEvents() {
 function setZoomInBtn(){
   const zoomInBtn = document.querySelector(".zoom-in-btn");
   zoomInBtn.addEventListener("click", ()=>{
-    zoomIn(THRESHOLD);
+    APP.camera.zoom = Math.min(MAX_ZOOM, APP.camera.zoom + THRESHOLD);
+    RENDER_FUNCS.updateTHREE(APP);
   });
 }
 
 function setZoomOutBtn(){
   const zoomOutBtn = document.querySelector(".zoom-out-btn");
   zoomOutBtn.addEventListener("click", ()=>{
-    zoomOut(THRESHOLD);
+    APP.camera.zoom = Math.max(MIN_ZOOM, APP.camera.zoom - THRESHOLD);
+    RENDER_FUNCS.updateTHREE(APP);
   });
 }
 

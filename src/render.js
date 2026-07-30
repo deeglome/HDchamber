@@ -164,6 +164,19 @@ async function init() {
         console.time('set camera and controls')
         let camera = (app.isOrtho) ? oCamera : pCamera;
         let controls = (app.isOrtho) ? oControls : pControls;
+
+        if (app.isOrtho) {
+            // Per l'ortografica, zoom nativo = property zoom (coerente con OrbitControls)
+            camera.zoom = app.camera.zoom;
+            camera.updateProjectionMatrix();
+        } else {
+            // Per la prospettiva, replica il dolly reale di OrbitControls:
+            // sposta la camera lungo la retta target -> camera
+            const target = controls.target;
+            const direction = camera.position.clone().sub(target).normalize();
+            const newDistance = CAM_DIST / app.camera.zoom;
+            camera.position.copy(target).add(direction.multiplyScalar(newDistance));
+        }
         console.timeEnd('set camera and controls')
 
         function error(val, ref){
