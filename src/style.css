@@ -1,7 +1,11 @@
 * {
   --text-color: #88ffdd;
+  --secondary-color: #099;
   --bg-color1: #18222d;
   --bg-color2: #0d1216;
+  --min-last-coordinate-color: #00c;
+  --mid-last-coordinate-color: #c0c;
+  --max-last-coordinate-color: #c00;
   color: var(--text-color);
   font-family: "Chakra Petch", sans-serif;
   transition: all 0.25s ease-in-out;
@@ -153,13 +157,26 @@ main {
 legend * {
   margin: auto;
 }
+
+.legend-values {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 400px;
+}
+
+.legend-value {
+  font-size: 12px;
+  margin: 0;
+}
+
 .legend-bar {
   margin-top: 3px;
-  border: 1px solid var(--text-color);
+  border: 1px solid var(--secondary-color);
   height: 10px;
-  max-width: 300px;
-  border-radius: 3px;
-  background: linear-gradient(to right, hsl(200, 100%, 50%), hsl(250, 100%, 50%), hsl(300, 100%, 50%), hsl(0, 100%, 50%));
+  max-width: 400px;
+  border-radius: 1px;
+  background: linear-gradient(to right, var(--min-last-coordinate-color), var(--mid-last-coordinate-color) 50%, var(--max-last-coordinate-color));
   opacity: 0.7;
 }
 .wikipage {
