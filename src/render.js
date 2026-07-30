@@ -5,6 +5,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 let GEOLIB;
 const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
+const THETA = Math.PI / 4;
+const PHI = Math.atan(Math.SQRT2);
 const MAIN_COLOR = 0x88ffdd;
 const AXIS_LEN = 2;
 const AXES_PALETTE = [
@@ -66,6 +68,11 @@ async function init() {
         return new Float32Array(colors);
     }
 
+    function setCameraOnSphere(camera, radius, theta, phi) {
+        camera.position.setFromSphericalCoords(radius, phi, theta);
+        // camera.lookAt(0, 0, 0); ridondante se poi chiami controls.update()
+    }
+
     let cachedObjGeo = null;
     let cachedAxesGeo = null;
     let cachedType = null;
@@ -97,10 +104,10 @@ async function init() {
         0.1,
         5
     );
-    oCamera.position.z = CAM_DIST;
-
     const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5);
-    pCamera.position.z = CAM_DIST;
+
+    setCameraOnSphere(oCamera, CAM_DIST, THETA, PHI);
+    setCameraOnSphere(pCamera, CAM_DIST, THETA, PHI);
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
