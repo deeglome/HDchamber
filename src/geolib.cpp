@@ -414,6 +414,14 @@ class GeometryND {
             this->n = n;
         }
 
+        float maxVertexDist(){
+            float max_dist = 0.00f;
+            for(PointND& v : this->verts){
+                if(v.norm() > max_dist) max_dist = v.norm();
+            }
+            return max_dist;
+        }
+
         vector<float> getBufferVerts(){
             vector<float> result = {};
             for(int j=0; j<this->verts.size(); j++){

@@ -141,6 +141,15 @@ async function init() {
         let objGeo = cachedObjGeo;
         console.timeEnd('selectObjGeometry')
 
+        if(app.dimensions > THREE_DIMENSIONS){
+            let maxLegendValue = Math.round(objGeo.maxVertexDist() * 1e3) / 1e3;
+            let minLegendSpan = document.querySelector("#min-legend-value");
+            let maxLegendSpan = document.querySelector("#max-legend-value");
+
+            minLegendSpan.innerHTML = -maxLegendValue;
+            maxLegendSpan.innerHTML = maxLegendValue; 
+        }   
+
         console.time('clone');
         let proj = objGeo.clone();
         console.timeEnd('clone');

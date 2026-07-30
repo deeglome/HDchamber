@@ -112,6 +112,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("extendIn", &GeometryND::extendIn)
         .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
         .function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
+        .function("maxVertexDist", &GeometryND::maxVertexDist)
         .function("getBufferVerts", &GeometryND::getBufferVerts)
         .function("getBufferEdgeIndices", &GeometryND::getBufferEdgeIndices);
 
