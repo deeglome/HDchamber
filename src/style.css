@@ -158,11 +158,16 @@ legend * {
   margin: auto;
 }
 
+legend {
+  position: absolute;
+  bottom: 12px;
+}
+
 .legend-values {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: 400px;
+  width: 450px;
 }
 
 .legend-value {
@@ -174,7 +179,7 @@ legend * {
   margin-top: 3px;
   border: 1px solid var(--secondary-color);
   height: 10px;
-  max-width: 400px;
+  max-width: 450px;
   border-radius: 1px;
   background: linear-gradient(to right, var(--min-last-coordinate-color), var(--mid-last-coordinate-color) 50%, var(--max-last-coordinate-color));
   opacity: 0.7;

@@ -3,7 +3,7 @@ import createGeolib from './geolib.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let GEOLIB;
-const THREE_DIMENSIONS = 3;
+export const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
 const THETA = Math.PI / 4;
 const PHI = Math.atan(Math.SQRT2);

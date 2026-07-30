@@ -1,6 +1,6 @@
 import * as GEOLIB from "./geolib_old.js";
 import * as CROSS_SECTION from "./cross-section.js";
-import { RENDER_FUNCS } from "./render.js";
+import { RENDER_FUNCS, THREE_DIMENSIONS} from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
 const MIN_DIMENSION = 2;
@@ -25,7 +25,7 @@ const APP = {
   camera: {position: null, zoom: 1.00},
   isOrtho: false,
   axesMode: "off",
-  lastCoordinateEnabled: false
+  colorMapMode: "off"
 };
 
 async function fetchWiki() {
@@ -52,6 +52,35 @@ function addWindowEvents() {
   });
 }
 
+function enableColorLegend() {
+  const colorLegend = document.querySelector("legend");
+  if (colorLegend.classList.contains("hidden")) colorLegend.classList.remove("hidden");
+  setLegendCoordinate();
+  console.log("LEGENDA ON")
+}
+
+function disableColorLegend() {
+  const colorLegend = document.querySelector("legend");
+  if (!colorLegend.classList.contains("hidden")) colorLegend.classList.add("hidden");
+  console.log("LEGENDA OFF")
+}
+
+function setLegendCoordinate() {
+  const axisIdentifiers = "xyzwvu";
+  const coordinateToMap = axisIdentifiers[APP.dimensions - 1].toUpperCase();
+  const colorLegendLabel = document.querySelector("legend label");
+  colorLegendLabel.innerHTML = coordinateToMap + " Coordinate";
+}
+
+function updateAndRender(){
+  RENDER_FUNCS.updateTHREE(APP);
+  if(APP.dimensions > THREE_DIMENSIONS){
+    enableColorLegend();
+  } else {
+    disableColorLegend();
+  }
+}
+
 /*
 *
 * ZOOM IN/OUT BUTTON
@@ -62,7 +91,7 @@ function setZoomInBtn(){
   const zoomInBtn = document.querySelector(".zoom-in-btn");
   zoomInBtn.addEventListener("click", ()=>{
     APP.camera.zoom = Math.min(MAX_ZOOM, APP.camera.zoom + THRESHOLD);
-    RENDER_FUNCS.updateTHREE(APP);
+    updateAndRender();
   });
 }
 
@@ -70,7 +99,7 @@ function setZoomOutBtn(){
   const zoomOutBtn = document.querySelector(".zoom-out-btn");
   zoomOutBtn.addEventListener("click", ()=>{
     APP.camera.zoom = Math.max(MIN_ZOOM, APP.camera.zoom - THRESHOLD);
-    RENDER_FUNCS.updateTHREE(APP);
+    updateAndRender();
   });
 }
 
@@ -79,7 +108,7 @@ function setProjectionButton({ button, icon }) {
   button.addEventListener("click", () => {
     APP.isOrtho = !APP.isOrtho;
     icon.style.setProperty('--icon-url', `url('/icons/${APP.isOrtho ? "perspective" : "ortho"}.png')`);
-    RENDER_FUNCS.updateTHREE(APP);
+    updateAndRender();
   });
 }
 
@@ -154,9 +183,8 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
       if (APP.selectedObj !== "And so on...") {
         cancelAnimationFrame(APP.animationId);
         uploadWikipage();
-        GEOLIB.disableColorLegend();
         console.time('updateTHREE')
-        RENDER_FUNCS.updateTHREE(APP);
+        updateAndRender();
         updateTitle();
         console.timeEnd('updateTHREE')
       } else {
@@ -202,7 +230,6 @@ function ValidDimensions(dimensions) {
 function setDimensionsButton({button, input}) {
   button.addEventListener("click", () => {
     input = prompt(`Enter the number of dimensions of the shape you want to see (${APP.MIN_DIMENSIONS}-${APP.MAX_DIMENSIONS}):`) * 1;
-    GEOLIB.disableColorLegend();
     if (!ValidDimensions(input)) {
       alert(`Invalid number of dimensions: ${input}`);
     } else {
@@ -213,7 +240,7 @@ function setDimensionsButton({button, input}) {
 
     const h1 = document.querySelector("h1");
     h1.innerHTML = `A ${APP.dimensions}-${input} rotating in ${APP.dimensions}`;
-    RENDER_FUNCS.updateTHREE(APP);
+    updateAndRender();
     updateTitle();
   });
 }
@@ -263,7 +290,7 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor / APP.k;
       APP.initialTime = Date.now();
       APP.omega = angularSpeedFactors;
-      RENDER_FUNCS.updateTHREE(APP);
+      updateAndRender();
       updateTitle();
     });
   });
@@ -285,7 +312,7 @@ function setRandomRotationBtn(handler){
       APP.omega = handler.angularSpeedFactors;
     });
     console.time('updateTHREE');
-    RENDER_FUNCS.updateTHREE(APP);
+    updateAndRender();
     console.timeEnd('updateTHREE')
   });
 }
@@ -305,7 +332,7 @@ function setClearRotationsBtn(handler){
       button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_SPEED;
       APP.initialTime = Date.now();
       APP.omega = handler.angularSpeedFactors;
-      RENDER_FUNCS.updateTHREE(APP);
+      updateAndRender();
     });
   });
 }
@@ -349,7 +376,6 @@ function nRots(n) {
 
 function setRotationButton({button, dropmenu}) {
   button.onclick = () => {
-    GEOLIB.disableColorLegend();
     toggleDropmenuDisplay(dropmenu, "flex");
   };
 }
@@ -486,7 +512,7 @@ function setAxesMode() {
         console.error("Error in axes elaboration!");
         break;
     }
-    RENDER_FUNCS.updateTHREE(APP);
+    updateAndRender();
   });
 }
 
