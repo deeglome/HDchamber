@@ -74,7 +74,7 @@ function setLegendCoordinate() {
 
 function updateAndRender(){
   RENDER_FUNCS.updateTHREE(APP);
-  if(APP.dimensions > THREE_DIMENSIONS){
+  if(APP.dimensions > THREE_DIMENSIONS && APP.colorMapMode === "on"){
     enableColorLegend();
   } else {
     disableColorLegend();
@@ -234,7 +234,7 @@ function setDimensionsButton({button, input}) {
       alert(`Invalid number of dimensions: ${input}`);
     } else {
       APP.dimensions = input;
-      APP.lastCoordinateEnabled = false;
+      APP.colorMapMode = false;
       setRotationHandler();
     }
 
@@ -516,16 +516,16 @@ function setAxesMode() {
   });
 }
 
-function setLastCoordinateMode() {
-  const lastCoordinateButton = document.querySelector(".button.last-coordinate-mode");
+function setColorMapMode() {
+  const colorMapButton = document.querySelector(".button.color-map-mode");
 
-  lastCoordinateButton.addEventListener("click", () => {
-    if (APP.dimensions < GEOLIB.COLOR_MAPPING_DIMENSION)
-      alert("Cannot enable 'Last Coordinate Mode' without color mapping. Try to select at least " + GEOLIB.COLOR_MAPPING_DIMENSION + " dimensions.");
+  colorMapButton.addEventListener("click", () => {
+    if (APP.dimensions <= THREE_DIMENSIONS)
+      alert("Cannot enable 'Color Map Mode' in " + THREE_DIMENSIONS + "D. Try to select at least " + (THREE_DIMENSIONS + 1) + " dimensions.");
     else {
-      APP.lastCoordinateEnabled = !APP.lastCoordinateEnabled;
-      lastCoordinateButton.setAttribute("title", (APP.lastCoordinateEnabled ? "Disable" : "Enable") + " last-coordinate mode");
-      renderEnvironment(APP.selectedObj);
+      APP.colorMapMode = APP.colorMapMode === "on" ? "off" : "on";
+      colorMapButton.setAttribute("title", (APP.colorMapMode === "on" ? "Disable" : "Enable") + " Color Map mode");
+      updateAndRender();
     }
   });
 }
@@ -571,7 +571,7 @@ function renderCrossSection(mesh, dataDiv) {
   const hyperplane = new CROSS_SECTION.Hyperplane([...zeros, 1]);
   const crossSection = hyperplane.crossSectionOfMesh(mesh, APP.dimensions);
   
-  crossSection.render(APP.dimensions - 1, APP.isOrtho, APP.renderScale, 5, APP.lastCoordinateEnabled);
+  crossSection.render(APP.dimensions - 1, APP.isOrtho, APP.renderScale, 5, APP.colorMapMode);
   
   const hyperplaneString = hyperplane.toString();
   
@@ -651,7 +651,7 @@ function updateTitle(){
   } else {
     dataDiv.innerHTML = "";
     if (!dataDiv.classList.contains("hidden")) dataDiv.classList.add("hidden");
-    mesh.render(rotationScope, APP.isOrtho, APP.renderScale, undefined, APP.lastCoordinateEnabled);
+    mesh.render(rotationScope, APP.isOrtho, APP.renderScale, undefined, APP.colorMapMode);
   }
   // Rendering assi
   if (APP.axesEnabled && APP.fixedAxes) {
@@ -686,7 +686,7 @@ function addGuiHandlers() {
   setWikiHandler();
   setCrossSectionMode();
   setAxesMode();
-  setLastCoordinateMode();
+  setColorMapMode();
   setPauseBtn();
   setZoomInBtn();
   setZoomOutBtn();

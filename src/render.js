@@ -166,7 +166,7 @@ async function init() {
         console.timeEnd('cancel')
 
         scene.clear();
-        if(app.dimensions > THREE_DIMENSIONS)
+        if(app.dimensions > THREE_DIMENSIONS && app.colorMapMode === "on")
             scene.add(colorMappedMesh);
         else
             scene.add(monochromaticMesh);
