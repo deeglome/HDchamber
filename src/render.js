@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import createGeolib from './geolib.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { lerp } from 'three/src/math/MathUtils.js';
 
 let GEOLIB;
 export const THREE_DIMENSIONS = 3;
@@ -68,6 +69,40 @@ async function init() {
         return new Float32Array(colors);
     }
 
+    function generateLerpColor(value, col1, col2, col3, min, mid, max) {
+        const c1 = new THREE.Color(col1);
+        const c2 = new THREE.Color(col2);
+        const c3 = new THREE.Color(col3);
+
+        let t;
+        let lerpColor = new THREE.Color();
+
+        if (value <= mid && value >= min) {
+            t = (mid - min) > 0 ? (value - min) / (mid - min) : 0;
+            lerpColor.copy(c1).lerp(c2, t);
+        } else {
+            t = (max - mid) > 0 ? (value - mid) / (max - mid) : 0;
+            lerpColor.copy(c2).lerp(c3, t);
+        }
+        return lerpColor;
+    }
+
+    function generateColorMap(dimensions, ndVerticesRaw, col1, col2, col3, min, mid, max){
+        const coord = dimensions - 1;
+        const vertexCount = ndVerticesRaw.length / dimensions;
+        const colorMap = new Float32Array(vertexCount * 3); // <-- dimensionato correttamente
+
+        for (let i = 0; i < vertexCount; i++) {
+            const value = ndVerticesRaw[i * dimensions + coord];
+            const c = generateLerpColor(value, col1, col2, col3, min, mid, max);
+            colorMap[i * 3]     = c.r;
+            colorMap[i * 3 + 1] = c.g;
+            colorMap[i * 3 + 2] = c.b;
+        }
+
+        return colorMap; // <-- restituisce il buffer, non modifica direttamente bufGeo qui dentro
+    }
+
     function setCameraOnSphere(camera, radius, theta, phi) {
         camera.position.setFromSphericalCoords(radius, phi, theta);
         // camera.lookAt(0, 0, 0); ridondante se poi chiami controls.update()
@@ -81,7 +116,8 @@ async function init() {
 
     const bufGeo = new THREE.BufferGeometry();
     const bufAxes = new THREE.BufferGeometry();
-    const material = new THREE.LineBasicMaterial({
+
+    const monochromaticMaterial = new THREE.LineBasicMaterial({
         color: MAIN_COLOR,
         linewidth: 1
     });
@@ -91,7 +127,13 @@ async function init() {
         linewidth: 1
     });
 
-    const mesh = new THREE.LineSegments(bufGeo, material);
+    const colorMapMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        linewidth: 1
+    });
+
+    const monochromaticMesh = new THREE.LineSegments(bufGeo, monochromaticMaterial);
+    const colorMappedMesh = new THREE.LineSegments(bufGeo, colorMapMaterial);
     const scene = new THREE.Scene();
 
     const aspect = window.innerWidth / window.innerHeight;
@@ -124,7 +166,10 @@ async function init() {
         console.timeEnd('cancel')
 
         scene.clear();
-        scene.add(mesh);
+        if(app.dimensions > THREE_DIMENSIONS)
+            scene.add(colorMappedMesh);
+        else
+            scene.add(monochromaticMesh);
 
         // It will be computed only if dimension or type has been changed.
         if(app.selectedObj !== cachedType || app.dimensions !== cachedDimensions){
@@ -141,8 +186,9 @@ async function init() {
         let objGeo = cachedObjGeo;
         console.timeEnd('selectObjGeometry')
 
+        let maxLegendValue;
         if(app.dimensions > THREE_DIMENSIONS){
-            let maxLegendValue = Math.round(objGeo.maxVertexDist() * 1e3) / 1e3;
+            maxLegendValue = Math.round(objGeo.maxVertexDist() * 1e3) / 1e3;
             let minLegendSpan = document.querySelector("#min-legend-value");
             let maxLegendSpan = document.querySelector("#max-legend-value");
 
@@ -231,7 +277,19 @@ async function init() {
 
             objGeo.transform(dR);
             app.initialTime = app.finalTime;
-        
+
+            if(app.dimensions > THREE_DIMENSIONS) {
+                let ndVerticesRaw = new Float32Array(GEOLIB.vectorFToJs(objGeo.getBufferVerts())); // dopo objGeo.transform(dR)
+                const colorMap = generateColorMap(app.dimensions, ndVerticesRaw, 0x0000cc, 0xcc00cc, 0xcc0000, -maxLegendValue, 0, maxLegendValue);
+
+                if (!bufGeo.attributes.color) {
+                    bufGeo.setAttribute('color', new THREE.BufferAttribute(colorMap, 3));
+                } else {
+                    bufGeo.attributes.color.array.set(colorMap);
+                    bufGeo.attributes.color.needsUpdate = true;
+                }
+            }
+               
             proj = objGeo.clone();
 
             if(app.dimensions >= THREE_DIMENSIONS)

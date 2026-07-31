@@ -181,7 +181,7 @@ legend {
   height: 10px;
   max-width: 450px;
   border-radius: 1px;
-  background: linear-gradient(to right, var(--min-last-coordinate-color), var(--mid-last-coordinate-color) 50%, var(--max-last-coordinate-color));
+  background: linear-gradient(in oklab to right, var(--min-last-coordinate-color), var(--mid-last-coordinate-color) 50%, var(--max-last-coordinate-color));
   opacity: 0.7;
 }
 .wikipage {
