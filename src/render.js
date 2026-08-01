@@ -198,7 +198,16 @@ async function init() {
 
         console.time('clone');
         let proj = objGeo.clone();
+        let indices = cachedIndices;
         console.timeEnd('clone');
+
+        if(app.crossSectionMode === "on"){
+            const n = new Array(app.dimensions).fill(1.0); 
+            const nVector = GEOLIB.JsToVectorF(n);
+            const d = 0.0;
+            proj = proj.getCrossSection(nVector, d);
+            indices = new Uint16Array(GEOLIB.vectorIToJs(proj.getBufferEdgeIndices()));
+        }
 
         console.log(app.dimensions, THREE_DIMENSIONS)
         if(app.dimensions >= THREE_DIMENSIONS){
@@ -217,7 +226,7 @@ async function init() {
         console.timeEnd('setVertices')
 
         console.time('indices')
-        let indices = cachedIndices;
+        
         console.timeEnd('indices')
         console.time('setIndex')
         bufGeo.setIndex(new THREE.BufferAttribute(indices, 1));
@@ -292,11 +301,27 @@ async function init() {
                
             proj = objGeo.clone();
 
+            if(app.crossSectionMode === "on"){
+                const n = new Array(app.dimensions).fill(1.0);
+                const nVector = GEOLIB.JsToVectorF(n);
+                proj = proj.getCrossSection(nVector, 0.0);
+            }
+
             if(app.dimensions >= THREE_DIMENSIONS)
                 proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
             else
                 proj.extendIn(THREE_DIMENSIONS);
+
             vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts()));
+
+            if(app.crossSectionMode === "on"){
+                const newIndices = new Uint16Array(GEOLIB.vectorIToJs(proj.getBufferEdgeIndices()));
+                bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
+                bufGeo.setIndex(new THREE.BufferAttribute(newIndices, 1));
+            } else {
+                bufGeo.attributes.position.array.set(vertices);
+                bufGeo.attributes.position.needsUpdate = true;
+            }
             
             rotatingAxes.transform(dR);
 

@@ -22,7 +22,7 @@ const APP = {
   guiHandlers: {},
   animationId: {},
   selectedObj: null,
-  isCrossSectionMode: false,
+  crossSectionMode: "off",
   camera: {position: null, zoom: 1.00},
   isOrtho: false,
   axesMode: "off",
@@ -468,14 +468,14 @@ function setWikiHandler() {
 // CROSS SECTION
 function setCrossSectionButton({button, icon}) {
   button.addEventListener("click", () => {
-    APP.isCrossSectionMode = !APP.isCrossSectionMode;
-    if (APP.isCrossSectionMode) {
+    APP.crossSectionMode = APP.crossSectionMode === "on" ? "off" : "on";
+    if (APP.crossSectionMode === "on") {
       button.setAttribute("title", "Disable cross-section mode");
     } else {
       button.setAttribute("title", "Enable cross-section mode");
     }
-    icon.style.setProperty('--icon-url', `url('/icons/cross_section_view_${APP.isCrossSectionMode ? "off" : "on"}_btn.svg')`);
-    renderEnvironment(APP.selectedObj);
+    icon.style.setProperty('--icon-url', `url('/icons/cross_section_view_${APP.crossSectionMode === "on" ? "on" : "off"}_btn.svg')`);
+    updateAndRender();
   });
 }
 

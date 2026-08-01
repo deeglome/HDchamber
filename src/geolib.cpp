@@ -7,7 +7,7 @@
 using namespace std;
 using namespace Eigen;
 
-#define MAX_N 6
+#define N 6
 #define EPS 1e-6
 #define CAM_DIST 3
 
@@ -16,7 +16,7 @@ const string AXIS_IDS = "xyzwvu";
 typedef VectorXf PointND;
 
 PointND origin(int n) {
-    if(n > MAX_N) throw out_of_range("'n' is out of range.");
+    if(n > N) throw out_of_range("'n' is out of range.");
     PointND p = PointND::Zero(n);
     return p;
 }
@@ -72,6 +72,13 @@ PointND barFromPoints(vector<PointND>& points){
     for(auto& p : points) g += p;
     int n = points.size();
     return g / (float)n;
+}
+
+bool found(PointND p, vector<PointND>& points){
+    for(auto& q : points){
+        if((p-q).norm() < EPS) return true;
+    }
+    return false;
 }
 
 int rotationScope(vector<string> planes){
@@ -136,6 +143,12 @@ class SegmentND {
             n = start.size();
         }
 
+        SegmentND() {
+            start = PointND();
+            end = PointND();
+            n = 0;
+        }
+
         float length() {
             return distance(start, end);
         }
@@ -150,12 +163,12 @@ class SegmentND {
             this->n = n;
         }
 
-        /* void print() {
-            int dim = start.size();
-            cout << "Segment" << dim << "D: " << endl;
-            setw(10); print_point(start);
-            setw(10); print_point(end);
-        } */
+        bool found(vector<SegmentND> arr){
+            for(SegmentND s : arr){
+                if(this->coincident(s)) return true;
+            }
+            return false;
+        }
 
         void transform(const MatrixXf& mat) {
             start = mat * start;
@@ -422,6 +435,27 @@ class GeometryND {
             return max_dist;
         }
 
+        GeometryND getCrossSection(vector<float> n, float d){
+            Eigen::VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n.data(), n.size());
+            Eigen::Hyperplane<float, Eigen::Dynamic> h = Eigen::Hyperplane<float, Eigen::Dynamic>(n_eigen, d);
+            vector<FaceND> sectionFaces = {};
+            vector<SegmentND> sectionEdges = {};
+            vector<PointND> sectionVerts = {};
+            for(FaceND f : this->faces){
+                try{
+                    SegmentND s = intersect(f, h);
+                    if(s.n == this->n && !s.found(sectionEdges)) sectionEdges.push_back(s);
+                    if(s.n == this->n && !found(s.start, sectionVerts)) sectionVerts.push_back(s.start);
+                    if(s.n == this->n && !found(s.end, sectionVerts)) sectionVerts.push_back(s.end);
+                }
+                catch(invalid_argument& e){
+                    // Se l'iperpiano interseca la faccia in un singolo punto, non è possibile creare un segmento.
+                    // In tal caso, si ignora la faccia e si passa alla successiva.
+                }
+            }
+            return GeometryND(this->n, sectionVerts, sectionEdges, sectionFaces);
+        }
+
         vector<float> getBufferVerts(){
             vector<float> result = {};
             for(int j=0; j<this->verts.size(); j++){
@@ -432,9 +466,17 @@ class GeometryND {
             return result;
         }
 
-        virtual vector<int> getBufferEdgeIndices(){
-            vector<int> result = {};
-            return result;
+        virtual vector<int> getBufferEdgeIndices() {
+            vector<int> indices;
+            indices.reserve(this->edges.size() * 2);
+
+            for(SegmentND& s : this->edges){
+                int startIdx = indexOf(s.start, this->verts);
+                int endIdx = indexOf(s.end, this->verts);
+                indices.push_back(startIdx);
+                indices.push_back(endIdx);
+            }
+            return indices;
         }
 
     private:
@@ -457,6 +499,31 @@ class GeometryND {
                 }
             }
             return res;
+        }
+
+        int indexOf(const PointND& p, const vector<PointND>& points){
+            for(int i = 0; i < points.size(); i++){
+                if((p - points[i]).norm() < EPS) return i;
+            }
+            return -1; // non trovato: segnale di un bug a monte (punto non presente in verts)
+        }
+
+        PointND instersect(SegmentND seg, Eigen::Hyperplane<float, Eigen::Dynamic> h){
+            if(h.normal().dot(seg.end - seg.start) == 0) return PointND(); // Condizione di parallelismo tra il segmento e l'iperpiano.
+            float t = -(h.normal().dot(seg.start) + h.offset()) / h.normal().dot(seg.end - seg.start);
+            if(t < 0 || t > 1) return PointND(); // Il punto giace sulla retta estesa ma non sul segmento.
+            return seg.start + t * (seg.end - seg.start);
+        }
+
+        SegmentND intersect(FaceND f, Eigen::Hyperplane<float, Eigen::Dynamic> h){
+            vector<PointND> points = {};
+            for(SegmentND s : f.edges){
+                PointND p = instersect(s, h);
+                if(p.size() != 0 && !found(p, points)) points.push_back(p);
+                if(points.size() == 2) return SegmentND(points[0], points[1]);
+            }
+            if(points.size() == 1) throw invalid_argument("The hyperplane intersects the face in a single point. It's geometrically impossible to create a segment from a single point.");
+            return SegmentND();
         }
 };
 
