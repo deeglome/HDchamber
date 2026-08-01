@@ -595,8 +595,8 @@ class Hypercube : public GeometryND {
                             vector<PointND> quartet = {
                                 verts[k],
                                 verts[k + (1<<i)],
-                                verts[k + (1<<j)],
-                                verts[k + (1<<i) + (1<<j)]
+                                verts[k + (1<<i) + (1<<j)],
+                                verts[k + (1<<j)]
                             };
 
                             FaceND f_new = FaceND(quartet);
