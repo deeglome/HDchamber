@@ -246,7 +246,7 @@ async function init() {
         }
 
         let dt = 0.1;
-        let d_theta = app.omega.map(o => o * dt);
+        let d_theta = app.omega().map(o => o * dt);
         let dR = R(app.dimensions, app.planes, d_theta);
         app.initialTime = Date.now();
 
@@ -271,7 +271,7 @@ async function init() {
             if(error(next_dt, dt) > 0.20){
                 console.log("Aggiorno dR!");
                 dt = next_dt;
-                d_theta = app.omega.map(o => o * dt);
+                d_theta = app.omega().map(o => o * dt);
                 dR = R(app.dimensions, app.planes, d_theta);
             }
 

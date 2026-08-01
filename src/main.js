@@ -5,17 +5,18 @@ import { RENDER_FUNCS, THREE_DIMENSIONS} from "./render.js";
 // VARIABILI GLOBALI PER L'APPLICAZIONE
 const MIN_DIMENSION = 2;
 const MAX_DIMENSION = 6;
+const OMEGA0 = Math.PI / 4; // rad/s
 
 const APP = {
   initialTime: null,
   finalTime: null,
   deltaTime: () => APP.finalTime - APP.initialTime,
-  k: Math.PI / 4, // rad/s
   dimensions: 3,
   MIN_DIMENSIONS: 2,
   MAX_DIMENSIONS: 6,
   theta: [],
-  omega: [],
+  kValues: [],
+  omega: () => APP.kValues.map((k) => k * OMEGA0),
   planes: [],
   isRendering: false,
   guiHandlers: {},
@@ -273,23 +274,28 @@ function setPlanes({planes, angularSpeedFactors, options, dropmenu}) {
   });
 }
 
-const MAX_SPEED = 4;
-const MIN_SPEED = -MAX_SPEED;
+const MAX_K_TOT = 4;
+const MIN_K_TOT = -MAX_K_TOT;
+
+function evenlyDistributedMaxK() {
+  return MAX_K_TOT / Math.sqrt(nRots(APP.dimensions));
+}
 
 function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
   planeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const input = button.innerHTML.toLowerCase();
       let rotationPlane = input.slice(0, 2);
-      let angularSpeedFactor = prompt(`Enter the angular speed factor for the plane ${rotationPlane}:`) * 1;
-      angularSpeedFactor = Math.min(angularSpeedFactor, MAX_SPEED);
-      angularSpeedFactor = Math.max(angularSpeedFactor, MIN_SPEED);
-      angularSpeedFactor *= APP.k;
+      let k = prompt(`Enter k (an angular speed factor) for the following plane: ${rotationPlane}:`) * 1;
+      const maxK = Math.round(evenlyDistributedMaxK() * 100) / 100;
+      if (Math.abs(k) > maxK) {
+        k = Math.sign(k) * maxK;
+      }
       let index = planes.indexOf(rotationPlane);
-      angularSpeedFactors[index] = angularSpeedFactor;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + angularSpeedFactor / APP.k;
+      angularSpeedFactors[index] = k;
+      button.innerHTML = rotationPlane.toUpperCase() + " | " + k;
       APP.initialTime = Date.now();
-      APP.omega = angularSpeedFactors;
+      APP.kValues = angularSpeedFactors;
       updateAndRender();
       updateTitle();
     });
@@ -304,12 +310,13 @@ function setRandomRotationBtn(handler){
       console.log("Funzione random!")
       const input = button.innerHTML.toLowerCase();
       let rotationPlane = input.slice(0,2);
-      let randomSpeed = Math.round(100 * (Math.random() - Math.random()) * MAX_SPEED) / 100;
+      const maxK = Math.round(evenlyDistributedMaxK() * 100) / 100;
+      let randomK = Math.round(100 * (Math.random() - Math.random()) * maxK) / 100;
       let index = handler.planes.indexOf(rotationPlane);
-      handler.angularSpeedFactors[index] = randomSpeed;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + randomSpeed;
+      handler.angularSpeedFactors[index] = randomK;
+      button.innerHTML = rotationPlane.toUpperCase() + " | " + randomK;
       APP.initialTime = Date.now();
-      APP.omega = handler.angularSpeedFactors;
+      APP.kValues = handler.angularSpeedFactors;
     });
     console.time('updateTHREE');
     updateAndRender();
@@ -317,7 +324,7 @@ function setRandomRotationBtn(handler){
   });
 }
 
-const CLEAN_SPEED = 0;
+const CLEAN_K = 0;
 
 function setClearRotationsBtn(handler){
   const clearBtn = handler.dropmenu.querySelector(".tools .clear-btn");
@@ -328,10 +335,10 @@ function setClearRotationsBtn(handler){
       const input = button.innerHTML.toLowerCase();
       let rotationPlane = input.slice(0, 2);
       let index = handler.planes.indexOf(rotationPlane);
-      handler.angularSpeedFactors[index] = CLEAN_SPEED;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_SPEED;
+      handler.angularSpeedFactors[index] = CLEAN_K;
+      button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_K;
       APP.initialTime = Date.now();
-      APP.omega = handler.angularSpeedFactors;
+      APP.kValues = handler.angularSpeedFactors;
       updateAndRender();
     });
   });
@@ -391,7 +398,7 @@ function setRotationHandler() {
   };
   setPlanesDropmenu(rotation);
   setRotationButton(rotation);
-  APP.omega = rotation.angularSpeedFactors;
+  APP.kValues = rotation.angularSpeedFactors;
   APP.planes = rotation.planes;
 }
 
