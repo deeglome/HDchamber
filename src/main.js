@@ -100,9 +100,12 @@ function rotationScope(planes, angularSpeeds) {
 }
 
 function resizeCanvas() {
-  screenDimensions.width = window.innerWidth;
-  context = canvas.getContext("2d");
-  context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+  const canvas = document.querySelector("canvas");
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+  RENDER_FUNCS.resizeRenderer(APP, width, height);
 }
 
 /*

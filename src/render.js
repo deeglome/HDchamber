@@ -353,6 +353,14 @@ async function init() {
         tic();
         console.timeEnd('tic()')
     }
+
+    RENDER_FUNCS.resizeRenderer = () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        oCamera.aspect = window.innerWidth / window.innerHeight;
+        oCamera.updateProjectionMatrix();
+        pCamera.aspect = window.innerWidth / window.innerHeight;
+        pCamera.updateProjectionMatrix();
+    }
 }
 
 init();
