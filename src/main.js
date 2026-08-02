@@ -1,5 +1,3 @@
-import * as GEOLIB from "./geolib_old.js";
-import * as CROSS_SECTION from "./cross-section.js";
 import { RENDER_FUNCS, THREE_DIMENSIONS} from "./render.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
@@ -42,13 +40,13 @@ async function fetchWiki() {
 
 const WIKI = await fetchWiki();
 
-const THRESHOLD = 0.20; // 50%
+const THRESHOLD = 0.20;
 const MAX_ZOOM = 3.00;
 const MIN_ZOOM = MAX_ZOOM / 10;
 
 function addWindowEvents() {
   window.addEventListener("resize", () => {
-    GEOLIB.resizeCanvas();
+    resizeCanvas();
     const h1 = document.querySelector("h1");
     h1.style.textAlign = "center";
   });
@@ -81,6 +79,30 @@ function updateAndRender(){
   } else {
     disableColorLegend();
   }
+}
+
+function rotationScope(planes, angularSpeeds) {
+  let scopeIndex = 0;
+
+  planes.forEach((plane) => {
+    const speed = angularSpeeds[planes.indexOf(plane)];
+
+    if (speed && speed !== 0) {
+      const i1 = AXIS_IDENTIFIERS.indexOf(plane[0]);
+      const i2 = AXIS_IDENTIFIERS.indexOf(plane[1]);
+
+      if (i1 === -1 || i2 === -1) throw new Error(`Invalid axis in plane: ${plane}`);
+      scopeIndex = Math.max(scopeIndex, i1, i2);
+    }
+  });
+
+  return scopeIndex > 0 ? scopeIndex + 1 : 0;
+}
+
+function resizeCanvas() {
+  screenDimensions.width = window.innerWidth;
+  context = canvas.getContext("2d");
+  context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
 }
 
 /*
@@ -159,22 +181,23 @@ function setMeshSelectorButton({ button, dropmenu }) {
 }
 
 function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
-  const meshesMap = new Map();
-  meshesMap.set("Hypercube", GEOLIB.Hypercube);
-  meshesMap.set("Simplex", GEOLIB.Simplex);
-  meshesMap.set("Orthoplex", GEOLIB.Orthoplex);
-  meshesMap.set("Hypersphere", GEOLIB.Hypersphere);
-  meshesMap.set("LowHypersphere", GEOLIB.LowHypersphere);
-  meshesMap.set("Hypertorus", GEOLIB.Hypertorus);
-  meshesMap.set("LowHypertorus", GEOLIB.LowHypertorus);
-  meshesMap.set("LowHyperspherinder", GEOLIB.LowHyperspherinder);
-  meshesMap.set("LowHypercone", GEOLIB.LowHypercone);
-  meshesMap.set("And so on...", null);
+  const meshes = [
+    "Hypercube",
+    "Simplex",
+    "Orthoplex",
+    "Hypersphere",
+    "LowHypersphere",
+    "Hypertorus",
+    "LowHypertorus",
+    "LowHyperspherinder",
+    "LowHypercone",
+    "And so on..."
+  ];
 
-  meshesMap.keys().forEach((key) => {
+  meshes.forEach((meshLabel) => {
     const mesh = document.createElement("li");
     mesh.classList.add("button", "mesh");
-    mesh.innerHTML = key;
+    mesh.innerHTML = meshLabel;
     dropmenu.appendChild(mesh);
   });
 
@@ -205,23 +228,6 @@ function setMeshSelector() {
   setMeshSelectorDropmenu(meshSelector);
   setMeshSelectorButton(meshSelector);
   APP.guiHandlers.meshSelector = meshSelector;
-}
-
-function selectMesh(input, dimensions) {
-  switch (input) {
-    case "Hypercube":
-      return new GEOLIB.Hypercube(dimensions);
-    case "Simplex":
-      return new GEOLIB.Simplex(dimensions);
-    case "Hypersphere":
-      return new GEOLIB.Hypersphere(dimensions);
-    case "Torus":
-      return new GEOLIB.Torus(dimensions);
-    case "Orthoplex":
-      return new GEOLIB.Orthoplex(dimensions);
-      default:
-        throw new Error("Invalid input entered: " + '"' + input + '"');
-  }
 }
 
 // DIMENSIONS HANDLER
@@ -359,7 +365,7 @@ function setPlanesDropmenu(handler) {
 }
 
 function allPossiblePlanes(dimensions) {
-  const coords = GEOLIB.axisIdentifiers.slice(0, dimensions).split("");
+  const coords = AXIS_IDENTIFIERS.slice(0, dimensions).split("");
   const planes = [];
   for (let i = 0; i < coords.length; i++) {
     for (let j = i + 1; j < coords.length; j++) planes.push(coords[i] + coords[j]);
@@ -605,7 +611,6 @@ function setPauseBtn(){
       pauseBtnIcon.style.setProperty('--icon-url', `url('/icons/pause.svg')`);
       pauseBtn.title = "Pause animation";
       APP.initialTime = Date.now();
-      //tic(APP.selectedObj);
     } else {
       pauseBtnIcon.style.setProperty('--icon-url', `url('/icons/resume.svg')`);
       pauseBtn.title = "Resume animation";
@@ -613,7 +618,6 @@ function setPauseBtn(){
   });
 }
 
-// RENDER AND TIC
 function humanizeMeshName(technicalName) {
   try {
     const target = getMeshWikiData(technicalName);
@@ -624,40 +628,8 @@ function humanizeMeshName(technicalName) {
   }
 }
 
-function renderCrossSection(mesh, dataDiv) {
-  const zeros = Array(APP.dimensions - 1).fill(0);
-  const hyperplane = new CROSS_SECTION.Hyperplane([...zeros, 1]);
-  const crossSection = hyperplane.crossSectionOfMesh(mesh, APP.dimensions);
-  
-  crossSection.render(APP.dimensions - 1, APP.isOrtho, APP.renderScale, 5, APP.colorMapMode);
-  
-  const hyperplaneString = hyperplane.toString();
-  
-  if (dataDiv.classList.contains("hidden")) dataDiv.classList.remove("hidden");
-  dataDiv.innerHTML = "";
-  const p = document.createElement("p");
-  switch (APP.dimensions) {
-    case 2:
-      p.innerHTML = "Line";
-      break;
-      case 3:
-        p.innerHTML = "Plane";
-      break;
-    default:
-      p.innerHTML = "Hyperplane";
-    }
-  p.innerHTML += ": " + hyperplaneString;
-  dataDiv.appendChild(p);
-}
-
-function smoothGoniometricTransition(angularSpeed, maxY = 1) {
-  const phase = APP.angle - 2 * Math.PI;
-  const eased = 0.5 * (1 - Math.cos(angularSpeed * phase));
-  return Math.min(Math.pow(eased, 3), maxY);
-}
-
 function updateTitle(){
-  const rotationScope = GEOLIB.rotationScope(APP.planes, APP.omega);
+  const rotationScope = rotationScope(APP.planes, APP.omega);
   const h1 = document.querySelector("h1");
   let filteredName = APP.selectedObj;
   if(filteredName.includes('Low'))
@@ -669,72 +641,6 @@ function updateTitle(){
   title.innerHTML = "HDchamber | " + h1.innerHTML;
   console.timeEnd('updateTHREE')
 }
-
-/* function renderEnvironment(input) {
-  const mesh = selectMesh(input, APP.dimensions);
-  const rotationScope = GEOLIB.rotationScope(APP.guiHandlers.rotation.planes, APP.guiHandlers.rotation.angularSpeedFactors);
-  const rotatingAxes = new GEOLIB.CartesianAxes(APP.dimensions);
-  if (mesh.nthDimension() < rotationScope) mesh.extendIn(rotationScope);
-  GEOLIB.uploadEnvironment();
-  // Creo la matrice di rotazione
-  let r = GEOLIB.SingletonMatrix.init(APP.dimensions);
-  if (APP.guiHandlers.rotation.planes.length !== APP.guiHandlers.rotation.angularSpeedFactors.length)
-    throw new Error(
-      `Num of planes and angles must be equal:\nRotation planes: ${APP.guiHandlers.rotation.planes} (${APP.guiHandlers.rotation.planes.length})\nAngles: ${APP.guiHandlers.rotation.angularSpeedFactors} (${APP.guiHandlers.rotation.angularSpeedFactors.length})`
-    );
-  // Calcolo gli angoli di rotazione nell'istante attuale
-  let angles = APP.guiHandlers.rotation.angularSpeedFactors.map((factor) => (factor * APP.angle) % (2 * Math.PI));
-  // Aggiorno il titolo
-  const h1 = document.querySelector("h1");
-  const humanizedInput = humanizeMeshName(`${APP.dimensions}-${input}`);
-  if (rotationScope > 1) h1.innerHTML = `A ${humanizedInput} is rotating in ${rotationScope}D`;
-  else h1.innerHTML = `A ${humanizedInput} is static`;
-  const title = document.querySelector("title");
-  title.innerHTML = "HDchamber | " + h1.innerHTML;
-  // Applico la rotazione
-  for (let i = 0; i < APP.guiHandlers.rotation.planes.length; i++) {
-    r.set("r", [APP.guiHandlers.rotation.planes[i], angles[i]]);
-    r.extendIn(rotationScope);
-    mesh.transform(r.value);
-    rotatingAxes.transform(r.value);
-  }
-  // Distruggo la matrice di rotazione. E' importante farlo per evitare memory leaks
-  r.destroy();
-  // Disegno la mesh
-  const dataDiv = document.querySelector(".technical-data");
-  if (APP.isCrossSectionMode) {
-    renderCrossSection(mesh, dataDiv);
-    const opacity = smoothGoniometricTransition(0.25, 0.5);
-    mesh.render(rotationScope, APP.isOrtho, APP.renderScale, opacity, false);
-  } else {
-    dataDiv.innerHTML = "";
-    if (!dataDiv.classList.contains("hidden")) dataDiv.classList.add("hidden");
-    mesh.render(rotationScope, APP.isOrtho, APP.renderScale, undefined, APP.colorMapMode);
-  }
-  // Rendering assi
-  if (APP.axesEnabled && APP.fixedAxes) {
-    const fixedAxes = new GEOLIB.CartesianAxes(APP.dimensions);
-    fixedAxes.render(rotationScope, APP.isOrtho, APP.renderScale);
-  } else if (!APP.fixedAxes && APP.axesEnabled) {
-    rotatingAxes.render(rotationScope, APP.isOrtho, APP.renderScale);
-  }
-
-  return rotationScope;
-}
-
-function tic(input) {
-  if (APP.isRendering)
-    return;
-
-  APP.isRendering = true;
-  APP.finalTime = Date.now();
-  APP.angle += (APP.angularSpeed * APP.deltaTime()) / 1000;
-  APP.initialTime = APP.finalTime;
-  let rotationScope = renderEnvironment(input);
-  if(rotationScope === 0)
-    return;
-  APP.animationId = requestAnimationFrame(() => tic(input));
-} */
 
 function addGuiHandlers() {
   setProjectionMode();
