@@ -293,13 +293,7 @@ async function init() {
             if(app.dimensions > THREE_DIMENSIONS) {
                 let ndVerticesRaw = new Float32Array(GEOLIB.vectorFToJs(objGeo.getBufferVerts())); // dopo objGeo.transform(dR)
                 const colorMap = generateColorMap(app.dimensions, ndVerticesRaw, 0x0000cc, 0xcc00cc, 0xcc0000, -maxLegendValue, 0, maxLegendValue);
-
-                if (!bufGeo.attributes.color) {
-                    bufGeo.setAttribute('color', new THREE.BufferAttribute(colorMap, 3));
-                } else {
-                    bufGeo.attributes.color.array.set(colorMap);
-                    bufGeo.attributes.color.needsUpdate = true;
-                }
+                bufGeo.setAttribute('color', new THREE.BufferAttribute(colorMap, 3));
             }
                
             proj = objGeo.clone();
@@ -313,6 +307,8 @@ async function init() {
                     proj = proj.getRelativeCrossSection(nVector, d);
             }
 
+            const ndRawVertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts()));
+
             if(app.dimensions >= THREE_DIMENSIONS)
                 proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
             else
@@ -322,10 +318,12 @@ async function init() {
 
             if(app.crossSectionMode.status !== "off"){
                 const newIndices = new Uint16Array(GEOLIB.vectorIToJs(proj.getBufferEdgeIndices()));
+                const colorMap = generateColorMap(app.dimensions, ndRawVertices, 0x0000cc, 0xcc00cc, 0xcc0000, -maxLegendValue, 0, maxLegendValue);
+                bufGeo.setAttribute('color', new THREE.BufferAttribute(colorMap, 3));
                 bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
                 bufGeo.setIndex(new THREE.BufferAttribute(newIndices, 1));
             } else {
-                bufGeo.attributes.position.array.set(vertices);
+                bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
                 bufGeo.attributes.position.needsUpdate = true;
             }
             
@@ -339,11 +337,11 @@ async function init() {
             }
 
             // Geometry
-            bufGeo.attributes.position.array.set(vertices);
+            bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
             bufGeo.attributes.position.needsUpdate = true;
 
             if(app.axesMode === "rotating"){
-                bufAxes.attributes.position.array.set(new Float32Array(GEOLIB.vectorFToJs(projAxes.getBufferVerts())));
+                bufAxes.setAttribute('position', new THREE.BufferAttribute(new Float32Array(GEOLIB.vectorFToJs(projAxes.getBufferVerts())), THREE_DIMENSIONS));
                 bufAxes.attributes.position.needsUpdate = true;
             }
 
