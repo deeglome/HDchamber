@@ -79,6 +79,7 @@ function updateAndRender(){
   } else {
     disableColorLegend();
   }
+  updateTitle();
 }
 
 function rotationScope(planes, angularSpeeds) {
@@ -87,7 +88,7 @@ function rotationScope(planes, angularSpeeds) {
   planes.forEach((plane) => {
     const speed = angularSpeeds[planes.indexOf(plane)];
 
-    if (speed && speed !== 0) {
+    if (speed !== 0 && speed !== null && speed !== undefined) {
       const i1 = AXIS_IDENTIFIERS.indexOf(plane[0]);
       const i2 = AXIS_IDENTIFIERS.indexOf(plane[1]);
 
@@ -213,7 +214,6 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
         uploadWikipage();
         console.time('updateTHREE')
         updateAndRender();
-        updateTitle();
         console.timeEnd('updateTHREE')
       } else {
         alert("Wait for new meshes!");
@@ -253,7 +253,6 @@ function setDimensionsButton({button, input}) {
     const h1 = document.querySelector("h1");
     h1.innerHTML = `A ${APP.dimensions}-${input} rotating in ${APP.dimensions}`;
     updateAndRender();
-    updateTitle();
   });
 }
 
@@ -308,7 +307,6 @@ function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
       APP.initialTime = Date.now();
       APP.kValues = angularSpeedFactors;
       updateAndRender();
-      updateTitle();
     });
   });
 }
@@ -331,6 +329,7 @@ function setRandomRotationBtn(handler){
     });
     console.time('updateTHREE');
     updateAndRender();
+
     console.timeEnd('updateTHREE')
   });
 }
@@ -632,13 +631,14 @@ function humanizeMeshName(technicalName) {
 }
 
 function updateTitle(){
-  const rotationScope = rotationScope(APP.planes, APP.omega);
+  const rScope = rotationScope(APP.planes, APP.omega());
+  console.log("Rotation scope:", rScope);
   const h1 = document.querySelector("h1");
   let filteredName = APP.selectedObj;
   if(filteredName.includes('Low'))
     filteredName = filteredName.replace('Low', '');
   const humanizedInput = humanizeMeshName(`${APP.dimensions}-${filteredName}`);
-  if (rotationScope > 1) h1.innerHTML = `A ${humanizedInput} is rotating in ${rotationScope}D`;
+  if (rScope > 1) h1.innerHTML = `A ${humanizedInput} is rotating in ${rScope}D`;
   else h1.innerHTML = `A ${humanizedInput} is static`;
   const title = document.querySelector("title");
   title.innerHTML = "HDchamber | " + h1.innerHTML;
