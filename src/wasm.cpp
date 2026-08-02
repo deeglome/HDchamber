@@ -113,7 +113,8 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
         .function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
         .function("maxVertexDist", &GeometryND::maxVertexDist)
-        .function("getCrossSection", &GeometryND::getCrossSection)
+        .function("getAbsoluteCrossSection", &GeometryND::getAbsoluteCrossSection)
+        .function("getRelativeCrossSection", &GeometryND::getRelativeCrossSection)
         .function("getBufferVerts", &GeometryND::getBufferVerts)
         .function("getBufferEdgeIndices", &GeometryND::getBufferEdgeIndices);
 

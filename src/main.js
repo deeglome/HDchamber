@@ -6,6 +6,7 @@ import { RENDER_FUNCS, THREE_DIMENSIONS} from "./render.js";
 const MIN_DIMENSION = 2;
 const MAX_DIMENSION = 6;
 const OMEGA0 = Math.PI / 4; // rad/s
+const AXIS_IDENTIFIERS = "xyzwvu";
 
 const APP = {
   initialTime: null,
@@ -22,7 +23,7 @@ const APP = {
   guiHandlers: {},
   animationId: {},
   selectedObj: null,
-  crossSectionMode: "off",
+  crossSectionMode: {status: "off", hyperplaneNormal: "", hyperplaneOffset: 0},
   camera: {position: null, zoom: 1.00},
   isOrtho: false,
   axesMode: "off",
@@ -237,6 +238,7 @@ function setDimensionsButton({button, input}) {
       APP.dimensions = input;
       APP.colorMapMode = false;
       setRotationHandler();
+      setCrossSectionDropmenu(document.querySelector(".cross-section-mode + .dropmenu"));
     }
 
     const h1 = document.querySelector("h1");
@@ -466,16 +468,65 @@ function setWikiHandler() {
 }
 
 // CROSS SECTION
+function setCrossSectionHyperplane(dropmenu){
+  APP.crossSectionMode.hyperplaneNormal = new Array(APP.dimensions).fill(1.0);
+  APP.crossSectionMode.hyperplaneOffset = 0.0;
+  const hyperplane = dropmenu.querySelector(".cross-section-mode .hyperplane");
+  hyperplane.innerHTML = "";
+  for(let i = 0; i < APP.dimensions; i++){
+      const input = document.createElement("input");
+      input.type = "number";
+      input.value = 1.00;
+      input.step = 0.01;
+      input.addEventListener("input", () => {
+          const inputs = hyperplane.querySelectorAll("input:not(.offset)");
+          const normal = Array.from(inputs).map((input) => parseFloat(input.value));
+          APP.crossSectionMode.hyperplaneNormal = normal;
+          updateAndRender();
+      });
+      hyperplane.appendChild(input);
+      const span = document.createElement("span");
+      span.innerHTML = AXIS_IDENTIFIERS[i] + " + ";
+      hyperplane.appendChild(span);
+  }
+  const offsetInput = document.createElement("input");
+  offsetInput.classList.add("offset");
+  offsetInput.type = "number";
+  offsetInput.value = 0.00;
+  offsetInput.step = 0.01;
+  offsetInput.addEventListener("input", () => {
+      APP.crossSectionMode.hyperplaneOffset = parseFloat(offsetInput.value);
+      updateAndRender();
+  });
+  hyperplane.appendChild(offsetInput);
+  const offsetSpan = document.createElement("span");
+  offsetSpan.innerHTML = " = 0";
+  hyperplane.appendChild(offsetSpan);
+}
+
+function setCrossSectionStatusButtons(dropmenu){
+  const statusButtons = dropmenu.querySelectorAll(".cross-section-mode .states .button");
+  statusButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      statusButtons.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+      APP.crossSectionMode.status = button.innerHTML.toLowerCase();
+      console.log("Cross-section mode:", APP.crossSectionMode.status);
+      updateAndRender();
+    });
+  });
+}
+
+function setCrossSectionDropmenu(dropmenu){
+  setCrossSectionHyperplane(dropmenu);
+  setCrossSectionStatusButtons(dropmenu);
+}
+
 function setCrossSectionButton({button, icon}) {
+  const dropmenu = document.querySelector(".cross-section-mode + .dropmenu");
+  setCrossSectionDropmenu(dropmenu);
   button.addEventListener("click", () => {
-    APP.crossSectionMode = APP.crossSectionMode === "on" ? "off" : "on";
-    if (APP.crossSectionMode === "on") {
-      button.setAttribute("title", "Disable cross-section mode");
-    } else {
-      button.setAttribute("title", "Enable cross-section mode");
-    }
-    icon.style.setProperty('--icon-url', `url('/icons/cross_section_view_${APP.crossSectionMode === "on" ? "on" : "off"}_btn.svg')`);
-    updateAndRender();
+    toggleDropmenuDisplay(dropmenu, "flex");
   });
 }
 

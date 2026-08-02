@@ -29,7 +29,7 @@
         <button class="button rotation-handler" title="Edit rotations">
           <div class="icon" style="--icon-url: url('/icons/rotation-icon.png');" role="img" aria-label="Rotation icon"></div>
         </button>
-        <div class="dropmenu">
+        <div class="dropmenu left">
           <ul class="planes"></ul>
           <ul class="tools buttons">
             <li>
@@ -49,7 +49,7 @@
         <button class="button">
           <div class="icon" style="--icon-url: url('/icons/box_btn.svg');" role="img" aria-label="Box button"></div>
         </button>
-        <ul class="dropmenu"></ul>
+        <ul class="dropmenu left"></ul>
       </li>
       <li>
         <button class="button projection-mode" title="Enable orthogonal projection">
@@ -98,6 +98,16 @@
         <button class="button cross-section-mode" title="Enable cross-section mode">
           <div class="icon" style="--icon-url: url('/icons/cross_section_view_on_btn.svg');" role="img" aria-label="Cross-section mode icon"></div>
         </button>
+        <div class="dropmenu right">
+          <div class="cross-section-mode">
+            <div class="hyperplane"></div>
+            <ul class="states buttons">
+              <li><button class="button small active" data-state="off">Off</button></li>
+              <li><button class="button small" data-state="absolute">Absolute</button></li>
+              <li><button class="button small" data-state="relative">Relative</button></li>
+            </ul>
+          </div>
+        </div>
       </li>
       <li>
         <button class="button axes" title="Enable fixed axes">

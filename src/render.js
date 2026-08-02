@@ -201,11 +201,14 @@ async function init() {
         let indices = cachedIndices;
         console.timeEnd('clone');
 
-        if(app.crossSectionMode === "on"){
-            const n = new Array(app.dimensions).fill(1.0); 
-            const nVector = GEOLIB.JsToVectorF(n);
-            const d = 0.0;
-            proj = proj.getCrossSection(nVector, d);
+        if(app.crossSectionMode.status !== "off"){
+            console.log("Normal vector:", app.crossSectionMode.hyperplaneNormal);
+            const nVector = GEOLIB.JsToVectorF(app.crossSectionMode.hyperplaneNormal);
+            const d = app.crossSectionMode.hyperplaneOffset;
+            if(app.crossSectionMode.status === "absolute")
+                proj = proj.getAbsoluteCrossSection(nVector, d);
+            else if(app.crossSectionMode.status === "relative")
+                proj = proj.getRelativeCrossSection(nVector, d);
             indices = new Uint16Array(GEOLIB.vectorIToJs(proj.getBufferEdgeIndices()));
         }
 
@@ -301,10 +304,13 @@ async function init() {
                
             proj = objGeo.clone();
 
-            if(app.crossSectionMode === "on"){
-                const n = new Array(app.dimensions).fill(1.0);
-                const nVector = GEOLIB.JsToVectorF(n);
-                proj = proj.getCrossSection(nVector, 0.0);
+            if(app.crossSectionMode.status !== "off"){
+                const nVector = GEOLIB.JsToVectorF(app.crossSectionMode.hyperplaneNormal);
+                const d = app.crossSectionMode.hyperplaneOffset;
+                if(app.crossSectionMode.status === "absolute")
+                    proj = proj.getAbsoluteCrossSection(nVector, d);
+                else if(app.crossSectionMode.status === "relative")
+                    proj = proj.getRelativeCrossSection(nVector, d);
             }
 
             if(app.dimensions >= THREE_DIMENSIONS)
@@ -314,7 +320,7 @@ async function init() {
 
             vertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts()));
 
-            if(app.crossSectionMode === "on"){
+            if(app.crossSectionMode.status !== "off"){
                 const newIndices = new Uint16Array(GEOLIB.vectorIToJs(proj.getBufferEdgeIndices()));
                 bufGeo.setAttribute('position', new THREE.BufferAttribute(vertices, THREE_DIMENSIONS));
                 bufGeo.setIndex(new THREE.BufferAttribute(newIndices, 1));

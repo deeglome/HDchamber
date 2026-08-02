@@ -32,10 +32,13 @@ legend {
   list-style: none;
   padding: 0;
   margin: 0;
-  /* display: flex;
-  flex-direction: column; */
   position: relative;
   z-index: 100;
+}
+.dropmenu .buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 .buttons.left {
   float: left;
@@ -62,13 +65,11 @@ legend {
   text-decoration: none;
   opacity: 0.45;
 }
-.button:hover {
+.button:hover,
+.button.active {
   opacity: 1;
   scale: 1.05;
   background-color: rgba(0, 0, 0, 0.3);
-}
-.buttons :not(:first-child) .button {
-  margin-top: 0;
 }
 .small.button{
   margin: 10px;
@@ -103,6 +104,7 @@ button i::before {
 }
 .dropmenu {
   min-width: 300px;
+  min-height: 100px;
   background-color: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
   border-radius: 3px;
@@ -111,21 +113,25 @@ button i::before {
   opacity: 0;
   transition: transform 0.3s ease-in-out, opacity 0.1s ease-in-out;
   position: absolute;
-  left: 100px;
   top: 0;
   list-style: none;
-  padding: 0px;
+  padding: 5px;
   display: none;
   flex-flow: row wrap;
   justify-content: center;
   align-items: center;
 }
+.dropmenu.left{
+  left: 100px;
+}
+.dropmenu.right{
+  right: 100px;
+}
 .dropmenu.open {
   opacity: 1;
   transform: none;
 }
-.dropmenu .button.mesh,
-.dropmenu .button.rotation-plane {
+.dropmenu .button {
   height: auto;
   width: auto;
   font-size: 12px;
@@ -218,6 +224,24 @@ legend {
   position: relative;
   transform: translateX(-450px);
 }
+
+input[type="number"] {
+  width: 25px;
+  margin: 5px;
+  padding: 3px;
+  border-radius: 3px;
+  border: 1px solid var(--text-color);
+  background-color: transparent;
+  color: var(--text-color);
+  -moz-appearance: textfield;
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
 .info {
   position: absolute;
   bottom: 10px;

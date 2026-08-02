@@ -435,7 +435,8 @@ class GeometryND {
             return max_dist;
         }
 
-        GeometryND getCrossSection(vector<float> n, float d){
+        GeometryND getAbsoluteCrossSection(vector<float> n, float d){
+            if(n.size() != this->n) throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
             Eigen::VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n.data(), n.size());
             Eigen::Hyperplane<float, Eigen::Dynamic> h = Eigen::Hyperplane<float, Eigen::Dynamic>(n_eigen, d);
             vector<FaceND> sectionFaces = {};
@@ -454,6 +455,44 @@ class GeometryND {
                 }
             }
             return GeometryND(this->n, sectionVerts, sectionEdges, sectionFaces);
+        }
+
+        GeometryND getRelativeCrossSection(vector<float> n, float d){
+            GeometryND section = this->getAbsoluteCrossSection(n, d);
+            // Vettore di traslazione per riportare l'iperpiano centrato nell'origine.
+            const VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n.data(), n.size());
+            VectorXf t = d * n_eigen / n_eigen.squaredNorm();
+            section.translate(t);
+            // Versore unitario diretto lungo l'asse positivo dell'ultima dimensione.
+            VectorXf u = VectorXf::Zero(n.size());
+            u(u.size() - 1) = 1.0f;
+
+            // Dal prodotto scalare si ricava:
+            const float theta = std::acos(n_eigen.dot(u) / (n_eigen.norm() * u.norm()));
+
+            const string plane = string(1, AXIS_IDS[this->n - 2]) + string(1, AXIS_IDS[this->n - 1]);
+            // Matrice di rotazione per allineare il vettore normale dell'iperpiano con il semiasse positivo dell'ultima dimensione.
+            MatrixXf T = MatrixXf::Identity(this->n, this->n);
+            VectorXf n_current = n_eigen;
+
+            for(int i = 0; i < this->n - 1; i++){
+                // Ruota nel piano (asse i, asse n-1) per azzerare la componente i
+                float xi = n_current(i);
+                float xlast = n_current(this->n - 1);
+                float r = sqrt(xi*xi + xlast*xlast);
+                if(r < EPS) continue; // già allineato su questo piano, salta
+
+                string plane = string(1, AXIS_IDS[i]) + string(1, AXIS_IDS[this->n - 1]);
+
+                MatrixXf partialR = createRotationMatrix(this->n, {plane}, {atan2(xi, xlast)});
+
+                n_current = partialR * n_current;
+                T = partialR * T;
+            }
+            
+            if(n_current.dot(u) < 1 - EPS) throw invalid_argument("n is not alligned with u after rotation. Something went wrong. Scalar: " + to_string(n_current.dot(u)));
+            section.transform(T);
+            return section;
         }
 
         vector<float> getBufferVerts(){
