@@ -238,21 +238,31 @@ function ValidDimensions(dimensions) {
   return dimensions >= APP.MIN_DIMENSIONS && dimensions <= APP.MAX_DIMENSIONS;
 }
 
-function setDimensionsButton({button, input}) {
-  button.addEventListener("click", () => {
-    input = prompt(`Enter the number of dimensions of the shape you want to see (${APP.MIN_DIMENSIONS}-${APP.MAX_DIMENSIONS}):`) * 1;
-    if (!ValidDimensions(input)) {
-      alert(`Invalid number of dimensions: ${input}`);
-    } else {
-      APP.dimensions = input;
-      APP.colorMapMode = false;
+function setDimensionsInput(input) {
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      const value = parseInt(input.value);
+      if (ValidDimensions(value)) {
+        APP.dimensions = value;
+      } else if (value < APP.MIN_DIMENSIONS) {
+        input.value = APP.MIN_DIMENSIONS;
+        APP.dimensions = APP.MIN_DIMENSIONS;
+      } else if (value > APP.MAX_DIMENSIONS) {
+        input.value = APP.MAX_DIMENSIONS;
+        APP.dimensions = APP.MAX_DIMENSIONS;
+      }
       setRotationHandler();
       setCrossSectionDropmenu(document.querySelector(".cross-section-mode + .dropmenu"));
+      setCrossSectionHyperplane(document.querySelector(".cross-section-mode + .dropmenu"));
+      updateAndRender();
     }
+  });
+}
 
-    const h1 = document.querySelector("h1");
-    h1.innerHTML = `A ${APP.dimensions}-${input} rotating in ${APP.dimensions}`;
-    updateAndRender();
+function setDimensionsButton({button, input}) {
+  button.addEventListener("click", () => {
+    const dropmenu = document.querySelector(".button.dimensions-handler + .dropmenu");
+    toggleDropmenuDisplay(dropmenu, "flex");
   });
 }
 
@@ -262,7 +272,8 @@ function setDimensionsHandler() {
     input: null,
   };
   setDimensionsButton(dimensions);
-  APP.guiHandlers.dimension = dimensions;
+  setDimensionsInput(document.querySelector(".dimensions-input"));
+  const dropmenu = document.querySelector(".button.dimensions-handler + .dropmenu");
 }
 
 // ROTATION HANDLER
