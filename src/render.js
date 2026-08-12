@@ -307,10 +307,10 @@ async function init() {
 
             // --- SYNC: aggiorna l'angolo assoluto accumulato per ogni piano ---
             const omegas = app.omega();
-            app.theta = app.theta.map((theta, i) => {
-                const updated = (theta + omegas[i] * next_dt) % (2 * Math.PI);
-                return updated < 0 ? updated + 2 * Math.PI : updated;
-            });
+            for (let i = 0; i < app.theta.length; i++) {
+                const updated = (app.theta[i] + omegas[i] * next_dt) % (2 * Math.PI);
+                app.theta[i] = updated < 0 ? updated + 2 * Math.PI : updated;
+            }
             // -----------------------------------------------------------------
 
             objGeo.transform(dR);
