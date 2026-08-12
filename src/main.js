@@ -22,7 +22,7 @@ const APP = {
   animationId: {},
   selectedObj: null,
   crossSectionMode: {status: "off", hyperplaneNormal: "", hyperplaneOffset: 0},
-  camera: {position: null, zoom: 1.00},
+  camera: {spherical: {radius: 3, phi: 0, theta: 0}, zoom: 1.00},
   isOrtho: false,
   axesMode: "off",
   colorMapMode: "off",
@@ -807,7 +807,7 @@ function setPauseBtn(){
 * CAMERA BUTTON
 * =============
 */
-function initSphericalP(symbol, min, max, value){
+function initSphericalP(prop, symbol, min, max, value){
   const sphericalP = document.createElement("p");
   sphericalP.classList.add("spherical-p");
   sphericalP.innerHTML = symbol;
@@ -817,6 +817,14 @@ function initSphericalP(symbol, min, max, value){
   input.setAttribute("min", min);
   if(max !== undefined) input.setAttribute("max", max);
   input.setAttribute("value", value);
+
+  input.addEventListener("keydown", (event)=>{
+    if(event.key === "Enter"){
+      input.value = clamp(input.value, min, max);
+      APP.camera.spherical[prop] = input.value;
+      RENDER_FUNCS.setCameraSpherical(APP, APP.camera.spherical.radius, APP.camera.spherical.theta, APP.camera.spherical.phi);
+    } 
+  })
   
   sphericalP.appendChild(input);
   return sphericalP;
@@ -827,13 +835,14 @@ function setSphericalInputs(dropmenu){
   sphericalInputs.classList.add("spherical-inputs");
 
   const rhoSymbol = "\u03C1";
-  const rhoP = initSphericalP(rhoSymbol, 0, undefined, 3);
+  console.log(APP);
+  const rhoP = initSphericalP("radius", rhoSymbol, 0, undefined, APP.camera.spherical.radius);
   
   const thetaSymbol = "\u03B8";
-  const thetaP = initSphericalP(thetaSymbol, 0, 2 * Math.PI, 0);
+  const thetaP = initSphericalP("theta", thetaSymbol, -Math.PI, Math.PI, APP.camera.spherical.theta);
 
   const phiSymbol = "\u03A6";
-  const phiP = initSphericalP(phiSymbol, 0, Math.PI, 0);
+  const phiP = initSphericalP("phi", phiSymbol, 0, Math.PI, APP.camera.spherical.phi);
 
   sphericalInputs.appendChild(rhoP);
   sphericalInputs.appendChild(thetaP);
@@ -844,6 +853,36 @@ function setSphericalInputs(dropmenu){
 
 function setRapidCameraAssetBtns(){
 
+}
+
+let sphericalSyncId = null;
+
+function setSphericalInputsSync() {
+  cancelAnimationFrame(sphericalSyncId);
+
+  const rhoInput = document.querySelector(".spherical-inputs .spherical-p:nth-child(1) input");
+  const thetaInput = document.querySelector(".spherical-inputs .spherical-p:nth-child(2) input");
+  const phiInput = document.querySelector(".spherical-inputs .spherical-p:nth-child(3) input");
+
+  function frame() {
+    const { radius, theta, phi } = APP.camera.spherical;
+
+    if (rhoInput && document.activeElement !== rhoInput) {
+      rhoInput.value = radius;
+    }
+    if (thetaInput && document.activeElement !== thetaInput) {
+      thetaInput.value = theta;
+    }
+    if (phiInput && document.activeElement !== phiInput) {
+      phiInput.value = phi;
+    }
+
+    APP.camera.spherical = { radius, theta, phi }; // tieni anche lo stato logico coerente
+
+    sphericalSyncId = requestAnimationFrame(frame);
+  }
+
+  sphericalSyncId = requestAnimationFrame(frame);
 }
 
 function setCameraBtn(dropmenu){
@@ -904,6 +943,7 @@ function addGuiHandlers() {
   setZoomOutBtn();
   setSliderSync();
   setCameraOptions();
+  setSphericalInputsSync();
 }
 
 addWindowEvents();

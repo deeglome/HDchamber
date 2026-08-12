@@ -105,6 +105,19 @@ async function init() {
         camera.position.setFromSphericalCoords(radius, phi, theta);
         // camera.lookAt(0, 0, 0); ridondante se poi chiami controls.update()
     }
+    
+    RENDER_FUNCS.setCameraSpherical = (app, radius, theta, phi) => {
+        const camera = app.isOrtho ? oCamera : pCamera;
+        const controls = app.isOrtho ? oControls : pControls;
+
+        app.camera.spherical.radius = radius;
+        app.camera.zoom = CAM_DIST / radius; // <-- tieni zoom coerente
+        app.camera.spherical.theta = theta;
+        app.camera.spherical.phi = phi;
+
+        setCameraOnSphere(camera, radius, theta, phi);
+        controls.update(); // fondamentale: risincronizza lo stato interno di OrbitControls
+    };
 
     let cachedObjGeo = null;
     let pristineObjGeo = null;
@@ -273,6 +286,12 @@ async function init() {
             return Math.abs(val - ref) / ref;
         }
 
+        function getCameraSpherical(camera) {
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(camera.position);
+            return spherical; // { radius, phi, theta }
+        }
+
         let dt = 0.1;
         let d_theta = app.omega().map(o => o * dt);
         let dR = R(app.dimensions, app.planes, d_theta);
@@ -292,6 +311,7 @@ async function init() {
         console.time('declare tic()')
         function tic(){
             controls.update();
+            app.camera.spherical = getCameraSpherical(camera);
 
             app.finalTime = Date.now();
             let next_dt = app.deltaTime() / 1000;
