@@ -277,46 +277,102 @@ function setDimensionsHandler() {
 }
 
 // ROTATION HANDLER
-function setPlanes({planes, angularSpeedFactors, options, dropmenu}) {
+const MAX_K_TOT = 4;
+const MIN_K_TOT = -MAX_K_TOT;
+
+function evenlyDistributedMaxK() {
+  return MAX_K_TOT / Math.sqrt(rots(APP.dimensions));
+}
+
+function initKInput(value){
+  const kInput = document.createElement("input");
+  kInput.setAttribute("type", "number");
+  let max = evenlyDistributedMaxK();
+  kInput.setAttribute("max", max);
+  kInput.setAttribute("min", -max);
+  kInput.setAttribute("value", value);
+  kInput.classList.add("k-input");
+  return kInput;
+}
+
+const THETA_STEP = Math.PI / 10;
+
+function initThetaSlider(value){
+  const slider = document.createElement("input");
+  slider.classList.add("theta-slider", "slider");
+  slider.setAttribute("type", "range");
+  slider.setAttribute("max", 2*Math.PI);
+  slider.setAttribute("min", 0);
+  slider.setAttribute("value", value);
+  slider.setAttribute("step", THETA_STEP);
+  return slider;
+}
+
+function setPlanes({planes, kValues, theta, options, dropmenu}) {
   const planesMap = new Map();
   for (let i = 0; i < planes.length; i++) {
-    planesMap.set(planes[i], angularSpeedFactors[i]);
+    console.log({planes, kValues, theta, options, dropmenu});
+    planesMap.set(planes[i], {k: kValues[i], angle: theta[i]});
   }
   options = document.createElement("ul");
   options.classList.add("rotation-handler-options", "button");
   const planesUl = dropmenu.querySelector("ul.planes");
   planesUl.innerHTML = "";
 
-  planesMap.forEach((value, key) => {
+  planesMap.forEach((rotationState, plane) => {
     const rotationPlane = document.createElement("li");
-    rotationPlane.classList.add("button", "rotation-plane", key);
-    rotationPlane.innerHTML = key.toUpperCase() + " | " + value;
+    rotationPlane.classList.add("rotation-plane", plane);
+
+    const planeHeader = document.createElement("div");
+    planeHeader.classList.add("plane-header");
+
+    const planeSpan = document.createElement("span");
+    planeSpan.innerHTML = `${plane.toUpperCase()}`;
+    planeHeader.appendChild(planeSpan);
+
+    const kInput = initKInput(rotationState.k);
+    planeHeader.appendChild(kInput);
+
+    rotationPlane.appendChild(planeHeader);
+    
+    // let omegaSymbol = "\u03C9";
+    // kBtn.innerHTML = `${plane.toUpperCase()} | x${rotationState.k} | `;
+
+    const slider = initThetaSlider(rotationState.angle);
+    rotationPlane.appendChild(slider);
+
     planesUl.appendChild(rotationPlane);
   });
 }
 
-const MAX_K_TOT = 4;
-const MIN_K_TOT = -MAX_K_TOT;
-
-function evenlyDistributedMaxK() {
-  return MAX_K_TOT / Math.sqrt(nRots(APP.dimensions));
+function clamp(value, min, max){
+  if(value > max) return max;
+  else if(value < min) return min;
+  return value;
 }
 
-function setPlaneButtons({planes, angularSpeedFactors, planeButtons}) {
-  planeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const input = button.innerHTML.toLowerCase();
-      let rotationPlane = input.slice(0, 2);
-      let k = prompt(`Enter k (an angular speed factor) for the following plane: ${rotationPlane}:`) * 1;
-      const maxK = Math.round(evenlyDistributedMaxK() * 100) / 100;
-      if (Math.abs(k) > maxK) {
-        k = Math.sign(k) * maxK;
+function setKInputs({planes, kValues, kInputs}) {
+  kInputs.forEach((input, index) => {
+    input.addEventListener("keydown", (event) => {
+      if(event.key === "Enter"){
+        const maxK = Math.round(evenlyDistributedMaxK() * 100) / 100;
+        input.value = clamp(input.value, -maxK, +maxK);
+        kValues[index] = input.value;
+        APP.initialTime = Date.now();
+        APP.kValues = kValues;
+        updateAndRender();
       }
-      let index = planes.indexOf(rotationPlane);
-      angularSpeedFactors[index] = k;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + k;
+    });
+  });
+}
+
+function setThetaSliders({planes, theta, thetaSliders}){
+  thetaSliders.forEach((slider, index) => {
+    slider.addEventListener("input", () => {
+      console.log(planes, theta, thetaSliders, slider.value);
+      theta[index] = slider.value * 1;
       APP.initialTime = Date.now();
-      APP.kValues = angularSpeedFactors;
+      APP.theta = theta;
       updateAndRender();
     });
   });
@@ -326,17 +382,14 @@ function setRandomRotationBtn(handler){
   const randomBtn = handler.dropmenu.querySelector(".tools .random-btn");
 
   randomBtn.addEventListener("click", ()=>{
-    handler.planeButtons.forEach((button)=>{
+    handler.kInputs.forEach((input, index)=>{
       console.log("Funzione random!")
-      const input = button.innerHTML.toLowerCase();
-      let rotationPlane = input.slice(0,2);
       const maxK = Math.round(evenlyDistributedMaxK() * 100) / 100;
       let randomK = Math.round(100 * (Math.random() - Math.random()) * maxK) / 100;
-      let index = handler.planes.indexOf(rotationPlane);
-      handler.angularSpeedFactors[index] = randomK;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + randomK;
+      handler.kValues[index] = randomK;
+      input.value = randomK;
       APP.initialTime = Date.now();
-      APP.kValues = handler.angularSpeedFactors;
+      APP.kValues = handler.kValues;
     });
     console.time('updateTHREE');
     updateAndRender();
@@ -346,20 +399,20 @@ function setRandomRotationBtn(handler){
 }
 
 const CLEAN_K = 0;
+const CLEAN_ANGLE = 0;
 
 function setClearRotationsBtn(handler){
   const clearBtn = handler.dropmenu.querySelector(".tools .clear-btn");
 
   clearBtn.addEventListener("click", () => {
-    handler.planeButtons.forEach((button) => {
-      console.log("Funzione random!")
-      const input = button.innerHTML.toLowerCase();
-      let rotationPlane = input.slice(0, 2);
-      let index = handler.planes.indexOf(rotationPlane);
-      handler.angularSpeedFactors[index] = CLEAN_K;
-      button.innerHTML = rotationPlane.toUpperCase() + " | " + CLEAN_K;
+    handler.kInputs.forEach((input, index) => {
+      console.log("Funzione clear!")
+      handler.kValues[index] = CLEAN_K;
+      handler.theta[index] = CLEAN_ANGLE;
+      input.value = CLEAN_K;
       APP.initialTime = Date.now();
-      APP.kValues = handler.angularSpeedFactors;
+      APP.kValues = handler.kValues;
+      APP.theta = handler.theta;
       updateAndRender();
     });
   });
@@ -373,8 +426,10 @@ function setTools(handler){
 function setPlanesDropmenu(handler) {
   setPlanes(handler);
   setTools(handler);
-  handler.planeButtons = document.querySelectorAll(".button.rotation-plane");
-  setPlaneButtons(handler);
+  handler.kInputs = document.querySelectorAll(".rotation-plane .k-input");
+  handler.thetaSliders = document.querySelectorAll(".rotation-plane .theta-slider");
+  setKInputs(handler);
+  setThetaSliders(handler);
 }
 
 function allPossiblePlanes(dimensions) {
@@ -397,7 +452,7 @@ function sortPlanes(coords) {
   };
 }
 
-function nRots(n) {
+function rots(n) {
   if( n < 0 ) throw new Error("Invalid n:", n);
   return n * (n-1) / 2;
 }
@@ -413,14 +468,17 @@ function setRotationHandler() {
     button: document.querySelector(".button.rotation-handler"),
     dropmenu: document.querySelector(".rotation-handler + .dropmenu"),
     planes: allPossiblePlanes(APP.dimensions),
-    angularSpeedFactors: Array(nRots(APP.dimensions)).fill(0),
-    planeButtons: null,
+    kValues: Array(rots(APP.dimensions)).fill(0),
+    theta: Array(rots(APP.dimensions)).fill(0),
+    kInputs: null,
+    thetaSliders: null,
     options: null,
   };
   setPlanesDropmenu(rotation);
   setRotationButton(rotation);
-  APP.kValues = rotation.angularSpeedFactors;
+  APP.kValues = rotation.kValues;
   APP.planes = rotation.planes;
+  console.log("theta: ", APP.theta);
 }
 
 // WIKI HANDLER
