@@ -120,7 +120,7 @@ function setZoomInBtn(){
   const zoomInBtn = document.querySelector(".zoom-in-btn");
   zoomInBtn.addEventListener("click", ()=>{
     APP.camera.zoom = Math.min(MAX_ZOOM, APP.camera.zoom + THRESHOLD);
-    updateAndRender();
+    RENDER_FUNCS.applyZoom(APP);
   });
 }
 
@@ -128,7 +128,7 @@ function setZoomOutBtn(){
   const zoomOutBtn = document.querySelector(".zoom-out-btn");
   zoomOutBtn.addEventListener("click", ()=>{
     APP.camera.zoom = Math.max(MIN_ZOOM, APP.camera.zoom - THRESHOLD);
-    updateAndRender();
+    RENDER_FUNCS.applyZoom(APP);
   });
 }
 

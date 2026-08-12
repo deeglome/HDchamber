@@ -187,6 +187,22 @@ async function init() {
         }
     };
 
+    RENDER_FUNCS.applyZoom = (app) => {
+        const camera = app.isOrtho ? oCamera : pCamera;
+        const controls = app.isOrtho ? oControls : pControls;
+
+        if (app.isOrtho) {
+            camera.zoom = app.camera.zoom;
+            camera.updateProjectionMatrix();
+        } else {
+            const target = controls.target;
+            const direction = camera.position.clone().sub(target).normalize();
+            const newDistance = CAM_DIST / app.camera.zoom;
+            camera.position.copy(target).add(direction.multiplyScalar(newDistance));
+        }
+        controls.update();
+    };
+
     RENDER_FUNCS.updateTHREE = (app) => {
         console.time('cancel')
         cancelAnimationFrame(animationId);
@@ -270,15 +286,13 @@ async function init() {
 
         if (app.isOrtho) {
             // Per l'ortografica, zoom nativo = property zoom (coerente con OrbitControls)
-            camera.zoom = app.camera.zoom;
+             // sincronizza prima lo stato con lo zoom reale impostato da OrbitControls
+            app.camera.zoom = camera.zoom;
             camera.updateProjectionMatrix();
         } else {
-            // Per la prospettiva, replica il dolly reale di OrbitControls:
-            // sposta la camera lungo la retta target -> camera
             const target = controls.target;
-            const direction = camera.position.clone().sub(target).normalize();
-            const newDistance = CAM_DIST / app.camera.zoom;
-            camera.position.copy(target).add(direction.multiplyScalar(newDistance));
+            const currentDistance = camera.position.distanceTo(target);
+            app.camera.zoom = CAM_DIST / currentDistance; // solo sync, camera resta dov'è
         }
         console.timeEnd('set camera and controls')
 
