@@ -802,6 +802,69 @@ function setPauseBtn(){
   });
 }
 
+/*
+* =============
+* CAMERA BUTTON
+* =============
+*/
+function initSphericalP(symbol, min, max, value){
+  const sphericalP = document.createElement("p");
+  sphericalP.classList.add("spherical-p");
+  sphericalP.innerHTML = symbol;
+
+  const input = document.createElement("input");
+  input.setAttribute("type", "number");
+  input.setAttribute("min", min);
+  if(max !== undefined) input.setAttribute("max", max);
+  input.setAttribute("value", value);
+  
+  sphericalP.appendChild(input);
+  return sphericalP;
+}
+
+function setSphericalInputs(dropmenu){
+  const sphericalInputs = document.createElement("ul");
+  sphericalInputs.classList.add("spherical-inputs");
+
+  const rhoSymbol = "\u03C1";
+  const rhoP = initSphericalP(rhoSymbol, 0, undefined, 3);
+  
+  const thetaSymbol = "\u03B8";
+  const thetaP = initSphericalP(thetaSymbol, 0, 2 * Math.PI, 0);
+
+  const phiSymbol = "\u03A6";
+  const phiP = initSphericalP(phiSymbol, 0, Math.PI, 0);
+
+  sphericalInputs.appendChild(rhoP);
+  sphericalInputs.appendChild(thetaP);
+  sphericalInputs.appendChild(phiP);
+
+  dropmenu.appendChild(sphericalInputs);
+}
+
+function setRapidCameraAssetBtns(){
+
+}
+
+function setCameraBtn(dropmenu){
+  const cameraBtn = document.querySelector(".camera.button");
+
+  cameraBtn.addEventListener("click", ()=>{
+    
+    console.log("Query selector dorpmenu", dropmenu)
+    toggleDropmenuDisplay(dropmenu, "flex");
+  });
+}
+
+function setCameraOptions(){
+  const camera = {
+    dropmenu: document.querySelector(".camera + .dropmenu")
+  };
+  setSphericalInputs(camera.dropmenu);
+  setRapidCameraAssetBtns();
+  setCameraBtn(camera.dropmenu);
+}
+
 function humanizeMeshName(technicalName) {
   try {
     const target = getMeshWikiData(technicalName);
@@ -840,6 +903,7 @@ function addGuiHandlers() {
   setZoomInBtn();
   setZoomOutBtn();
   setSliderSync();
+  setCameraOptions();
 }
 
 addWindowEvents();

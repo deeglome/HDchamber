@@ -296,6 +296,15 @@ input[type=number]::-webkit-outer-spin-button {
   margin: 0; 
 }
 
+.dropmenu .spherical-inputs{
+  list-style: none;
+  width: max-content;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .info {
   position: absolute;
   bottom: 10px;
