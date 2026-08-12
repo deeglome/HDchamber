@@ -25,7 +25,8 @@ const APP = {
   camera: {position: null, zoom: 1.00},
   isOrtho: false,
   axesMode: "off",
-  colorMapMode: "off"
+  colorMapMode: "off",
+  angleMeasurement: "radian"
 };
 
 async function fetchWiki() {
@@ -301,10 +302,10 @@ function initThetaInput(value){
   const slider = document.createElement("input");
   slider.classList.add("theta-input");
   slider.setAttribute("type", "number");
-  slider.setAttribute("max", 2*Math.PI);
+  slider.setAttribute("max", APP.angleMeasurement === "radian" ? 2*Math.PI : 360);
   slider.setAttribute("min", 0);
   slider.setAttribute("value", value);
-  slider.setAttribute("step", THETA_STEP);
+  slider.setAttribute("step", THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI));
   return slider;
 }
 
@@ -312,10 +313,10 @@ function initThetaSlider(value){
   const slider = document.createElement("input");
   slider.classList.add("theta-slider", "slider");
   slider.setAttribute("type", "range");
-  slider.setAttribute("max", 2*Math.PI);
+  slider.setAttribute("max", APP.angleMeasurement === "radian" ? 2*Math.PI : 360);
   slider.setAttribute("min", 0);
   slider.setAttribute("value", value);
-  slider.setAttribute("step", THETA_STEP);
+  slider.setAttribute("step", THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI));
   return slider;
 }
 
@@ -387,8 +388,8 @@ function arg(value){
 }
 
 function updateThetaValue(input, index, theta){
-  let angle = arg(input.value*1);
-  input.value = angle;
+  let angle = arg(APP.angleMeasurement === "radian" ? input.value*1 : input.value * Math.PI / 180);
+  input.value = APP.angleMeasurement === "radian" ? angle : angle * 180 / Math.PI;
   theta[index] = angle;
   APP.theta = theta;
   APP.initialTime = Date.now();
@@ -423,10 +424,10 @@ function setSliderSync() {
       const inputEl = document.querySelector(`.rotation-plane.${plane} .theta-input`);
       const sliderEl = document.querySelector(`.rotation-plane.${plane} .theta-slider`);
       if (sliderEl && document.activeElement !== sliderEl) {
-        sliderEl.value = APP.theta[i];
+        sliderEl.value = APP.angleMeasurement === "radian" ? APP.theta[i] : APP.theta[i] * 180 / Math.PI;
       }
       if (inputEl && document.activeElement !== inputEl) {
-        inputEl.value = APP.theta[i];
+        inputEl.value = APP.angleMeasurement === "radian" ? APP.theta[i] : APP.theta[i] * 180 / Math.PI; 
       }
     });
     sliderSyncId = requestAnimationFrame(frame);
@@ -473,9 +474,64 @@ function setClearRotationsBtn(handler){
   });
 }
 
+function convertToDisplay(radians) {
+  return APP.angleMeasurement === "degree" ? radians * 180 / Math.PI : radians;
+}
+
+function refreshThetaControlsForUnit() {
+  const isDegree = APP.angleMeasurement === "degree";
+  const max = isDegree ? 360 : 2 * Math.PI;
+  const step = isDegree ? 18 : THETA_STEP; // step coerente con l'unità
+
+  APP.planes.forEach((plane, i) => {
+    const sliderEl = document.querySelector(`.rotation-plane.${plane} .theta-slider`);
+    if (sliderEl) {
+      sliderEl.max = max;
+      sliderEl.step = step;
+      sliderEl.value = convertToDisplay(APP.theta[i]);
+    }
+
+    const inputEl = document.querySelector(`.rotation-plane.${plane} .theta-input`);
+    if (inputEl) {
+      inputEl.step = step;
+      inputEl.value = convertToDisplay(APP.theta[i]);
+    }
+  });
+}
+
+function setRadianBtn(handler){
+  const radianBtn = handler.dropmenu.querySelector(".radian-btn");
+  const degreeBtn = handler.dropmenu.querySelector(".degree-btn");
+
+  radianBtn.addEventListener("click", ()=>{
+    radianBtn.classList.add("active");
+    degreeBtn.classList.remove("active");
+    
+    APP.angleMeasurement = "radian";
+
+    refreshThetaControlsForUnit()
+  });
+}
+
+function setDegreeBtn(handler){
+  const radianBtn = handler.dropmenu.querySelector(".radian-btn");
+  const degreeBtn = handler.dropmenu.querySelector(".degree-btn");
+
+  degreeBtn.addEventListener("click", ()=>{
+    radianBtn.classList.remove("active");
+    degreeBtn.classList.add("active");
+
+    APP.angleMeasurement = "degree";
+
+    refreshThetaControlsForUnit();
+  });
+}
+
 function setTools(handler){
   setRandomRotationBtn(handler);
   setClearRotationsBtn(handler);
+  setRadianBtn(handler);
+  setDegreeBtn(handler);
 }
 
 function setPlanesDropmenu(handler) {
