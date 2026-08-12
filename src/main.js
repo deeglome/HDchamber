@@ -297,6 +297,17 @@ function initKInput(value){
 
 const THETA_STEP = Math.PI / 10;
 
+function initThetaInput(value){
+  const slider = document.createElement("input");
+  slider.classList.add("theta-input");
+  slider.setAttribute("type", "number");
+  slider.setAttribute("max", 2*Math.PI);
+  slider.setAttribute("min", 0);
+  slider.setAttribute("value", value);
+  slider.setAttribute("step", THETA_STEP);
+  return slider;
+}
+
 function initThetaSlider(value){
   const slider = document.createElement("input");
   slider.classList.add("theta-slider", "slider");
@@ -329,6 +340,9 @@ function setPlanes({planes, kValues, theta, options, dropmenu}) {
     const planeSpan = document.createElement("span");
     planeSpan.innerHTML = `${plane.toUpperCase()}`;
     planeHeader.appendChild(planeSpan);
+
+    const thetaInput = initThetaInput(rotationState.angle);
+    planeHeader.appendChild(thetaInput);
 
     const kInput = initKInput(rotationState.k);
     planeHeader.appendChild(kInput);
@@ -366,16 +380,35 @@ function setKInputs({planes, kValues, kInputs}) {
   });
 }
 
-function setThetaSliders({planes, theta, thetaSliders}){
+function arg(value){
+  while(value < 0) value += 2*Math.PI;
+  while(value > 2*Math.PI) value -= 2*Math.PI;
+  return value;
+}
+
+function updateThetaValue(input, index, theta){
+  let angle = arg(input.value*1);
+  input.value = angle;
+  theta[index] = angle;
+  APP.theta = theta;
+  APP.initialTime = Date.now();
+
+  RENDER_FUNCS.setAbsoluteTheta(APP, APP.theta); // R0 · v0
+  updateAndRender();
+}
+
+function setThetaInputsAndSliders({planes, theta, thetaInputs, thetaSliders}){
+  thetaInputs.forEach((input, index) =>{
+      input.addEventListener("keydown", (event) => {
+        if(event.key === "Enter"){
+          updateThetaValue(input, index, theta);
+        }
+    });
+  });
+
   thetaSliders.forEach((slider, index) => {
     slider.addEventListener("input", () => {
-      console.log(planes, theta, thetaSliders, slider.value);
-      theta[index] = slider.value * 1;
-      APP.theta = theta;
-      APP.initialTime = Date.now();
-
-      RENDER_FUNCS.setAbsoluteTheta(APP, APP.theta); // R0 · v0
-      updateAndRender();
+      updateThetaValue(slider, index, theta);
     });
   });
 }
@@ -387,9 +420,13 @@ function setSliderSync() {
 
   function frame() {
     APP.planes.forEach((plane, i) => {
+      const inputEl = document.querySelector(`.rotation-plane.${plane} .theta-input`);
       const sliderEl = document.querySelector(`.rotation-plane.${plane} .theta-slider`);
       if (sliderEl && document.activeElement !== sliderEl) {
         sliderEl.value = APP.theta[i];
+      }
+      if (inputEl && document.activeElement !== inputEl) {
+        inputEl.value = APP.theta[i];
       }
     });
     sliderSyncId = requestAnimationFrame(frame);
@@ -445,9 +482,10 @@ function setPlanesDropmenu(handler) {
   setPlanes(handler);
   setTools(handler);
   handler.kInputs = document.querySelectorAll(".rotation-plane .k-input");
+  handler.thetaInputs = document.querySelectorAll(".rotation-plane .theta-input");
   handler.thetaSliders = document.querySelectorAll(".rotation-plane .theta-slider");
   setKInputs(handler);
-  setThetaSliders(handler);
+  setThetaInputsAndSliders(handler);
 }
 
 function allPossiblePlanes(dimensions) {
