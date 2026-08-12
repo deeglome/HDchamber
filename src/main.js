@@ -371,11 +371,31 @@ function setThetaSliders({planes, theta, thetaSliders}){
     slider.addEventListener("input", () => {
       console.log(planes, theta, thetaSliders, slider.value);
       theta[index] = slider.value * 1;
-      APP.initialTime = Date.now();
       APP.theta = theta;
+      APP.initialTime = Date.now();
+
+      RENDER_FUNCS.setAbsoluteTheta(APP, APP.theta); // R0 · v0
       updateAndRender();
     });
   });
+}
+
+let sliderSyncId = null;
+
+function setSliderSync() {
+  cancelAnimationFrame(sliderSyncId);
+
+  function frame() {
+    APP.planes.forEach((plane, i) => {
+      const sliderEl = document.querySelector(`.rotation-plane.${plane} .theta-slider`);
+      if (sliderEl && document.activeElement !== sliderEl) {
+        sliderEl.value = APP.theta[i];
+      }
+    });
+    sliderSyncId = requestAnimationFrame(frame);
+  }
+
+  sliderSyncId = requestAnimationFrame(frame);
 }
 
 function setRandomRotationBtn(handler){
@@ -408,11 +428,9 @@ function setClearRotationsBtn(handler){
     handler.kInputs.forEach((input, index) => {
       console.log("Funzione clear!")
       handler.kValues[index] = CLEAN_K;
-      handler.theta[index] = CLEAN_ANGLE;
       input.value = CLEAN_K;
       APP.initialTime = Date.now();
       APP.kValues = handler.kValues;
-      APP.theta = handler.theta;
       updateAndRender();
     });
   });
@@ -478,6 +496,7 @@ function setRotationHandler() {
   setRotationButton(rotation);
   APP.kValues = rotation.kValues;
   APP.planes = rotation.planes;
+  APP.theta = rotation.theta; 
   console.log("theta: ", APP.theta);
 }
 
@@ -726,6 +745,7 @@ function addGuiHandlers() {
   setPauseBtn();
   setZoomInBtn();
   setZoomOutBtn();
+  setSliderSync();
 }
 
 addWindowEvents();

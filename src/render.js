@@ -109,7 +109,9 @@ async function init() {
     }
 
     let cachedObjGeo = null;
+    let pristineObjGeo = null;
     let cachedAxesGeo = null;
+    let pristineAxesGeo = null;
     let cachedType = null;
     let cachedDimensions = null;
     let cachedIndices = null;
@@ -160,6 +162,20 @@ async function init() {
     const oControls = new OrbitControls(oCamera, renderer.domElement);
     const pControls = new OrbitControls(pCamera, renderer.domElement);
 
+    RENDER_FUNCS.setAbsoluteTheta = (app, thetaArray) => {
+        if (!pristineObjGeo) return;
+
+        const R0 = R(app.dimensions, app.planes, thetaArray); // usa la stessa R() già esistente
+        cachedObjGeo = pristineObjGeo.clone();
+        cachedObjGeo.transform(R0);
+
+        // stesso trattamento per gli assi, se vuoi che seguano lo slider
+        if (pristineAxesGeo) {
+            cachedAxesGeo = pristineAxesGeo.clone();
+            cachedAxesGeo.transform(R0);
+        }
+    };
+
     RENDER_FUNCS.updateTHREE = (app) => {
         console.time('cancel')
         cancelAnimationFrame(animationId);
@@ -174,9 +190,11 @@ async function init() {
         // It will be computed only if dimension or type has been changed.
         if(app.selectedObj !== cachedType || app.dimensions !== cachedDimensions){
             console.time('cachedGeo')
-            cachedObjGeo = selectObjGeometry(app);
+            pristineObjGeo = selectObjGeometry(app);
+            cachedObjGeo = pristineObjGeo.clone();
             console.timeEnd('cachedGeo')
-            cachedAxesGeo = new GEOLIB.AxesND(app.dimensions, AXIS_LEN);
+            pristineAxesGeo = new GEOLIB.AxesND(app.dimensions, AXIS_LEN);
+            cachedAxesGeo = pristineAxesGeo.clone();
             cachedType = app.selectedObj;
             cachedDimensions = app.dimensions;
             cachedIndices = new Uint16Array(GEOLIB.vectorIToJs(cachedObjGeo.getBufferEdgeIndices()));
@@ -286,6 +304,14 @@ async function init() {
                 d_theta = app.omega().map(o => o * dt);
                 dR = R(app.dimensions, app.planes, d_theta);
             }
+
+            // --- SYNC: aggiorna l'angolo assoluto accumulato per ogni piano ---
+            const omegas = app.omega();
+            app.theta = app.theta.map((theta, i) => {
+                const updated = (theta + omegas[i] * next_dt) % (2 * Math.PI);
+                return updated < 0 ? updated + 2 * Math.PI : updated;
+            });
+            // -----------------------------------------------------------------
 
             objGeo.transform(dR);
             app.initialTime = app.finalTime;
