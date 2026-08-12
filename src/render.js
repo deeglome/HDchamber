@@ -49,9 +49,7 @@ async function init() {
         const axes = new GEOLIB.AxesND(dimensions, axisLength);
         if(dimensions >= THREE_DIMENSIONS){
             axes.projectWithCam(dimensions, CAM_DIST);
-        } else {
-            axes.extendIn(dimensions);
-        }
+        } // else you don't need to extend
         let indices = new Uint16Array(GEOLIB.vectorIToJs(axes.getBufferEdgeIndices()));
         let vertices = new Float32Array(GEOLIB.vectorFToJs(axes.getBufferVerts()));
         let colors = generateAxesColors(dimensions);
