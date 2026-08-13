@@ -9,7 +9,6 @@
   color: var(--text-color);
   font-family: "Chakra Petch", sans-serif;
   transition: all 0.25s ease-in-out;
-  cursor: url('/cursor.svg'), auto;
 }
 svg, path{
   fill: var(--text-color);
@@ -131,6 +130,7 @@ input[type=range]::-webkit-slider-runnable-track{
 
 .renderer {
   position: absolute;
+  cursor: url('/cursor.svg'), auto;
 }
 .dropmenu {
   min-width: 300px;
