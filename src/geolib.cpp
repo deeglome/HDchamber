@@ -932,7 +932,8 @@ class Hypersphere : public GeometryND {
         Hypersphere(int n, float radius, int subdivisions) : GeometryND(
             n,
             hypersphere(n, radius, subdivisions).verts,
-            hypersphere(n, radius, subdivisions).edges
+            hypersphere(n, radius, subdivisions).edges,
+            hypersphere(n, radius, subdivisions).faces
         ) {}
 
         Hypersphere* clone() override {
@@ -984,10 +985,14 @@ class Hypersphere : public GeometryND {
                 GeometryND section = hypersphere(n-1, sectionRadius, subdivs, newPointstamp);
                 result.verts.insert(result.verts.end(), section.verts.begin(), section.verts.end());
                 result.edges.insert(result.edges.end(), section.edges.begin(), section.edges.end());
+                result.faces.insert(result.faces.end(), section.faces.begin(), section.faces.end()); // <-- NUOVO: propaga facce dai livelli più interni
 
                 if (hasPrevious) {
                     auto connectors = connectAdjacentHsSections(&previousSection, section);
                     result.edges.insert(result.edges.end(), connectors.begin(), connectors.end());
+
+                    auto newFaces = connectAdjacentHsFaces(&previousSection, section); // <-- NUOVO
+                    result.faces.insert(result.faces.end(), newFaces.begin(), newFaces.end());
                 }
 
                 previousSection = move(section);
@@ -1051,6 +1056,57 @@ class Hypersphere : public GeometryND {
             else for (int v = 0; v < currSize; v++)
                 edges.push_back(SegmentND(previousHypersphereSection->verts[v], hypersphereSection.verts[v]));
             return edges;
+        }
+
+        static vector<FaceND> connectAdjacentHsFaces(const GeometryND *previousHypersphereSection, const GeometryND &hypersphereSection) {
+            vector<FaceND> faces;
+
+            if (previousHypersphereSection == nullptr) return faces;
+
+            int prevSize = previousHypersphereSection->verts.size();
+            int currSize = hypersphereSection.verts.size();
+
+            if (prevSize == 1) {
+                // Polo -> cerchio/sezione: ventaglio di triangoli
+                for (int v = 0; v < currSize; v++) {
+                    int vNext = (v + 1) % currSize;
+                    vector<PointND> tri = {
+                        previousHypersphereSection->verts[0],
+                        hypersphereSection.verts[v],
+                        hypersphereSection.verts[vNext]
+                    };
+                    faces.push_back(FaceND(tri));
+                }
+            }
+            else if (currSize == 1) {
+                // Sezione -> polo: ventaglio di triangoli, verso opposto
+                for (int v = 0; v < prevSize; v++) {
+                    int vNext = (v + 1) % prevSize;
+                    vector<PointND> tri = {
+                        previousHypersphereSection->verts[v],
+                        previousHypersphereSection->verts[vNext],
+                        hypersphereSection.verts[0]
+                    };
+                    faces.push_back(FaceND(tri));
+                }
+            }
+            else if (prevSize == currSize) {
+                // Caso generale: quad strip tra due sezioni con lo stesso numero di vertici
+                for (int v = 0; v < currSize; v++) {
+                    int vNext = (v + 1) % currSize;
+                    vector<PointND> quad = {
+                        previousHypersphereSection->verts[v],
+                        previousHypersphereSection->verts[vNext],
+                        hypersphereSection.verts[vNext],
+                        hypersphereSection.verts[v]
+                    };
+                    faces.push_back(FaceND(quad));
+                }
+            }
+            // Se prevSize != currSize e nessuno dei due è 1, le sezioni non sono corrispondenti:
+            // situazione anomala, si ignora silenziosamente (non dovrebbe accadere con subdivs fissi).
+
+            return faces;
         }
 };
 
