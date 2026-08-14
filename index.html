@@ -111,8 +111,24 @@
         </button>
         <div class="dropmenu right">
           <div class="cross-section-mode">
-            <div class="hyperplane"></div>
-            <ul class="states buttons">
+            <p class="from hidden">From:</p>
+            <div class="from hyperplane"></div>
+            <ul class="animation-toolbar buttons hidden">
+              <li>To: <div class="to hyperplane"></div></li>
+              <li>Duration (s): <input type="number" value="15" class="duration"></li>
+              <li><button class="button">Animate</button></li>
+            </ul>
+
+            <p><strong>Animation Toolbar state</strong></p>
+
+            <ul class="animation-toolbar-states buttons">
+              <button class="button active">Closed</button>
+              <button class="button">Open</button>
+            </ul>
+
+            <p><strong>Section Mode state</strong></p>
+
+            <ul class="cross-section-mode-states states buttons">
               <li><button class="button small active" data-state="off">Off</button></li>
               <li><button class="button small" data-state="absolute">Absolute</button></li>
               <li><button class="button small" data-state="relative">Relative</button></li>

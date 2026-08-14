@@ -28,6 +28,10 @@ legend {
   opacity: 0;
 }
 
+.dropmenu .buttons.hidden {
+  display: none;
+}
+
 ul{
   list-style: none;
 }
@@ -303,6 +307,12 @@ input[type=number]::-webkit-outer-spin-button {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+}
+
+.cross-section-mode .animation-tools{
+  display: flex;
+  justify-content: left;
+  flex-direction: column;
 }
 
 .info {

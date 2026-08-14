@@ -1,4 +1,5 @@
 import { RENDER_FUNCS, THREE_DIMENSIONS} from "./render.js";
+import { animate } from "popmotion";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
 const MIN_DIMENSION = 2;
@@ -660,40 +661,142 @@ function setWikiHandler() {
 }
 
 // CROSS SECTION
+function initHyperplaneNormalInput(hyperplane){
+  const input = document.createElement("input");
+  input.type = "number";
+  input.value = 1.00;
+  input.step = 0.01;
+  if(hyperplane.classList.contains("from")){
+    input.addEventListener("input", () => {
+      stopHyperplaneAnimation();
+      const inputs = hyperplane.querySelectorAll("input:not(.offset)");
+      const normal = Array.from(inputs).map((input) => parseFloat(input.value));
+      APP.crossSectionMode.hyperplaneNormal = normal;
+      updateAndRender();
+    });
+  }    
+  return input;
+}
+
+function initHyperplaneOffsetInput(hyperplane){
+  const input = document.createElement("input");
+  input.classList.add("offset");
+  input.type = "number";
+  input.value = 0.00;
+  input.step = 0.01;
+  if(hyperplane.classList.contains("from")){
+      stopHyperplaneAnimation();
+      input.addEventListener("input", () => {
+      APP.crossSectionMode.hyperplaneOffset = parseFloat(input.value);
+      updateAndRender();
+    });
+  }
+  return input;
+}
+
 function setCrossSectionHyperplane(dropmenu){
   APP.crossSectionMode.hyperplaneNormal = new Array(APP.dimensions).fill(1.0);
   APP.crossSectionMode.hyperplaneOffset = 0.0;
-  const hyperplane = dropmenu.querySelector(".cross-section-mode .hyperplane");
-  hyperplane.innerHTML = "";
-  for(let i = 0; i < APP.dimensions; i++){
-      const input = document.createElement("input");
-      input.type = "number";
-      input.value = 1.00;
-      input.step = 0.01;
-      input.addEventListener("input", () => {
-          const inputs = hyperplane.querySelectorAll("input:not(.offset)");
-          const normal = Array.from(inputs).map((input) => parseFloat(input.value));
-          APP.crossSectionMode.hyperplaneNormal = normal;
-          updateAndRender();
-      });
-      hyperplane.appendChild(input);
-      const span = document.createElement("span");
-      span.innerHTML = AXIS_IDENTIFIERS[i] + " + ";
-      hyperplane.appendChild(span);
-  }
-  const offsetInput = document.createElement("input");
-  offsetInput.classList.add("offset");
-  offsetInput.type = "number";
-  offsetInput.value = 0.00;
-  offsetInput.step = 0.01;
-  offsetInput.addEventListener("input", () => {
-      APP.crossSectionMode.hyperplaneOffset = parseFloat(offsetInput.value);
-      updateAndRender();
+  const hyperplanes = dropmenu.querySelectorAll(".cross-section-mode .hyperplane");
+
+  hyperplanes.forEach(hyperplane => {
+    hyperplane.innerHTML = "";
+    for(let i = 0; i < APP.dimensions; i++){
+        const input = initHyperplaneNormalInput(hyperplane);
+        hyperplane.appendChild(input);
+        const span = document.createElement("span");
+        span.innerHTML = AXIS_IDENTIFIERS[i] + " + ";
+        hyperplane.appendChild(span);
+    }
+    const offsetInput = initHyperplaneOffsetInput(hyperplane);
+    hyperplane.appendChild(offsetInput);
+    const offsetSpan = document.createElement("span");
+    offsetSpan.innerHTML = " = 0";
+    hyperplane.appendChild(offsetSpan);
   });
-  hyperplane.appendChild(offsetInput);
-  const offsetSpan = document.createElement("span");
-  offsetSpan.innerHTML = " = 0";
-  hyperplane.appendChild(offsetSpan);
+}
+
+function setAnimationToolbarStatusButtons(dropmenu){
+  const statusButtons = dropmenu.querySelectorAll(".animation-toolbar-states .button");
+  statusButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      statusButtons.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+      
+      const animationToolbar = document.querySelector(".animation-toolbar");
+      const p = document.querySelector(".cross-section-mode p.from");
+
+      if(button.innerHTML === "Open"){
+        p.classList.remove("hidden");
+        animationToolbar.classList.remove("hidden");
+      } else {
+        p.classList.add("hidden");
+        animationToolbar.classList.add("hidden");
+      }
+      updateAndRender();
+    });
+  });
+}
+
+function getHyperplaneValues(hyperplaneEl) {
+  const normalInputs = hyperplaneEl.querySelectorAll("input:not(.offset)");
+  const offsetInput = hyperplaneEl.querySelector("input.offset");
+  return {
+    normal: Array.from(normalInputs).map((input) => parseFloat(input.value)),
+    offset: parseFloat(offsetInput.value)
+  };
+}
+
+function lerpArray(from, to, t) {
+  return from.map((v, i) => v + (to[i] - v) * t);
+}
+
+let hyperplaneAnimation = null;
+
+function stopHyperplaneAnimation() {
+  hyperplaneAnimation?.stop();
+  hyperplaneAnimation = null;
+}
+
+function setAnimateHyperplaneBtn(dropmenu) {
+  const animateBtn = dropmenu.querySelector(".animation-toolbar .button");
+  const durationInput = dropmenu.querySelector(".animation-toolbar .duration");
+  const fromHyperplane = dropmenu.querySelector(".from.hyperplane");
+  const toHyperplane = dropmenu.querySelector(".to.hyperplane");
+
+  animateBtn.addEventListener("click", () => {
+    stopHyperplaneAnimation();
+
+    const fromNormal = [...APP.crossSectionMode.hyperplaneNormal];
+    const fromOffset = APP.crossSectionMode.hyperplaneOffset;
+    const to = getHyperplaneValues(toHyperplane);
+    const duration = 1000 * parseFloat(durationInput.value) || 1000;
+
+    const fromNormalInputs = fromHyperplane.querySelectorAll("input:not(.offset)");
+    const fromOffsetInput = fromHyperplane.querySelector("input.offset");
+
+    hyperplaneAnimation = animate({
+      from: 0,
+      to: 1,
+      duration,
+      onUpdate: (t) => {
+        const currentNormal = lerpArray(fromNormal, to.normal, t);
+        const currentOffset = fromOffset + (to.offset - fromOffset) * t;
+        
+        APP.crossSectionMode.hyperplaneNormal = lerpArray(fromNormal, to.normal, t);
+        APP.crossSectionMode.hyperplaneOffset = fromOffset + (to.offset - fromOffset) * t;
+        // sincronizza anche gli input .from visibili
+        fromNormalInputs.forEach((input, i) => {
+          input.value = currentNormal[i].toFixed(2);
+        });
+        if (fromOffsetInput) fromOffsetInput.value = currentOffset.toFixed(2);
+        updateAndRender();
+      },
+      onComplete: () => {
+        hyperplaneAnimation = null;
+      }
+    });
+  });
 }
 
 function setCrossSectionStatusButtons(dropmenu){
@@ -712,6 +815,8 @@ function setCrossSectionStatusButtons(dropmenu){
 function setCrossSectionDropmenu(dropmenu){
   setCrossSectionHyperplane(dropmenu);
   setCrossSectionStatusButtons(dropmenu);
+  setAnimationToolbarStatusButtons(dropmenu);
+  setAnimateHyperplaneBtn(dropmenu);
 }
 
 function setCrossSectionButton({button, icon}) {
