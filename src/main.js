@@ -74,6 +74,7 @@ function setLegendCoordinate() {
 }
 
 function updateAndRender(){
+  updateDeveloperDataDiv(developerDataDiv);
   RENDER_FUNCS.updateTHREE(APP);
   if(APP.dimensions > THREE_DIMENSIONS && APP.colorMapMode === "on"){
     enableColorLegend();
@@ -430,6 +431,7 @@ function setSliderSync() {
         inputEl.value = APP.angleMeasurement === "radian" ? APP.theta[i] : APP.theta[i] * 180 / Math.PI; 
       }
     });
+    updateDeveloperDataDiv(developerDataDiv);
     sliderSyncId = requestAnimationFrame(frame);
   }
 
@@ -879,9 +881,9 @@ function setSphericalInputsSync() {
 
     APP.camera.spherical = { radius, theta, phi }; // tieni anche lo stato logico coerente
 
+    updateDeveloperDataDiv(developerDataDiv);
     sphericalSyncId = requestAnimationFrame(frame);
   }
-
   sphericalSyncId = requestAnimationFrame(frame);
 }
 
@@ -902,6 +904,32 @@ function setCameraOptions(){
   setSphericalInputs(camera.dropmenu);
   setRapidCameraAssetBtns();
   setCameraBtn(camera.dropmenu);
+}
+
+/*
+* ==============
+* DEVELOPER MODE
+* ==============
+*/
+const developerDataDiv = document.querySelector(".developer-data");
+
+function updateDeveloperDataDiv(developerDataDiv){
+  developerDataDiv.innerHTML = "";
+
+  Object.getOwnPropertyNames(APP).forEach((prop) => {
+    const developerP = document.createElement("p");
+    developerP.classList.add("developer-p");
+    developerP.innerHTML = `${prop}: ${APP[prop]}`;
+    developerDataDiv.appendChild(developerP);
+  });
+}
+
+function setDeveloperModeBtn(){
+  const developerModeBtn = document.querySelector(".developer-mode.button");
+
+  developerModeBtn.addEventListener("click", ()=>{
+    developerDataDiv.classList.toggle("hidden");
+  });
 }
 
 function humanizeMeshName(technicalName) {
@@ -944,6 +972,7 @@ function addGuiHandlers() {
   setSliderSync();
   setCameraOptions();
   setSphericalInputsSync();
+  setDeveloperModeBtn();
 }
 
 addWindowEvents();
