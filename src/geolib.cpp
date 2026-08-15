@@ -149,7 +149,7 @@ class SegmentND {
             n = 0;
         }
 
-        float length() {
+        float length() const {
             return distance(start, end);
         }
 
@@ -433,6 +433,23 @@ class GeometryND {
                 if(v.norm() > max_dist) max_dist = v.norm();
             }
             return max_dist;
+        }
+
+        // E' sott'inteso che this e other siano generati mediante funzioni 'preconfezionate' e che sia garantito pertanto l'ordine.
+        // Inoltre, è garantito che entrambe le geometrie siano costituite da almeno una faccia.
+        bool similarTo(const GeometryND& other){
+            if( this->n != other.n || this->verts.size() != other.verts.size() || this->edges.size() != other.edges.size() || this->faces.size() != other.faces.size())
+                return false;
+
+            if( this->edges.empty() ) return true;
+            const float ratio = this->edges[0].length() / other.edges[0].length();
+
+            for(int i=1; i<this->edges.size(); i++){
+                if( abs(this->edges[i].length() / other.edges[i].length() - ratio) >= EPS )
+                    return false;
+            }
+
+            return true;
         }
 
         GeometryND getAbsoluteCrossSection(vector<float> n, float d){
@@ -925,6 +942,70 @@ class Orthoplex : public GeometryND {
         }
         return faces;
     }
+};
+
+class Joint {
+    public:
+        int n;
+        GeometryND start;
+        GeometryND end;
+        vector<PointND> verts;
+        vector<SegmentND> edges;
+        vector<FaceND> faces;
+
+        Joint(GeometryND _start, GeometryND _end) : start(_start), end(_end) {
+            if( !(_start.similarTo(_end)) ) throw invalid_argument("'start' and 'end' must be similar.");
+
+            this->n = _start.n; // E' indifferente con _end.n
+            int vsize = _start.verts.size(); // E' indifferente con _end.verts.size()
+
+            for(int i=0; i<vsize; i++){
+                this->verts.push_back(_start.verts[i]);
+                this->verts.push_back(_end.verts[i]);
+            }
+
+            for(int i=0; i<2*vsize; i+=2){
+                SegmentND s = SegmentND(this->verts[i], this->verts[i+1]);
+                this->edges.push_back(s);
+            }
+
+            for(int i=0; i<vsize; i++){
+                vector<PointND> vface;
+                vface.push_back(_start.verts[i]);
+                vface.push_back(_start.verts[(i+1) % vsize]);
+                vface.push_back(_end.verts[(i+1) % vsize]);
+                vface.push_back(_end.verts[i]);
+
+                FaceND f = FaceND(vface);
+                this->faces.push_back(f);
+            }
+        }
+
+        // Joint 'iperconico'
+        Joint(GeometryND _start, PointND _end) : start(_start), end(GeometryND(_end.size(), {_end})) {
+            if(_start.n != _end.size()) throw invalid_argument("'start' and 'end' must have the same number of dimensions.");
+
+            this->n = _start.n;
+            int vsize = _start.verts.size();
+
+            this->verts.insert(this->verts.end(), _start.verts.begin(), _start.verts.end());
+            this->verts.push_back(_end);
+
+            for(PointND v : _start.verts){
+                SegmentND s = SegmentND(v, _end);
+                this->edges.push_back(s);
+            }
+
+            for(int i=0; i<vsize; i++){
+                vector<PointND> vface;
+                vface.push_back(_start.verts[i]);
+                vface.push_back(_start.verts[ (i+1) % vsize ]);
+                vface.push_back(_end);
+
+                FaceND f = FaceND(vface);
+                this->faces.push_back(f);
+            }
+        }
 };
 
 class Hypersphere : public GeometryND {
