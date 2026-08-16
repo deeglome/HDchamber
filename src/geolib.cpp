@@ -944,16 +944,17 @@ class Orthoplex : public GeometryND {
     }
 };
 
-class Joint {
+class Joint : public GeometryND {
+    private:
+        static int evaluateN(const GeometryND& g){
+            return g.n;
+        }
+
     public:
-        int n;
         GeometryND start;
         GeometryND end;
-        vector<PointND> verts;
-        vector<SegmentND> edges;
-        vector<FaceND> faces;
 
-        Joint(GeometryND _start, GeometryND _end) : start(_start), end(_end) {
+        Joint(GeometryND _start, GeometryND _end) : start(_start), end(_end), GeometryND(evaluateN(_start), {}, {}, {}) {
             if( !(_start.similarTo(_end)) ) throw invalid_argument("'start' and 'end' must be similar.");
 
             this->n = _start.n; // E' indifferente con _end.n
@@ -982,7 +983,7 @@ class Joint {
         }
 
         // Joint 'iperconico'
-        Joint(GeometryND _start, PointND _end) : start(_start), end(GeometryND(_end.size(), {_end})) {
+        Joint(GeometryND _start, PointND _end) : start(_start), end(GeometryND(_end.size(), {_end})), GeometryND(_end.size(), {}, {}, {}) {
             if(_start.n != _end.size()) throw invalid_argument("'start' and 'end' must have the same number of dimensions.");
 
             this->n = _start.n;
