@@ -2,10 +2,12 @@ GXX = g++
 SRC = main.cpp
 OUT = main
 EIGEN = /usr/include/eigen3
+EMSDK = ~/emsdk
 
 all: clean wasm
 
 wasm: wasm.cpp
+	source $(EMSDK)/emsdk_env.sh
 	emcc wasm.cpp \
 	-I$(EIGEN) \
 	-lembind \
