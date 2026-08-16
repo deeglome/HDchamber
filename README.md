@@ -6,7 +6,7 @@
 
 > 🆕 **HDchamber isn't just vanilla JavaScript anymore!**
 
-HDchamber is a rendering environment built in THREE.js and partly compiled in WebAssembly using Emscripten. It's a place where geometric figures from higher dimensions are brought to life and can be studied. HDchamber page is online and hosted on [Netlify](https://hdchamber.netlify.app/).
+HDchamber is a rendering environment built in THREE.js and partly compiled in WebAssembly using Emscripten and Eigen. It's a place where geometric figures from higher dimensions are brought to life and can be studied. HDchamber page is online and hosted on [Netlify](https://hdchamber.netlify.app/).
 
 ## Features
 
@@ -37,50 +37,37 @@ HDchamber is a rendering environment built in THREE.js and partly compiled in We
 
 ## How to Run HDchamber Locally!
 
-Install an IDE or Text Editor like [Visual Studio Code](https://code.visualstudio.com/) if you haven't already.
-Then clone HDchamber repo to your local machine using the following command (in bash shell):
+### Requirements
+
+1) An IDE or Text Editor like [Visual Studio Code](https://code.visualstudio.com/)
+2) [Eigen C++ library](https://libeigen.gitlab.io/) used by `geolib.cpp` for linear algebra computations. If you're using Linux you can install it from your distro package manager. Alternatively, you can clone the repo from the link
+3) [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) to compile `wasm.cpp` in WebAssembly
+4) [npm](https://www.npmjs.com/package/npm) to run your localhost
+
+### Getting Started
+Clone HDchamber repo to your local machine using the following command:
+
 ```bash
-# Replace /path/to with your real path
-git clone https://github.com/deeglome/HDchamber.git /path/to/HDchamber
+# Replace '/path/to/HDchamber' with your real path (for instance '~/HDchamber')
+git clone -b wasm-three https://github.com/deeglome/HDchamber.git /path/to/HDchamber
 ```
 
-Also, you need to install Emscripten to compile `wasm.cpp` in WebAssembly. Start cloning its repo:
-```bash
-# Get the emsdk repo
-git clone https://github.com/emscripten-core/emsdk.git /path/to/emsdk
+Next, run these commands in your directory:
 
-# Enter that directory
-cd emsdk
-```
-Run the following emsdk commands to get the latest tools from GitHub and set them as active:
-```bash
-# Fetch the latest version of the emsdk (not needed the first time you clone)
-git pull
-
-# Download and install the latest SDK tools.
-./emsdk install latest
-
-# Make the "latest" SDK "active" for the current user. (writes .emscripten file)
-./emsdk activate latest
-
-# Activate PATH and other environment variables in the current terminal
-source ./emsdk_env.sh
-```
-All Emscripten guidelines are taken from its official [Documentation](https://emscripten.org/docs/getting_started/downloads.html). You can check there if you want.
-
-Last but not least, since every time you'll open a new terminal you'll also have to activate Emscripten, I suggest you create an alias in your `.bashrc` file like the following:
-```bash
-# In .bashrc
-alias emcc-activate='source /path/to/emsdk/emsdk_env.sh'
-```
-Next, run these commands in your directory (make sure you've already installed `npm`!):
 ```bash
 # In /path/to/HDchamber
 npm install;
 cd src;
-
-# After you've already run 'emcc-activate'
 make wasm;
 npm run dev;
 ```
+
+Make sure `Makefile` constants are matched. These are the default values:
+
+```bash
+# In /path/to/HDchamber/src/Makefile
+EIGEN = /usr/include/eigen3
+EMSDK = ~/emsdk
+```
+
 That's all! Enjoy analyzing higher dimensions!
