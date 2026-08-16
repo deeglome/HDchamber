@@ -7,8 +7,7 @@ EMSDK = ~/emsdk
 all: clean wasm
 
 wasm: wasm.cpp
-	source $(EMSDK)/emsdk_env.sh
-	emcc wasm.cpp \
+	bash -c "source $(EMSDK)/emsdk_env.sh && em++ wasm.cpp \
 	-I$(EIGEN) \
 	-lembind \
 	-s WASM=1 \
@@ -22,7 +21,7 @@ wasm: wasm.cpp
 	-s SAFE_HEAP=1 \
 	-s STACK_OVERFLOW_CHECK=2 \
 	-g \
-	-o geolib.js
+	-o geolib.js"
 
 test: test.cpp
 	$(GXX) test.cpp -o test -I$(EIGEN)
