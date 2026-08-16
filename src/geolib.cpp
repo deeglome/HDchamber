@@ -1191,6 +1191,47 @@ class Hypersphere : public GeometryND {
         }
 };
 
+class HypersphericalGeometry : public GeometryND {
+    private:
+        static int evaluateN(const vector<Hypersphere>& hspheres){
+            if(hspheres.empty()) throw invalid_argument("'hspheres' mustn't be empty.");
+            return hspheres[0].n;
+        }
+
+    public:
+        vector<Hypersphere> hspheres;
+        vector<Joint> joints;
+
+        HypersphericalGeometry(vector<Hypersphere> _hspheres, bool cyclic=false) : GeometryND(evaluateN(_hspheres), {}, {}, {}){
+            this->n = _hspheres[0].n;
+            this->hspheres = _hspheres;
+            int hsize = _hspheres.size();
+
+            if(!cyclic){
+                for(int i=0; i<hsize-1; i++){
+                    Joint j(_hspheres[i], _hspheres[i+1]);
+                    this->joints.push_back(j);
+                }
+            }
+            else
+            {
+                for(int i=0; i<hsize; i++){
+                    Joint j(_hspheres[i], _hspheres[ (i+1) % hsize ]);
+                    this->joints.push_back(j);
+                }
+            }
+
+            for(Hypersphere& hs : _hspheres){
+                this->verts.insert(this->verts.end(), hs.verts.begin(), hs.verts.end());
+            }
+
+            for(Joint& j : this->joints){
+                this->edges.insert(this->edges.end(), j.edges.begin(), j.edges.end());
+                this->faces.insert(this->faces.end(), j.faces.begin(), j.faces.end());
+            }
+        }
+};
+
 class LowHypersphere : public GeometryND {
     public:
         int subdivs;
