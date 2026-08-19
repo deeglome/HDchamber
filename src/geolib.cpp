@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <Eigen/Dense>
+#include <vector>
 #include <thread>
 #include <cmath>
 
@@ -52,6 +53,20 @@ PointND extendPoint(PointND p, int n) {
 float distance(PointND p, PointND q) {
     if (p.size() != q.size()) throw invalid_argument("Points must have the same number of dimensions.");
     return (p-q).norm();
+}
+
+bool isUniformSet(vector<PointND> points) {
+    int nump = points.size();
+    if(nump == 0) return true;
+
+    PointND p0 = points[0];
+    for(int i=0; i<nump-1; i++){
+        if(points[i].size() != p0.size()) return false;
+        for(int j=i+1; j<nump; j++){
+            if(points[i] == points[j]) return false;
+        }
+    }
+    return true;
 }
 
 void print_point(const PointND p, string label = "", int digs = 2) {
@@ -157,6 +172,72 @@ class SegmentND {
             return (start + end) / 2.0f;
         }
 
+        bool overlaps(const SegmentND& other) const {
+            VectorXf dir1 = end - start;
+            VectorXf dir2 = other.end - other.start;
+
+            float len1 = dir1.norm();
+            float len2 = dir2.norm();
+
+            VectorXf u1 = dir1 / len1;
+            VectorXf u2 = dir2 / len2;
+
+            // 1) directions must be parallel: |u1 . u2| ≈ 1
+            float dot = u1.dot(u2);
+            if (std::abs(std::abs(dot) - 1.0f) > EPS) return false;
+
+            // 2) same line: the vector which links starts
+            //    must be parallel to u1 too (orthogonal component ≈ 0)
+            VectorXf w = other.start - start;
+            VectorXf wPerp = w - (w.dot(u1)) * u1;
+            if (wPerp.norm() > EPS) return false;
+
+            // 3) project the 4 extremes onto scalar param along u1
+            float tStart      = 0.0f;
+            float tEnd        = len1;
+            float tOtherStart = w.dot(u1);
+            float tOtherEnd   = (other.end - start).dot(u1);
+
+            float aMin = std::min(tStart, tEnd);
+            float aMax = std::max(tStart, tEnd);
+            float bMin = std::min(tOtherStart, tOtherEnd);
+            float bMax = std::max(tOtherStart, tOtherEnd);
+
+            // 4) intersect between the 2 1D-intervals
+            float overlapMin = std::max(aMin, bMin);
+            float overlapMax = std::min(aMax, bMax);
+
+            return (overlapMax - overlapMin) > EPS; // positive overlap length
+        }
+
+        /* Calculate intersection bewtweeen two non-overlapping distinct segments */
+        unique_ptr<PointND> intersect(const SegmentND& other) const {
+            if(this->n != other.n) throw invalid_argument("*this and *other are not embedded in the same N-dimensional space.");
+            if( this->overlaps(other) ) throw invalid_argument("*this and *other can't be overlapped.");
+            MatrixXf A(this->n, 2);
+            A.col(0) = this->end - this->start;
+            A.col(1) = other.start - other.end;
+            VectorXf b = other.start - this->start;
+
+            MatrixXf Ab(this->n, 3);
+            Ab.col(0) = A.col(0);
+            Ab.col(1) = A.col(1);
+            Ab.col(2) = b;
+
+            auto qrA = A.colPivHouseholderQr();
+            auto qrAb = Ab.colPivHouseholderQr();
+
+            qrA.setThreshold(EPS);
+            qrAb.setThreshold(EPS);
+            
+            if( qrA.rank() != qrAb.rank() || qrA.rank() < 2 ) return nullptr;
+
+            Vector2f x = qrA.solve(b);
+            if(x(0) < -EPS || x(0) > 1+EPS || x(1) < -EPS || x(1) > 1+EPS) return nullptr;
+            float t = std::max(0.0f, std::min( x(0), 1.0f) );
+            return unique_ptr<PointND>(new PointND(this->start + t * (this->end - this->start)));
+        }
+
         void extendIn(int n){
             this->start = extendPoint(this->start, n);
             this->end = extendPoint(this->end, n);
@@ -212,24 +293,56 @@ class SegmentND {
         }
 };
 
+/* Calculate the edges of a polygon (a closed plane figure) given its vertices. The order of the vertices matters.*/
+vector<SegmentND> polyEdgesFromVerts(vector<PointND> verts){
+    vector<SegmentND> edges;
+    int numv = verts.size();
+
+    for(int i=0; i<numv; i++){
+        edges.push_back(SegmentND(verts[i], verts[ (i+1) % numv ]));
+    }
+    return edges;
+}
+
+/* A FaceND is a closed, non-self-intersecting plane figure embedded in an N-dimensional space. */
 class FaceND {
     public:
         vector<PointND> verts;
         vector<SegmentND> edges;
         int n;
+        
+        FaceND(vector<PointND> _verts) {
+            if( !isUniformSet(_verts) ) throw invalid_argument("_verts is not a uniform set of points.");
 
-        // L'insieme di segmenti che deve formare una figura piana chiusa. E' importante l'ordine dei segmenti nel vettore.
-        // Per dimensioni superiori alla seconda, tutti i vertici devono appartenere allo stesso piano.
-        // Tuttavia, queste condizioni sono bypassate negli algoritmi di generazioni delle geometrie e pertanto non sono necessarie.
-        FaceND(vector<SegmentND> _edges) : edges(_edges){
-            int temp_n = _edges[0].n;
-            for(SegmentND& e : _edges) if(e.n != temp_n) invalid_argument("There are different edge sizes in the same face. They must be equal.");
-            verts = vertsFromLoop(_edges);
-            n = temp_n;
+            int _n = _verts[0].size();
+            int numv = _verts.size();
+            if(numv < 3) throw invalid_argument("Cannot create a closed plane figure using only " + to_string(numv) + " vertices.");
+
+            VectorXf v0 = _verts[0];
+            MatrixXf A(_n, numv);
+            for(int i=0; i<numv; i++){
+                A.col(i) = _verts[i] - v0;
+            }
+
+            FullPivLU<MatrixXf> lu_decomp_A(A);
+            if( lu_decomp_A.rank() < 2 ) throw invalid_argument("_verts consists of collinear vertices, or all the vertices coincide.");
+            if( lu_decomp_A.rank() > 2 ) throw invalid_argument("There is no plane that passes through all the vertices of _verts (the vertices form skew lines).");
+
+            vector<SegmentND> _edges = polyEdgesFromVerts(_verts);
+            for(int i=0; i<numv-1; i++){
+                for(int j=i+1; j<numv; j++){
+                    SegmentND s1 = _edges[i], s2 = _edges[j];
+
+                    unique_ptr<PointND> p = s1.intersect(s2);
+                    if( p != nullptr && *p != s1.start && *p != s1.end && *p != s2.start && *p != s2.end )
+                        throw invalid_argument("The plane figure is self-intersecting.");
+                }
+            }
+
+            this->verts = _verts;
+            this->edges = _edges;
+            this->n = _n;
         }
-
-        // Dato un insieme di vertici i segmenti vengono costruiti nell'ordine in cui si trovano nel vettore.
-        FaceND(vector<PointND> _verts) : FaceND(loopFromVerts(_verts)) {}
 
         // Calcola il baricentro della faccia.
         PointND bar(){
@@ -250,17 +363,6 @@ class FaceND {
             if(s.size() != n) throw invalid_argument("Scale vector must have the same number of dimensions as the face.");
             for(SegmentND& seg : this->edges) seg.scale(s);
             for(PointND& p : this->verts) p = p.cwiseProduct(s);
-        }
-
-        // Restituisce un vettore dei singoli prodotti scalari tra edges consecutivi.
-        vector<float> scalars(){
-            vector<float> v;
-            for(int i=0; i<this->edges.size(); i++){
-                PointND dir_i = this->edges[i].end - this->edges[i].start;
-                PointND dir_ii = this->edges[(i+1) % edges.size()].end - this->edges[(i+1) % edges.size()].start;
-                v.push_back(dir_i.dot(dir_ii));
-            }
-            return v;
         }
 
         // Due facce si dicono coincidenti se rispettivamente ogni edge è coincidente.
@@ -319,23 +421,6 @@ class FaceND {
 
         bool operator!=(FaceND f){
             return !(*this==f);
-        }
-
-    private:
-        vector<SegmentND> loopFromVerts(vector<PointND> verts){
-            vector<SegmentND> edges;
-            int i;
-            for(i=1; i<verts.size(); i++){
-                edges.push_back(SegmentND(verts[i-1], verts[i]));
-            }
-            edges.push_back(SegmentND(verts[i-1], verts[0]));
-            return edges;
-        }
-
-        vector<PointND> vertsFromLoop(vector<SegmentND> loop){
-            vector<PointND> verts;
-            for(int i=0; i<loop.size(); i++) verts.push_back(loop[i].start);
-            return verts;
         }
 };
 
