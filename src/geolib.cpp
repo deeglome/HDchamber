@@ -473,46 +473,46 @@ class GeometryND {
             return new GeometryND(*this);
         }
 
-        void transform(const MatrixXf& mat) {
+        virtual void transform(const MatrixXf& mat) {
             for(FaceND& f : this->faces) f.transform(mat);
             for(SegmentND& s : this->edges) s.transform(mat);
             for(PointND& p : this->verts) p = mat * p;
         }
 
-        void translate(const PointND& t){
+        virtual void translate(const PointND& t){
             for(FaceND& f : this->faces) f.translate(t);
             for(SegmentND& s : this->edges) s.translate(t);
             for(PointND& p : this->verts) p += t;
         }
 
-        void scale(const PointND& s){
+        virtual void scale(const PointND& s){
             for(FaceND& f : this->faces) f.scale(s);
             for(SegmentND& seg : this->edges) seg.scale(s);
             for(PointND& p : this->verts) p = p.cwiseProduct(s);
         }
 
-        void extendIn(int n){
+        virtual void extendIn(const int n){
             for(FaceND& f : faces) f.extendIn(n);
             for(SegmentND& s : edges) s.extendIn(n);
             for(PointND& v : verts) v = extendPoint(v, n);
             this->n = n;
         }
 
-        void project(int n){
+        virtual void project(int n){
             for(FaceND& f : this->faces) f.project(n);
             for(SegmentND& s : this->edges) s.project(n);
             for(PointND& v : this->verts) v = projectPoint(v, n);
             this->n = n;
         }
 
-        void project(int n, float cam_dist){
+        virtual void project(int n, float cam_dist){
             for(FaceND& f : this->faces) f.project(n, cam_dist);
             for(SegmentND& s : this->edges) s.project(n, cam_dist);
             for(PointND& v : this->verts) v = projectPoint(v, n, cam_dist);
             this->n = n;
         }
 
-        float maxVertexDist(){
+        virtual float maxVertexDist(){
             float max_dist = 0.00f;
             for(PointND& v : this->verts){
                 if(v.norm() > max_dist) max_dist = v.norm();
@@ -522,7 +522,7 @@ class GeometryND {
 
         // E' sott'inteso che this e other siano generati mediante funzioni 'preconfezionate' e che sia garantito pertanto l'ordine.
         // Inoltre, è garantito che entrambe le geometrie siano costituite da almeno una faccia.
-        bool similarTo(const GeometryND& other){
+        virtual bool similarTo(const GeometryND& other){
             if( this->n != other.n || this->verts.size() != other.verts.size() || this->edges.size() != other.edges.size() || this->faces.size() != other.faces.size())
                 return false;
 
@@ -1106,13 +1106,77 @@ class Hypersphere : public GeometryND {
             hypersphere(n, radius, subdivs).edges,
             {} // Non servono le facce, la sezione ha una forma analitica chiusa!
         ) {
-            this->center = center;
+            this->center = vector<float>(n, 0.0f); 
             this->radius = radius;
             this->subdivs = subdivs;
+
+            Eigen::Map<Eigen::VectorXf> target(center.data(), center.size());
+            this->translate(PointND(target)); // sposta verts/edges E aggiorna this->center a 'center'
         }
 
         Hypersphere* clone() override {
             return new Hypersphere(*this);
+        }
+
+        // Be careful! Only orthogonal matrices (isometries and scales) transforms Hyperspheres into Hyperspheres.
+        // A general transform matrix could transform an Hypersphere into a Hyperellipsoid. To avoid!
+        void transform(const MatrixXf& mat) override {
+            if (!mat.isUnitary(EPS))
+                throw invalid_argument("Hypersphere::transform: The matrix must be orthogonal to ensure that the transformation maps a hypersphere onto a hypersphere.");
+
+            GeometryND::transform(mat);
+
+            // The center must be transformed consistently; otherwise, it remains “old”
+            // relative to the newly rotated vertices
+            Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
+            Eigen::VectorXf c2 = mat * c;
+            for (int i = 0; i < c2.size(); ++i) center[i] = c2(i);
+        }
+
+        void translate(const PointND& t) override {
+            GeometryND::translate(t);
+            for (int i = 0; i < center.size(); ++i) center[i] += t(i);
+        }
+
+        void scale(const PointND& s) override {
+            for (int i = 1; i < s.size(); ++i)
+                if (std::abs(s(i) - s(0)) > EPS)
+                    throw invalid_argument("Hypersphere::scale: the scale vector must be uniform (isotropic) to keep the shape a hypersphere.");
+
+            GeometryND::scale(s);
+            Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
+            c = c.cwiseProduct(s);
+            for (int i = 0; i < c.size(); ++i) center[i] = c(i);
+
+            this->radius *= s(0);
+        }
+
+        void extendIn(const int n) override {
+            GeometryND::extendIn(n);
+            Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
+            c = extendPoint(c, n);
+            for (int i = 0; i < c.size(); ++i) center[i] = c(i);
+        }
+
+        void project(int n) override {
+            Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
+            PointND c_proj = projectPoint(PointND(c), n);
+            center.assign(c_proj.data(), c_proj.data() + c_proj.size());
+
+            GeometryND::project(n);
+        }
+
+        void project(int n, float cam_dist) override {
+            Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
+            PointND c_proj = projectPoint(PointND(c), n, cam_dist);
+            center.assign(c_proj.data(), c_proj.data() + c_proj.size());
+
+            GeometryND::project(n, cam_dist);
+        }
+
+        float maxVertexDist() override {
+            Eigen::Map<const Eigen::VectorXf> c(center.data(), center.size());
+            return c.norm() + radius; // exact analytic value
         }
 
         // -----------------------------------------------------------------

@@ -29,7 +29,7 @@ async function init() {
             case "Hypercube": return new GEOLIB.Hypercube(app.dimensions, 1.0); break;
             case "Simplex": return new GEOLIB.Simplex(app.dimensions, 1.0); break;
             case "Orthoplex": return new GEOLIB.Orthoplex(app.dimensions, 1.0); break;
-            case "Hypersphere": return new GEOLIB.Hypersphere(app.dimensions, GEOLIB.JsToVectorF(Array(app.dimensions).fill(0)), 1.0, 4); break;
+            case "Hypersphere": return new GEOLIB.Hypersphere(app.dimensions, GEOLIB.JsToVectorF(Array(app.dimensions).fill(1)), 1.0, 4); break;
             case "LowHypersphere": return new GEOLIB.LowHypersphere(app.dimensions, 1.0, 32); break;
             case "Hypertorus": return new GEOLIB.Hypertorus(app.dimensions, 1.0, 0.5, 8);
             case "LowHypertorus": return new GEOLIB.LowHypertorus(app.dimensions, 1.0, 0.2, 8, 8); break;
