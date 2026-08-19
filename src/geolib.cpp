@@ -334,7 +334,7 @@ class FaceND {
                     SegmentND s1 = _edges[i], s2 = _edges[j];
 
                     unique_ptr<PointND> p = s1.intersect(s2);
-                    if( p != nullptr && *p != s1.start && *p != s1.end && *p != s2.start && *p != s2.end )
+                    if( p != nullptr && (*p - s1.start).norm() < EPS && (*p - s1.end).norm() < EPS && (*p - s2.start).norm() < EPS && (*p - s2.end).norm() < EPS )
                         throw invalid_argument("The plane figure is self-intersecting.");
                 }
             }
@@ -400,7 +400,7 @@ class FaceND {
 
         // Una faccia è uguale/congruente ad un'altra faccia 'f' se essa è sovrapponibile mediante isometrie, trasformazioni che conservano distanze e angoli.
         // CN: le facce devono avere = num di edges.
-        bool operator==(FaceND f){
+        /* bool operator==(FaceND f){
             if(this->edges.size() != f.edges.size()) return false;
             if(this->coincident(f)) return true;
             bool len_found, ang_found;
@@ -421,7 +421,7 @@ class FaceND {
 
         bool operator!=(FaceND f){
             return !(*this==f);
-        }
+        } */
 };
 
 void combine(const vector<PointND>& array, size_t comboSize, size_t start, vector<PointND>& combo, vector<vector<PointND>>& result) {
