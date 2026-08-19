@@ -79,18 +79,18 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("extendIn", &SegmentND::extendIn)
         .function("transform", &SegmentND::transform)
         .function("coincident", &SegmentND::coincident)
+        .function("intersect", &SegmentND::intersect)
         .function("project", emscripten::select_overload<void(int)>(&SegmentND::project))
         .function("projectWithCam", emscripten::select_overload<void(int, float)>(&SegmentND::project));
 
     // Binding per FaceND
     emscripten::class_<FaceND>("FaceND")
-        .constructor<vector<SegmentND>>()
+        .constructor<vector<PointND>>()
         .property("verts", &FaceND::verts)
         .property("edges", &FaceND::edges)
         .property("n", &FaceND::n)
         .function("bar", &FaceND::bar)
         .function("transform", &FaceND::transform)
-        .function("scalars", &FaceND::scalars)
         .function("coincident", &FaceND::coincident)
         .function("extendIn", &FaceND::extendIn)
         .function("project", emscripten::select_overload<void(int)>(&FaceND::project))
@@ -152,7 +152,7 @@ EMSCRIPTEN_BINDINGS(my_module){
 
     // Binding per Hypersphere
     emscripten::class_<Hypersphere, emscripten::base<GeometryND>>("Hypersphere")
-        .constructor<int, float, int>()
+        .constructor<int, vector<float>, float, int>()
         .function("clone", emscripten::optional_override([](Hypersphere& self) -> Hypersphere* {
             return self.clone();
         }), emscripten::allow_raw_pointers());
@@ -166,11 +166,11 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("getBufferEdgeIndices", &LowHypersphere::getBufferEdgeIndices);
 
     // Binding per Hypertorus
-    emscripten::class_<Hypertorus, emscripten::base<GeometryND>>("Hypertorus")
+    /* emscripten::class_<Hypertorus, emscripten::base<GeometryND>>("Hypertorus")
         .constructor<int, float, float, int>()
         .function("clone", emscripten::optional_override([](Hypertorus& self) -> Hypertorus* {
             return self.clone();
-        }), emscripten::allow_raw_pointers());
+        }), emscripten::allow_raw_pointers()); */
     
     // Binding per LowHypertorus
     emscripten::class_<LowHypertorus, emscripten::base<GeometryND>>("LowHypertorus")

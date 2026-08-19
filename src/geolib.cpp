@@ -537,7 +537,7 @@ class GeometryND {
             return true;
         }
 
-        GeometryND getAbsoluteCrossSection(vector<float> n, float d){
+        virtual GeometryND getAbsoluteCrossSection(vector<float> n, float d){
             if(n.size() != this->n) throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
             Eigen::VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n.data(), n.size());
             Eigen::Hyperplane<float, Eigen::Dynamic> h = Eigen::Hyperplane<float, Eigen::Dynamic>(n_eigen, d);
@@ -1096,18 +1096,102 @@ class Joint : public GeometryND {
 
 class Hypersphere : public GeometryND {
     public:
-        Hypersphere(int n, float radius, int subdivisions) : GeometryND(
+        vector<float> center;
+        float radius;
+        int subdivs;
+
+        Hypersphere(int n, vector<float> center, float radius, int subdivs) : GeometryND(
             n,
-            hypersphere(n, radius, subdivisions).verts,
-            hypersphere(n, radius, subdivisions).edges,
-            hypersphere(n, radius, subdivisions).faces
-        ) {}
+            hypersphere(n, radius, subdivs).verts,
+            hypersphere(n, radius, subdivs).edges,
+            {} // Non servono le facce, la sezione ha una forma analitica chiusa!
+        ) {
+            this->center = center;
+            this->radius = radius;
+            this->subdivs = subdivs;
+        }
 
         Hypersphere* clone() override {
             return new Hypersphere(*this);
         }
 
+        // -----------------------------------------------------------------
+        // Only getAbsoluteCrossSection needs to be overridden: it's the only
+        // virtual cross-section hook in GeometryND. getRelativeCrossSection
+        // stays inherited as-is (non-virtual in the base), and works
+        // correctly for ANY GeometryND made of verts/edges — including this
+        // one — because it operates generically on the mesh returned here.
+        // -----------------------------------------------------------------
+        GeometryND getAbsoluteCrossSection(vector<float> n_vec, float d) override {
+            if ((int)n_vec.size() != this->n)
+                throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
+            if (this->n < 2)
+                throw invalid_argument("Cannot take a cross section of a 0- or 1-dimensional hypersphere.");
+
+            Eigen::VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n_vec.data(), n_vec.size());
+            Eigen::Hyperplane<float, Eigen::Dynamic> h(n_eigen, d);
+
+            Eigen::Map<Eigen::VectorXf> center_eigen(this->center.data(), this->center.size());
+            PointND c = h.projection(center_eigen); // still n-dimensional, absolute (world) coordinates
+            float dist = (center_eigen - c).norm();
+
+            if (dist > this->radius + EPS) {
+                // The cutting hyperplane misses the sphere entirely: empty section.
+                return GeometryND(this->n);
+            }
+
+            float r = std::sqrt(std::max(0.0f, this->radius * this->radius - dist * dist));
+
+            // Orthonormal basis of the hyperplane's direction space (n x (n-1)):
+            // columns are all orthogonal to n_eigen, so any point c + B*y
+            // automatically satisfies n_eigen . (c + B*y) = d.
+            Eigen::MatrixXf B = orthonormalComplement(n_eigen);
+
+            // Canonical (n-1)-dimensional sphere mesh, in LOCAL coordinates
+            // (this is the same private generator the constructor already uses).
+            GeometryND localSection = hypersphere(this->n - 1, r, this->subdivs);
+
+            // Embed every local vertex into the ambient n-dimensional space,
+            // positioned exactly on the cutting hyperplane.
+            vector<PointND> sectionVerts;
+            sectionVerts.reserve(localSection.verts.size());
+            for (const PointND& y : localSection.verts) {
+                sectionVerts.push_back(c + B * y);
+            }
+
+            vector<SegmentND> sectionEdges;
+            sectionEdges.reserve(localSection.edges.size());
+            for (const SegmentND& e : localSection.edges) {
+                PointND p1 = c + B * e.start;
+                PointND p2 = c + B * e.end;
+                sectionEdges.push_back(SegmentND(p1, p2));
+            }
+
+            // No faces here either: same convention as Hypersphere itself
+            // (analytic closed shape, faces aren't needed).
+            return GeometryND(this->n, sectionVerts, sectionEdges, {});
+        }
+
     private:
+        // -----------------------------------------------------------------
+        // Orthonormal basis (n x (n-1)) of the orthogonal complement of v.
+        // Needed to embed the canonical (n-1)-sphere mesh onto the actual
+        // cutting hyperplane in ambient coordinates.
+        // -----------------------------------------------------------------
+        static Eigen::MatrixXf orthonormalComplement(const Eigen::VectorXf& v) {
+            const int DIM = static_cast<int>(v.size());
+
+            Eigen::MatrixXf A(1, DIM);
+            A.row(0) = v.normalized().transpose();
+
+            Eigen::FullPivLU<Eigen::MatrixXf> lu(A);
+            Eigen::MatrixXf ker = lu.kernel(); // DIM x (DIM-1), not necessarily orthonormal
+
+            Eigen::HouseholderQR<Eigen::MatrixXf> qr(ker);
+            Eigen::MatrixXf Q = qr.householderQ() * Eigen::MatrixXf::Identity(DIM, DIM - 1);
+            return Q;
+        }
+
         static GeometryND hypersphere(int n, float radius, int subdivs, std::vector<float> pointstamp = {}) {
             const float MIN_PHI = -M_PI/2;
             const float MAX_PHI = M_PI/2;
@@ -1149,14 +1233,10 @@ class Hypersphere : public GeometryND {
                 GeometryND section = hypersphere(n-1, sectionRadius, subdivs, newPointstamp);
                 result.verts.insert(result.verts.end(), section.verts.begin(), section.verts.end());
                 result.edges.insert(result.edges.end(), section.edges.begin(), section.edges.end());
-                result.faces.insert(result.faces.end(), section.faces.begin(), section.faces.end()); // <-- NUOVO: propaga facce dai livelli più interni
 
                 if (hasPrevious) {
                     auto connectors = connectAdjacentHsSections(&previousSection, section);
                     result.edges.insert(result.edges.end(), connectors.begin(), connectors.end());
-
-                    auto newFaces = connectAdjacentHsFaces(&previousSection, section); // <-- NUOVO
-                    result.faces.insert(result.faces.end(), newFaces.begin(), newFaces.end());
                 }
 
                 previousSection = move(section);
@@ -1220,57 +1300,6 @@ class Hypersphere : public GeometryND {
             else for (int v = 0; v < currSize; v++)
                 edges.push_back(SegmentND(previousHypersphereSection->verts[v], hypersphereSection.verts[v]));
             return edges;
-        }
-
-        static vector<FaceND> connectAdjacentHsFaces(const GeometryND *previousHypersphereSection, const GeometryND &hypersphereSection) {
-            vector<FaceND> faces;
-
-            if (previousHypersphereSection == nullptr) return faces;
-
-            int prevSize = previousHypersphereSection->verts.size();
-            int currSize = hypersphereSection.verts.size();
-
-            if (prevSize == 1) {
-                // Polo -> cerchio/sezione: ventaglio di triangoli
-                for (int v = 0; v < currSize; v++) {
-                    int vNext = (v + 1) % currSize;
-                    vector<PointND> tri = {
-                        previousHypersphereSection->verts[0],
-                        hypersphereSection.verts[v],
-                        hypersphereSection.verts[vNext]
-                    };
-                    faces.push_back(FaceND(tri));
-                }
-            }
-            else if (currSize == 1) {
-                // Sezione -> polo: ventaglio di triangoli, verso opposto
-                for (int v = 0; v < prevSize; v++) {
-                    int vNext = (v + 1) % prevSize;
-                    vector<PointND> tri = {
-                        previousHypersphereSection->verts[v],
-                        previousHypersphereSection->verts[vNext],
-                        hypersphereSection.verts[0]
-                    };
-                    faces.push_back(FaceND(tri));
-                }
-            }
-            else if (prevSize == currSize) {
-                // Caso generale: quad strip tra due sezioni con lo stesso numero di vertici
-                for (int v = 0; v < currSize; v++) {
-                    int vNext = (v + 1) % currSize;
-                    vector<PointND> quad = {
-                        previousHypersphereSection->verts[v],
-                        previousHypersphereSection->verts[vNext],
-                        hypersphereSection.verts[vNext],
-                        hypersphereSection.verts[v]
-                    };
-                    faces.push_back(FaceND(quad));
-                }
-            }
-            // Se prevSize != currSize e nessuno dei due è 1, le sezioni non sono corrispondenti:
-            // situazione anomala, si ignora silenziosamente (non dovrebbe accadere con subdivs fissi).
-
-            return faces;
         }
 };
 
@@ -1398,6 +1427,7 @@ class LowHypersphere : public GeometryND {
         }
 };
 
+/*
 class Hypertorus : public GeometryND {
     public:
         Hypertorus(int n, float radius, float distanceFromCenter, int subdivs) : GeometryND(
@@ -1463,7 +1493,7 @@ class Hypertorus : public GeometryND {
             for (SegmentND &s : connectors) edges.push_back(s);
         }
 };
-
+*/
 class LowHypertorus : public GeometryND {
     public:
         int subdivs_R;
