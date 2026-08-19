@@ -1114,6 +1114,18 @@ class Hypersphere : public GeometryND {
             const float PHI_RANGE = MAX_PHI - MIN_PHI;
             float d_phi = PHI_RANGE / static_cast<float>(subdivs+1);
 
+            if (radius == 0) {
+                int dim = n + (int)pointstamp.size();
+                GeometryND sec(dim);
+                PointND v = PointND::Zero(dim);
+
+                for (size_t i = 0; i < pointstamp.size(); ++i) {
+                    v(n + i) = pointstamp[i];
+                }
+
+                sec.verts.push_back(v);
+                return sec;
+            }
             if(n==1) {
                 Hypercube hc(1, radius);
                 GeometryND sec(n, hc.verts);
@@ -1121,21 +1133,6 @@ class Hypersphere : public GeometryND {
             }
             else if(n==2 && radius!=0) {
                 return circle(radius, d_phi, pointstamp);
-            }
-            else if (n == 2 && radius == 0) {
-                int dim = 2+pointstamp.size();
-                GeometryND sec(dim);
-                PointND v(dim);
-
-                v(0) = 0.0f;
-                v(1) = 0.0f;
-
-                for (size_t i = 0; i < pointstamp.size(); ++i) {
-                    v(2+i) = pointstamp[i];
-                }
-
-                sec.verts.push_back(v);
-                return sec;
             }
 
             GeometryND result(n);
