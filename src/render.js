@@ -35,6 +35,7 @@ async function init() {
             case "LowHypertorus": return new GEOLIB.LowHypertorus(app.dimensions, 1.0, 0.2, 8, 8); break;
             case "Hyperspherinder": return GEOLIB.hyperspherinder(app.dimensions, 0.5, 1.0, 16); break;
             case "LowHyperspherinder": return new GEOLIB.LowHyperspherinder(app.dimensions, 0.5, 1.0, 16, 6); break;
+            case "Hypercone": return GEOLIB.hypercone(app.dimensions, 0.5, 1.0, 8); break;
             case "LowHypercone": return new GEOLIB.LowHypercone(app.dimensions, 0.5, 1.0, 16, 6); break;
             default: throw Error("Invalid input entered:", app.selectedObj); break;
         }

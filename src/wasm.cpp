@@ -156,6 +156,17 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](Hypersphere& self) -> Hypersphere* {
             return self.clone();
         }), emscripten::allow_raw_pointers());
+
+    // Binding per Joint
+    emscripten::class_<Joint, emscripten::base<GeometryND>>("Joint")
+        .property("start", &Joint::start)
+        .property("end", &Joint::end);
+
+    // Binding per HypersphericalGeometry
+    emscripten::class_<HypersphericalGeometry, emscripten::base<GeometryND>>("HypersphericalGeometry")
+        .constructor<vector<Hypersphere>, bool>()
+        .property("hspheres", &HypersphericalGeometry::hspheres)
+        .property("joints", &HypersphericalGeometry::joints);
     
     // Binding per LowHypersphere
     emscripten::class_<LowHypersphere, emscripten::base<GeometryND>>("LowHypersphere")
@@ -211,6 +222,11 @@ EMSCRIPTEN_BINDINGS(my_module){
             return hyperspherinder(n, radius, height, subdivs);
         }
     ));
+        emscripten::function("hypercone", emscripten::optional_override(
+        [](int n, float radius, float height, int subdivs) -> Joint {
+            return hypercone(n, radius, height, subdivs);
+        }
+    ));
     
     emscripten::function("barFromPoints", &barFromPoints);
     emscripten::function("createRotationMatrix", &createRotationMatrix);
@@ -226,4 +242,6 @@ EMSCRIPTEN_BINDINGS(my_module){
     emscripten::register_vector<SegmentND>("VectorSegmentND");
     emscripten::register_vector<FaceND>("VectorFaceND");
     emscripten::register_vector<std::string>("VectorString");
+    emscripten::register_vector<Joint>("VectorJoint");
+
 }

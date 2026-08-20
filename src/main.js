@@ -198,6 +198,7 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
     "LowHypertorus",
     "Hyperspherinder",
     "LowHyperspherinder",
+    "Hypercone",
     "LowHypercone",
     "And so on..."
   ];
