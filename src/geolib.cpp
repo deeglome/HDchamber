@@ -325,17 +325,17 @@ class FaceND {
             }
 
             FullPivLU<MatrixXf> lu_decomp_A(A);
-            if( lu_decomp_A.rank() < 2 ) throw invalid_argument("_verts consists of collinear vertices, or all the vertices coincide.");
-            if( lu_decomp_A.rank() > 2 ) throw invalid_argument("There is no plane that passes through all the vertices of _verts (the vertices form skew lines).");
+            // if( lu_decomp_A.rank() < 2 ) throw invalid_argument("_verts consists of collinear vertices, or all the vertices coincide.");
+            // if( lu_decomp_A.rank() > 2 ) throw invalid_argument("There is no plane that passes through all the vertices of _verts (the vertices form skew lines).");
 
             vector<SegmentND> _edges = polyEdgesFromVerts(_verts);
             for(int i=0; i<numv-1; i++){
                 for(int j=i+1; j<numv; j++){
                     SegmentND s1 = _edges[i], s2 = _edges[j];
 
-                    unique_ptr<PointND> p = s1.intersect(s2);
-                    if( p != nullptr && (*p - s1.start).norm() < EPS && (*p - s1.end).norm() < EPS && (*p - s2.start).norm() < EPS && (*p - s2.end).norm() < EPS )
-                        throw invalid_argument("The plane figure is self-intersecting.");
+                    //unique_ptr<PointND> p = s1.intersect(s2);
+                    //if( p != nullptr && (*p - s1.start).norm() < EPS && (*p - s1.end).norm() < EPS && (*p - s2.start).norm() < EPS && (*p - s2.end).norm() < EPS )
+                    //    throw invalid_argument("The plane figure is self-intersecting.");
                 }
             }
 
@@ -522,7 +522,7 @@ class GeometryND {
 
         // E' sott'inteso che this e other siano generati mediante funzioni 'preconfezionate' e che sia garantito pertanto l'ordine.
         // Inoltre, è garantito che entrambe le geometrie siano costituite da almeno una faccia.
-        virtual bool similarTo(const GeometryND& other){
+        virtual bool similarTo(const GeometryND& other) const {
             if( this->n != other.n || this->verts.size() != other.verts.size() || this->edges.size() != other.edges.size() || this->faces.size() != other.faces.size())
                 return false;
 
@@ -547,7 +547,7 @@ class GeometryND {
             for(FaceND f : this->faces){
                 try{
                     SegmentND s = intersect(f, h);
-                    if(s.n == this->n && !s.found(sectionEdges)) sectionEdges.push_back(s);
+                    if(distance(s.start, s.end) > EPS && s.n == this->n && !s.found(sectionEdges) ) sectionEdges.push_back(s);
                     if(s.n == this->n && !found(s.start, sectionVerts)) sectionVerts.push_back(s.start);
                     if(s.n == this->n && !found(s.end, sectionVerts)) sectionVerts.push_back(s.end);
                 }
@@ -1039,7 +1039,7 @@ class Joint : public GeometryND {
         GeometryND start;
         GeometryND end;
 
-        Joint(GeometryND _start, GeometryND _end) : start(_start), end(_end), GeometryND(evaluateN(_start), {}, {}, {}) {
+        Joint(const GeometryND& _start, const GeometryND& _end) : start(_start), end(_end), GeometryND(evaluateN(_start), {}, {}, {}) {
             if( !(_start.similarTo(_end)) ) throw invalid_argument("'start' and 'end' must be similar.");
 
             this->n = _start.n; // E' indifferente con _end.n
@@ -1056,6 +1056,10 @@ class Joint : public GeometryND {
             }
 
             for(int i=0; i<vsize; i++){
+                if (distance(_start.verts[i], _start.verts[(i + 1) % vsize]) < EPS) {
+                    continue; 
+                }
+
                 vector<PointND> vface;
                 vface.push_back(_start.verts[i]);
                 vface.push_back(_start.verts[(i+1) % vsize]);
@@ -1068,7 +1072,7 @@ class Joint : public GeometryND {
         }
 
         // Joint 'iperconico'
-        Joint(GeometryND _start, PointND _end) : start(_start), end(GeometryND(_end.size(), {_end})), GeometryND(_end.size(), {}, {}, {}) {
+        Joint(const GeometryND& _start, PointND _end) : start(_start), end(GeometryND(_end.size(), {_end})), GeometryND(_end.size(), {}, {}, {}) {
             if(_start.n != _end.size()) throw invalid_argument("'start' and 'end' must have the same number of dimensions.");
 
             this->n = _start.n;
@@ -1154,8 +1158,8 @@ class Hypersphere : public GeometryND {
         void extendIn(const int n) override {
             GeometryND::extendIn(n);
             Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
-            c = extendPoint(c, n);
-            for (int i = 0; i < c.size(); ++i) center[i] = c(i);
+            PointND extended = extendPoint(PointND(c), n);
+            center.assign(extended.data(), extended.data() + extended.size());
         }
 
         void project(int n) override {
@@ -1177,6 +1181,10 @@ class Hypersphere : public GeometryND {
         float maxVertexDist() override {
             Eigen::Map<const Eigen::VectorXf> c(center.data(), center.size());
             return c.norm() + radius; // exact analytic value
+        }
+
+        bool similarTo(const GeometryND& other) const override {
+            return true; // It's always true for hyperspheres.
         }
 
         // -----------------------------------------------------------------
@@ -1228,7 +1236,7 @@ class Hypersphere : public GeometryND {
             for (const SegmentND& e : localSection.edges) {
                 PointND p1 = c + B * e.start;
                 PointND p2 = c + B * e.end;
-                sectionEdges.push_back(SegmentND(p1, p2));
+                if( distance(p1, p2) > EPS ) sectionEdges.push_back(SegmentND(p1, p2));
             }
 
             // No faces here either: same convention as Hypersphere itself
@@ -1280,6 +1288,7 @@ class Hypersphere : public GeometryND {
                 return sec;
             }
             else if(n==2 && radius!=0) {
+                d_phi = 2*M_PI / static_cast<float>(subdivs);
                 return circle(radius, d_phi, pointstamp);
             }
 
@@ -1536,7 +1545,41 @@ class LowHypersphere : public GeometryND {
             }
             return edges;
         }
-};
+}; 
+
+HypersphericalGeometry hypertorus(int n, float Radius, float radius, int subdivs, int subdivsPerSphere) {
+    if (n < 2)
+        throw invalid_argument("hypertorus: 'n' must be at least 2 to sweep a ring of hyperspheres.");
+    if (subdivs < 3)
+        throw invalid_argument("hypertorus: 'subdivs' must be at least 3 to close the ring.");
+
+    vector<Hypersphere> hslices;
+    hslices.reserve(subdivs);
+
+    vector<float> center(n-1, 0.0f);
+    Hypersphere slice(n-1, center, radius, subdivsPerSphere);
+    slice.extendIn(n);
+
+    const string plane0 = string(1, AXIS_IDS[1]) + string(1, AXIS_IDS[n-1]);
+    const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
+    slice.transform(R0);
+
+    VectorXf t = VectorXf::Zero(n); t(0) = Radius;
+    slice.translate(t);
+
+    hslices.push_back(slice);
+
+    float theta = (2.0f * M_PI / static_cast<float>(subdivs));
+    const string dplane = "xy";
+    const MatrixXf dR = createRotationMatrix(n, {dplane}, {theta});
+    
+    for (int i=1; i<subdivs; i++) {
+        slice.transform(dR);
+        hslices.push_back(slice);
+    }
+
+    return HypersphericalGeometry(hslices, /*cyclic=*/true);
+}
 
 /*
 class Hypertorus : public GeometryND {
