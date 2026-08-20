@@ -1663,6 +1663,27 @@ class LowHypertorus : public GeometryND {
         }
 };
 
+HypersphericalGeometry hyperspherinder(int n, float radius, float height, int subdivs) {
+    vector<Hypersphere> hslices;
+    hslices.reserve(2);
+
+    vector<float> center(n-1, 0.0f);
+    Hypersphere slice(n-1, center, radius, subdivs);
+    slice.extendIn(n);
+
+    const string plane0 = string(1, AXIS_IDS[0]) + string(1, AXIS_IDS[n-1]);
+    const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
+    slice.transform(R0);
+
+    VectorXf t = VectorXf::Zero(n); t(0) = height / 2.0f;
+    slice.translate(t);
+    hslices.push_back(slice);
+    slice.translate( -2.0f * t);
+    hslices.push_back(slice);
+
+    return HypersphericalGeometry(hslices, false);
+}
+
 class LowHyperspherinder : public GeometryND {
     public:
         int subdivs_r;

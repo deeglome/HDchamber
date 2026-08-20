@@ -206,6 +206,11 @@ EMSCRIPTEN_BINDINGS(my_module){
     emscripten::function("distance", emscripten::optional_override([](PointND p, PointND q) -> float {
         return distance(p, q);
     }));
+    emscripten::function("hyperspherinder", emscripten::optional_override(
+        [](int n, float radius, float height, int subdivs) -> HypersphericalGeometry {
+            return hyperspherinder(n, radius, height, subdivs);
+        }
+    ));
     
     emscripten::function("barFromPoints", &barFromPoints);
     emscripten::function("createRotationMatrix", &createRotationMatrix);

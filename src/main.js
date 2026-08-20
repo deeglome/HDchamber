@@ -196,6 +196,7 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
     "LowHypersphere",
     "Hypertorus",
     "LowHypertorus",
+    "Hyperspherinder",
     "LowHyperspherinder",
     "LowHypercone",
     "And so on..."
