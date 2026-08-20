@@ -1406,6 +1406,53 @@ class HypersphericalGeometry : public GeometryND {
                 this->faces.insert(this->faces.end(), j.faces.begin(), j.faces.end());
             }
         }
+
+        void transform(const MatrixXf& mat) override {
+            GeometryND::transform(mat);
+            for(Hypersphere& hs : this->hspheres) hs.transform(mat);
+        }
+
+        void translate(const PointND& t) override {
+            GeometryND::translate(t);
+            for(Hypersphere& hs : this->hspheres) hs.translate(t);
+        }
+
+        void scale(const PointND& s) override {
+            GeometryND::scale(s);
+            for(Hypersphere& hs : this->hspheres) hs.scale(s);
+        }
+
+        GeometryND getAbsoluteCrossSection(vector<float> n, float d) override {
+            if((int)n.size() != this->n)
+                throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
+
+            // Sezione "generica": copre i joint, le cui facce (quad) sono già
+            // in this->faces (popolate nel costruttore) - riusa la logica
+            // già scritta in GeometryND, bypassando la dispatch virtuale.
+            GeometryND jointsSection = GeometryND::getAbsoluteCrossSection(n, d);
+            return jointsSection;
+
+            /* vector<PointND> sectionVerts = jointsSection.verts;
+            vector<SegmentND> sectionEdges = jointsSection.edges;
+
+            // Sezione analitica di ciascuna hypersphere: non hanno facce
+            // proprie (sono "chiuse" analiticamente), quindi va richiesta
+            // esplicitamente al loro override.
+            for(Hypersphere& hs : this->hspheres){
+                GeometryND hsSection = hs.getAbsoluteCrossSection(n, d);
+
+                for(SegmentND& s : hsSection.edges){
+                    if(!s.found(sectionEdges) && distance(s.start, s.end) > EPS) sectionEdges.push_back(s);
+                }
+                for(PointND& v : hsSection.verts){
+                    if(!found(v, sectionVerts)) sectionVerts.push_back(v);
+                }
+            }
+
+            // Nessuna faccia nel risultato, stessa convenzione delle altre
+            // getAbsoluteCrossSection della classe.
+            return GeometryND(this->n, sectionVerts, sectionEdges, {}); */
+        }
 };
 
 class LowHypersphere : public GeometryND {
