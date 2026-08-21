@@ -119,16 +119,22 @@ MatrixXf createRotationMatrix(int n, vector<string> planes, vector<float> angles
     
     MatrixXf R = MatrixXf::Identity(n, n);
     
-    for(int k=0; k<planes.size(); k++){
-        MatrixXf partialR = MatrixXf::Identity(n,n);
+    for(int k=0; k<planes.size(); k++) {
+        char c1 = planes[k][0], c2 = planes[k][1];
 
-        if((int)AXIS_IDS.find(planes[k][0]) >= n || (int)AXIS_IDS.find(planes[k][1]) >= n){
-            int idx = ((int)AXIS_IDS.find(planes[k][0]) > k-1) ? 0 : 1;
+        if(planes[k].length() != 2 || c1 == c2)
+            throw invalid_argument("Invalid plane entered: " + planes[k]);
+
+        int i = (int)AXIS_IDS.find(c1);
+        int j = (int)AXIS_IDS.find(c2);
+
+        if(i >= n || j >= n){
+            int idx = (i > k-1) ? 0 : 1;
             throw invalid_argument("Cannot operate with dimension '"+string(1, planes[k][idx])+"' in "+to_string(n)+" dimensions.");
         }
 
-        int i = (int)AXIS_IDS.find(planes[k][0]);
-        int j = (int)AXIS_IDS.find(planes[k][1]);
+        MatrixXf partialR = MatrixXf::Identity(n,n);
+
         float cos_a = abs(cos(angles[k])) < EPS ? 0 : cos(angles[k]);
         float sin_a = abs(sin(angles[k])) < EPS ? 0 : sin(angles[k]);
 
