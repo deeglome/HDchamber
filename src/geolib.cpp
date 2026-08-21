@@ -1582,9 +1582,11 @@ HypersphericalGeometry hypertorus(int n, float Radius, float radius, int subdivs
     Hypersphere slice(n-1, center, radius, subdivsPerSphere);
     slice.extendIn(n);
 
-    const string plane0 = string(1, AXIS_IDS[1]) + string(1, AXIS_IDS[n-1]);
-    const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
-    slice.transform(R0);
+    if(n > 2) {
+        const string plane0 = string(1, AXIS_IDS[1]) + string(1, AXIS_IDS[n-1]);
+        const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
+        slice.transform(R0);
+    }
 
     VectorXf t = VectorXf::Zero(n); t(0) = Radius;
     slice.translate(t);
@@ -1603,73 +1605,6 @@ HypersphericalGeometry hypertorus(int n, float Radius, float radius, int subdivs
     return HypersphericalGeometry(hslices, /*cyclic=*/true);
 }
 
-/*
-class Hypertorus : public GeometryND {
-    public:
-        Hypertorus(int n, float radius, float distanceFromCenter, int subdivs) : GeometryND(
-            n,
-            hypertorus(n, radius, distanceFromCenter, subdivs).verts,
-            hypertorus(n, radius, distanceFromCenter, subdivs).edges
-        ) {}
-
-        Hypertorus *clone() override {
-            printf("Hypertorus::clone() called.");
-            return new Hypertorus(*this);
-        }
-
-    private:
-        GeometryND hypertorus(int n, float radius, float distanceFromCenter, int subdivs){
-            vector<PointND> verts;
-            vector<SegmentND> edges;
-
-            Hypersphere slice(n-1, radius, subdivs/2);
-            slice.extendIn(n);
-            VectorXf zerosToAppend = VectorXf::Zero(n-1);
-            VectorXf vector(n);
-            vector(0) = radius + distanceFromCenter;
-
-            for(int i=1;i<n;i++){
-                vector(i) = zerosToAppend(i-1);
-            }
-            for(PointND& v : slice.verts){
-                for(int i=0;i<v.size();i++){
-                    v(i) += vector(i);
-                }
-            }
-
-            string stamp;
-            stamp.push_back('x');
-            stamp.push_back(AXIS_IDS[n-1]);
-            float stepAngle = M_PI / subdivs;
-            for(int i=0;i<2*subdivs;i++){
-                MatrixXf R(n,n);
-                // set_rotation(&R,{stamp},{stepAngle});
-                slice.transform(R);
-                
-                for(PointND& v : slice.verts) verts.push_back(v);
-                for(SegmentND& s : slice.edges) edges.push_back(s);
-            }
-
-            connectAdiacentTorusSections(slice, verts, edges);
-            return GeometryND(n, verts, edges);
-        }
-
-        void connectAdiacentTorusSections(GeometryND slice, vector<PointND> verts, vector<SegmentND>& edges){
-            vector<SegmentND> connectors;
-
-            for(int i=slice.verts.size(); i<verts.size(); i++){
-                if(i > verts.size() - 1 - slice.verts.size()){
-                    SegmentND edge1(verts[i], verts[(i+slice.verts.size()) % verts.size()]);
-                    SegmentND edge2(verts[(i-slice.verts.size()) % verts.size()], verts[i]);
-
-                    connectors.push_back(edge1);
-                    connectors.push_back(edge2);
-                }
-            }
-            for (SegmentND &s : connectors) edges.push_back(s);
-        }
-};
-*/
 class LowHypertorus : public GeometryND {
     public:
         int subdivs_R;

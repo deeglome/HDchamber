@@ -181,13 +181,6 @@ EMSCRIPTEN_BINDINGS(my_module){
             return self.clone();
         }), emscripten::allow_raw_pointers())
         .function("getBufferEdgeIndices", &LowHypersphere::getBufferEdgeIndices);
-
-    // Binding per Hypertorus
-    /* emscripten::class_<Hypertorus, emscripten::base<GeometryND>>("Hypertorus")
-        .constructor<int, float, float, int>()
-        .function("clone", emscripten::optional_override([](Hypertorus& self) -> Hypertorus* {
-            return self.clone();
-        }), emscripten::allow_raw_pointers()); */
     
     // Binding per LowHypertorus
     emscripten::class_<LowHypertorus, emscripten::base<GeometryND>>("LowHypertorus")
