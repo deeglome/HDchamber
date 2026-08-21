@@ -252,6 +252,10 @@ class SegmentND {
         }
 
         void transform(const MatrixXf& mat) {
+            if(mat.cols() != this->start.size())
+                throw invalid_argument("SegmentND::transform(): invalid matrix product:"
+                    "\nmat.cols() = " + to_string(mat.cols()) + "."
+                    "\nstart.size() - end.size() = " + to_string(this->start.size()) + " - " + to_string(this->end.size()) + ".\n");
             start = mat * start;
             end = mat * end;
         }
@@ -1096,6 +1100,10 @@ class Joint : public GeometryND {
                 this->faces.push_back(f);
             }
         }
+
+        Joint* clone() override {
+            return new Joint(*this);
+        }
 };
 
 class Hypersphere : public GeometryND {
@@ -1416,6 +1424,10 @@ class HypersphericalGeometry : public GeometryND {
             }
         }
 
+        HypersphericalGeometry* clone() override {
+            return new HypersphericalGeometry(*this);
+        }
+
         void transform(const MatrixXf& mat) override {
             GeometryND::transform(mat);
             for(Hypersphere& hs : this->hspheres) hs.transform(mat);
@@ -1429,6 +1441,16 @@ class HypersphericalGeometry : public GeometryND {
         void scale(const PointND& s) override {
             GeometryND::scale(s);
             for(Hypersphere& hs : this->hspheres) hs.scale(s);
+        }
+
+        void project(int n) override {
+            GeometryND::project(n);
+            for(Hypersphere& hs : this->hspheres) hs.project(n);
+        }
+
+        void project(int n, float cam_dist) override {
+            GeometryND::project(n, cam_dist);
+            for(Hypersphere& hs : this->hspheres) hs.project(n, cam_dist);
         }
 
         GeometryND getAbsoluteCrossSection(vector<float> n, float d) override {

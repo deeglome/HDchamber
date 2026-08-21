@@ -160,13 +160,19 @@ EMSCRIPTEN_BINDINGS(my_module){
     // Binding per Joint
     emscripten::class_<Joint, emscripten::base<GeometryND>>("Joint")
         .property("start", &Joint::start)
-        .property("end", &Joint::end);
+        .property("end", &Joint::end)
+        .function("clone", emscripten::optional_override([](Joint& self) -> Joint* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers());
 
     // Binding per HypersphericalGeometry
     emscripten::class_<HypersphericalGeometry, emscripten::base<GeometryND>>("HypersphericalGeometry")
         .constructor<vector<Hypersphere>, bool>()
         .property("hspheres", &HypersphericalGeometry::hspheres)
-        .property("joints", &HypersphericalGeometry::joints);
+        .property("joints", &HypersphericalGeometry::joints)
+        .function("clone", emscripten::optional_override([](HypersphericalGeometry& self) -> HypersphericalGeometry* {
+            return self.clone();
+        }), emscripten::allow_raw_pointers());
     
     // Binding per LowHypersphere
     emscripten::class_<LowHypersphere, emscripten::base<GeometryND>>("LowHypersphere")
