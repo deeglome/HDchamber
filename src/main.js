@@ -663,10 +663,10 @@ function setWikiHandler() {
 }
 
 // CROSS SECTION
-function initHyperplaneNormalInput(hyperplane){
+function initHyperplaneNormalInput(hyperplane, value){
   const input = document.createElement("input");
   input.type = "number";
-  input.value = 1.00;
+  input.value = value;
   input.step = 0.01;
   if(hyperplane.classList.contains("from")){
     input.addEventListener("input", () => {
@@ -697,14 +697,18 @@ function initHyperplaneOffsetInput(hyperplane){
 }
 
 function setCrossSectionHyperplane(dropmenu){
-  APP.crossSectionMode.hyperplaneNormal = new Array(APP.dimensions).fill(1.0);
+  const defaultNormal = new Array(APP.dimensions).fill(0.0);
+  defaultNormal[APP.dimensions - 1] = 1.0;
+  APP.crossSectionMode.hyperplaneNormal = defaultNormal;
   APP.crossSectionMode.hyperplaneOffset = 0.0;
   const hyperplanes = dropmenu.querySelectorAll(".cross-section-mode .hyperplane");
 
   hyperplanes.forEach(hyperplane => {
     hyperplane.innerHTML = "";
+    const defaultHypeplaneNormal = Array(APP.dimensions).fill(0);
+    defaultHypeplaneNormal[APP.dimensions - 1] = 1;
     for(let i = 0; i < APP.dimensions; i++){
-        const input = initHyperplaneNormalInput(hyperplane);
+        const input = initHyperplaneNormalInput(hyperplane, defaultHypeplaneNormal[i]);
         hyperplane.appendChild(input);
         const span = document.createElement("span");
         span.innerHTML = AXIS_IDENTIFIERS[i] + " + ";

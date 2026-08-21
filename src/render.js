@@ -166,7 +166,7 @@ async function init() {
         0.1,
         5
     );
-    const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5);
+    const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 15);
 
     setCameraOnSphere(oCamera, CAM_DIST, THETA, PHI);
     setCameraOnSphere(pCamera, CAM_DIST, THETA, PHI);
