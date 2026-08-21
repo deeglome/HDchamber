@@ -418,9 +418,12 @@ async function init() {
 
     RENDER_FUNCS.resizeRenderer = () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
-        oCamera.aspect = window.innerWidth / window.innerHeight;
+        const aspect = window.innerWidth / window.innerHeight;
+        const frustumHeight = oCamera.top - oCamera.bottom; // o un valore fisso a tua scelta
+        oCamera.left = -frustumHeight * aspect / 2;
+        oCamera.right = frustumHeight * aspect / 2;
         oCamera.updateProjectionMatrix();
-        pCamera.aspect = window.innerWidth / window.innerHeight;
+        pCamera.aspect = aspect;
         pCamera.updateProjectionMatrix();
     }
 }
