@@ -8,54 +8,55 @@
 using namespace std;
 using namespace Eigen;
 
-#define N 6
+#define MAXDIM 6
 #define EPS 1e-6
-#define CAM_DIST 3
+#define CAMRHO 3
 
 const string AXIS_IDS = "xyzwvu";
 
 typedef VectorXf PointND;
 
-PointND origin(int n) {
-    if(n > N) throw out_of_range("'n' is out of range.");
-    PointND p = PointND::Zero(n);
+PointND origin(const int ambient_dim) {
+    if(ambient_dim > MAXDIM || ambient_dim < 0) throw out_of_range("'ambient_dim' is out of range.");
+    PointND p = PointND::Zero(ambient_dim);
     return p;
 }
 
-PointND projectPoint(const PointND p, int n) {
-    if (p.size() < n) throw invalid_argument("'p' has fewer coordinates than required, it can't be projected.");
-    if (p.size() == n) return p;
-    return p.head(n);
+PointND project_point(const PointND p, const int low_ambient_dim) {
+    if (p.size() < low_ambient_dim) throw invalid_argument("Cannot project a Point from "+to_string(p.size())+" to "+to_string(low_ambient_dim)+" dimensions. Try to extend it.");
+    if (p.size() == low_ambient_dim) return p;
+    if (p.size() == low_ambient_dim) return p;
+    return p.head(low_ambient_dim);
 }
 
-PointND projectPoint(const PointND p, int n, float cam_dist) {
-    if (p.size() < n) throw invalid_argument("'p' has fewer coordinates than required, it can't be projected.");
-    if (p.size() == n) return p;
+PointND project_point(const PointND p, const int low_ambient_dim, const float cam_distance) {
+    if (p.size() < low_ambient_dim) throw invalid_argument("Cannot project a Point from "+to_string(p.size())+" to "+to_string(low_ambient_dim)+" dimensions. Try to extend it.");
+    if (p.size() == low_ambient_dim) return p;
    
     float last = p(p.size() - 1);
-    float fact = 1 / (cam_dist + last);
+    float fact = 1.0f / (cam_distance + last);
 
-    PointND proj(n);
-    for (int i = 0; i < n; ++i) {
+    PointND proj(low_ambient_dim);
+    for (int i = 0; i < low_ambient_dim; ++i) {
         proj(i) = p(i) * fact;
     }
     return proj;
 }
 
-PointND extendPoint(PointND p, int n) {
-    if (n < p.size()) throw new invalid_argument("Cannot extend a Point in fewer dimensions. Try to project it.");
-    if (n == p.size()) throw invalid_argument("'p' has the same dimensions than required. It's unnecessary to be extended.");
-    PointND q = PointND::Zero(n);
+PointND extend_point(const PointND p, const int high_ambient_dim) {
+    if (high_ambient_dim > MAXDIM) throw out_of_range("'highAmbientDim' is out of range.");
+    if (high_ambient_dim < p.size()) throw new invalid_argument("Cannot extend a Point from "+to_string(p.size())+" to "+to_string(high_ambient_dim)+" dimensions. Try to project it.");
+    PointND q = PointND::Zero(high_ambient_dim);
     q.head(p.size()) = p;
     return q;
 }
 
-float distance(PointND p, PointND q) {
-    if (p.size() != q.size()) throw invalid_argument("Points must have the same number of dimensions.");
+float distance(const PointND p, const PointND q) {
+    if (p.size() != q.size()) throw invalid_argument("Points must be embedded in the same ambient dimension.\np: "+to_string(p.size())+"\nq: "+to_string(q.size()));
     return (p-q).norm();
 }
 
-bool isUniformSet(vector<PointND> points) {
+bool is_uniform_set(const vector<PointND> points) {
     int nump = points.size();
     if(nump == 0) return true;
 
@@ -69,7 +70,7 @@ bool isUniformSet(vector<PointND> points) {
     return true;
 }
 
-void print_point(const PointND p, string label = "", int digs = 2) {
+void print_point(const PointND p, string label = "", const int digs = 2) {
     if (label.empty()) {
         label = "Point" + to_string(p.size()) + "D";
     }
@@ -78,25 +79,23 @@ void print_point(const PointND p, string label = "", int digs = 2) {
     cout << label << ": " << p.transpose() << endl;
 }
 
-PointND barFromPoints(vector<PointND>& points){
-    int k = points[0].size();
-    for(auto& p : points){
-        if(p.size()!=k) throw invalid_argument("Every point must have the same number of dimensions.");
-    }
-    PointND g = PointND::Zero(k);
+PointND bar_from_points(const vector<PointND>& points){
+    if( !is_uniform_set(points) ) throw invalid_argument("Points given are not a uniform set.");
+    int dim = points[0].size();
+    PointND g = origin(dim);
     for(auto& p : points) g += p;
-    int n = points.size();
-    return g / (float)n;
+    int nump = points.size();
+    return g / static_cast<float>(nump);
 }
 
-bool found(PointND p, vector<PointND>& points){
+bool found(const PointND p, const vector<PointND>& points){
     for(auto& q : points){
-        if((p-q).norm() < EPS) return true;
+        if(distance(p, q) < EPS) return true;
     }
     return false;
 }
 
-int rotationScope(vector<string> planes){
+int rotation_scope(const vector<string> planes){
     int r = 0;
 
     for(int i=0; i<planes.size(); i++){
@@ -114,7 +113,7 @@ int rotationScope(vector<string> planes){
     return r ? r+1 : 0;
 }
 
-MatrixXf createRotationMatrix(int n, vector<string> planes, vector<float> angles){
+MatrixXf create_rotation_matrix(int n, vector<string> planes, vector<float> angles){
     if(planes.size()!=angles.size()) throw invalid_argument("Number of planes and angles must be the same.");
     
     MatrixXf R = MatrixXf::Identity(n, n);
@@ -244,9 +243,9 @@ class SegmentND {
             return unique_ptr<PointND>(new PointND(this->start + t * (this->end - this->start)));
         }
 
-        void extendIn(int n){
-            this->start = extendPoint(this->start, n);
-            this->end = extendPoint(this->end, n);
+        void extend_in(int n){
+            this->start = extend_point(this->start, n);
+            this->end = extend_point(this->end, n);
             this->n = n;
         }
 
@@ -291,20 +290,20 @@ class SegmentND {
 
         void project(int n)
         {
-            start = projectPoint(start, n);
-            end = projectPoint(end, n);
+            start = project_point(start, n);
+            end = project_point(end, n);
             this->n = n;
         }
         void project(int n, float cam_dist)
         {
-            start = projectPoint(start, n, cam_dist);
-            end = projectPoint(end, n, cam_dist);
+            start = project_point(start, n, cam_dist);
+            end = project_point(end, n, cam_dist);
             this->n = n;
         }
 };
 
 /* Calculate the edges of a polygon (a closed plane figure) given its vertices. The order of the vertices matters.*/
-vector<SegmentND> polyEdgesFromVerts(vector<PointND> verts){
+vector<SegmentND> poly_edges_from_verts(vector<PointND> verts){
     vector<SegmentND> edges;
     int numv = verts.size();
 
@@ -322,7 +321,7 @@ class FaceND {
         int n;
         
         FaceND(vector<PointND> _verts) {
-            if( !isUniformSet(_verts) ) throw invalid_argument("_verts is not a uniform set of points.");
+            if( !is_uniform_set(_verts) ) throw invalid_argument("_verts is not a uniform set of points.");
 
             int _n = _verts[0].size();
             int numv = _verts.size();
@@ -338,7 +337,7 @@ class FaceND {
             // if( lu_decomp_A.rank() < 2 ) throw invalid_argument("_verts consists of collinear vertices, or all the vertices coincide.");
             // if( lu_decomp_A.rank() > 2 ) throw invalid_argument("There is no plane that passes through all the vertices of _verts (the vertices form skew lines).");
 
-            vector<SegmentND> _edges = polyEdgesFromVerts(_verts);
+            vector<SegmentND> _edges = poly_edges_from_verts(_verts);
             for(int i=0; i<numv-1; i++){
                 for(int j=i+1; j<numv; j++){
                     SegmentND s1 = _edges[i], s2 = _edges[j];
@@ -356,7 +355,7 @@ class FaceND {
 
         // Calcola il baricentro della faccia.
         PointND bar(){
-            return barFromPoints(this->verts);
+            return bar_from_points(this->verts);
         }
 
         void transform(const MatrixXf& mat){
@@ -390,20 +389,20 @@ class FaceND {
             return true;
         }
 
-        void extendIn(int n){
-            for(SegmentND& s : edges) s.extendIn(n);
-            for(PointND& v : verts) v = extendPoint(v, n);
+        void extend_in(int n){
+            for(SegmentND& s : edges) s.extend_in(n);
+            for(PointND& v : verts) v = extend_point(v, n);
             this->n = n;
         }
 
         void project(int n){
             for (SegmentND &s : edges) s.project(n);
-            for (PointND &v : verts) v = projectPoint(v, n);
+            for (PointND &v : verts) v = project_point(v, n);
             this->n = n;
         }
 
         void project(int n, float cam_dist){
-            for (PointND &v : verts) v = projectPoint(v, n, cam_dist);
+            for (PointND &v : verts) v = project_point(v, n, cam_dist);
             for (SegmentND &s : edges) s.project(n, cam_dist);
             this->n = n;
         }
@@ -434,14 +433,14 @@ class FaceND {
         } */
 };
 
-void combine(const vector<PointND>& array, size_t comboSize, size_t start, vector<PointND>& combo, vector<vector<PointND>>& result) {
-    if(combo.size() == comboSize) {
+void combine(const vector<PointND>& array, size_t combo_size, size_t start, vector<PointND>& combo, vector<vector<PointND>>& result) {
+    if(combo.size() == combo_size) {
         result.push_back(combo);
         return;
     }
     for(size_t i = start; i < array.size(); i++) {
         combo.push_back(array[i]);
-        combine(array, comboSize, i + 1, combo, result);
+        combine(array, combo_size, i + 1, combo, result);
         combo.pop_back();
     }
 }
@@ -463,8 +462,8 @@ class GeometryND {
 
         GeometryND(int _n, vector<FaceND> _faces) {
             for(FaceND f : _faces) if(f.n != _n) invalid_argument("Face sizes must be equal.");
-            verts = vertsFromFaces(_faces);
-            edges = edgesFromFaces(_faces);
+            verts = verts_from_faces(_faces);
+            edges = edges_from_faces(_faces);
             n = _n;
         }
 
@@ -476,7 +475,7 @@ class GeometryND {
         }
 
         PointND bar() {
-            return barFromPoints(this->verts);
+            return bar_from_points(this->verts);
         }
 
         virtual GeometryND* clone(){
@@ -501,28 +500,28 @@ class GeometryND {
             for(PointND& p : this->verts) p = p.cwiseProduct(s);
         }
 
-        virtual void extendIn(const int n){
-            for(FaceND& f : faces) f.extendIn(n);
-            for(SegmentND& s : edges) s.extendIn(n);
-            for(PointND& v : verts) v = extendPoint(v, n);
+        virtual void extend_in(const int n){
+            for(FaceND& f : faces) f.extend_in(n);
+            for(SegmentND& s : edges) s.extend_in(n);
+            for(PointND& v : verts) v = extend_point(v, n);
             this->n = n;
         }
 
         virtual void project(int n){
             for(FaceND& f : this->faces) f.project(n);
             for(SegmentND& s : this->edges) s.project(n);
-            for(PointND& v : this->verts) v = projectPoint(v, n);
+            for(PointND& v : this->verts) v = project_point(v, n);
             this->n = n;
         }
 
         virtual void project(int n, float cam_dist){
             for(FaceND& f : this->faces) f.project(n, cam_dist);
             for(SegmentND& s : this->edges) s.project(n, cam_dist);
-            for(PointND& v : this->verts) v = projectPoint(v, n, cam_dist);
+            for(PointND& v : this->verts) v = project_point(v, n, cam_dist);
             this->n = n;
         }
 
-        virtual float maxVertexDist(){
+        virtual float max_vertex_dist(){
             float max_dist = 0.00f;
             for(PointND& v : this->verts){
                 if(v.norm() > max_dist) max_dist = v.norm();
@@ -532,7 +531,7 @@ class GeometryND {
 
         // E' sott'inteso che this e other siano generati mediante funzioni 'preconfezionate' e che sia garantito pertanto l'ordine.
         // Inoltre, è garantito che entrambe le geometrie siano costituite da almeno una faccia.
-        virtual bool similarTo(const GeometryND& other) const {
+        virtual bool similar_to(const GeometryND& other) const {
             if( this->n != other.n || this->verts.size() != other.verts.size() || this->edges.size() != other.edges.size() || this->faces.size() != other.faces.size())
                 return false;
 
@@ -547,7 +546,7 @@ class GeometryND {
             return true;
         }
 
-        virtual GeometryND getAbsoluteCrossSection(vector<float> n, float d){
+        virtual GeometryND get_absolute_cross_section(vector<float> n, float d){
             if(n.size() != this->n) throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
             Eigen::VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n.data(), n.size());
             Eigen::Hyperplane<float, Eigen::Dynamic> h = Eigen::Hyperplane<float, Eigen::Dynamic>(n_eigen, d);
@@ -569,8 +568,8 @@ class GeometryND {
             return GeometryND(this->n, sectionVerts, sectionEdges, sectionFaces);
         }
 
-        GeometryND getRelativeCrossSection(vector<float> n, float d){
-            GeometryND section = this->getAbsoluteCrossSection(n, d);
+        GeometryND get_relative_cross_section(vector<float> n, float d){
+            GeometryND section = this->get_absolute_cross_section(n, d);
             // Vettore di traslazione per riportare l'iperpiano centrato nell'origine.
             const VectorXf n_eigen = Eigen::Map<Eigen::VectorXf>(n.data(), n.size());
             VectorXf t = d * n_eigen / n_eigen.squaredNorm();
@@ -596,7 +595,7 @@ class GeometryND {
 
                 string plane = string(1, AXIS_IDS[i]) + string(1, AXIS_IDS[this->n - 1]);
 
-                MatrixXf partialR = createRotationMatrix(this->n, {plane}, {atan2(xi, xlast)});
+                MatrixXf partialR = create_rotation_matrix(this->n, {plane}, {atan2(xi, xlast)});
 
                 n_current = partialR * n_current;
                 T = partialR * T;
@@ -607,7 +606,7 @@ class GeometryND {
             return section;
         }
 
-        vector<float> getBufferVerts(){
+        vector<float> get_buffer_verts(){
             vector<float> result = {};
             for(int j=0; j<this->verts.size(); j++){
                 for(int k=0; k<this->n; k++){
@@ -617,13 +616,13 @@ class GeometryND {
             return result;
         }
 
-        virtual vector<int> getBufferEdgeIndices() {
+        virtual vector<int> get_buffer_edge_indices() {
             vector<int> indices;
             indices.reserve(this->edges.size() * 2);
 
             for(SegmentND& s : this->edges){
-                int startIdx = indexOf(s.start, this->verts);
-                int endIdx = indexOf(s.end, this->verts);
+                int startIdx = index_of(s.start, this->verts);
+                int endIdx = index_of(s.end, this->verts);
                 indices.push_back(startIdx);
                 indices.push_back(endIdx);
             }
@@ -631,7 +630,7 @@ class GeometryND {
         }
 
     private:
-        vector<PointND> vertsFromFaces(vector<FaceND> _faces){
+        vector<PointND> verts_from_faces(vector<FaceND> _faces){
             vector<PointND> res;
             for(FaceND f : _faces){
                 for(SegmentND s : f.edges){
@@ -642,7 +641,7 @@ class GeometryND {
             return res;
         }
 
-        vector<SegmentND> edgesFromFaces(vector<FaceND> _faces){
+        vector<SegmentND> edges_from_faces(vector<FaceND> _faces){
             vector<SegmentND> res;
             for(FaceND f : _faces){
                 for(SegmentND s : f.edges){
@@ -652,7 +651,7 @@ class GeometryND {
             return res;
         }
 
-        int indexOf(const PointND& p, const vector<PointND>& points){
+        int index_of(const PointND& p, const vector<PointND>& points){
             for(int i = 0; i < points.size(); i++){
                 if((p - points[i]).norm() < EPS) return i;
             }
@@ -682,8 +681,8 @@ class AxesND : public GeometryND {
     public:
         AxesND(int n, float axis_len) : GeometryND(
             n,
-            axesVerts(n, axis_len),
-            axesEdges(axesVerts(n, axis_len)),
+            axes_verts(n, axis_len),
+            axes_edges(axes_verts(n, axis_len)),
             {}
         ) {}
 
@@ -691,7 +690,7 @@ class AxesND : public GeometryND {
             return new AxesND(*this);
         }
 
-        vector<int> getBufferEdgeIndices(){
+        vector<int> get_buffer_edge_indices(){
             vector<int> indices;
 
             for(int i=0; i<this->verts.size(); i+=2){
@@ -702,7 +701,7 @@ class AxesND : public GeometryND {
         }
 
     private:
-        vector<PointND> axesVerts(int n, float axis_len){
+        vector<PointND> axes_verts(int n, float axis_len){
             vector<PointND> verts;
 
             for(int i=0; i<n; i++){
@@ -715,7 +714,7 @@ class AxesND : public GeometryND {
             return verts;
         }
 
-        vector<SegmentND> axesEdges(const vector<PointND> &verts){
+        vector<SegmentND> axes_edges(const vector<PointND> &verts){
             vector<SegmentND> axes;
 
             for(int i=0; i<verts.size(); i+=2){
@@ -730,16 +729,16 @@ class Hypercube : public GeometryND {
     public:
         Hypercube(int n, float edge_len) : GeometryND(
             n,
-            hypercubeVerts(n, edge_len),
-            hypercubeEdges(n, hypercubeVerts(n, edge_len)),
-            hypercubeFaces(n, hypercubeVerts(n, edge_len))
+            hypercube_verts(n, edge_len),
+            hypercube_edges(n, hypercube_verts(n, edge_len)),
+            hypercube_faces(n, hypercube_verts(n, edge_len))
         ) {}
 
         Hypercube* clone() override {
             return new Hypercube(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices = {};
             vector<int> vertsUsed;
             for(int i=0; i<n; i++){
@@ -764,7 +763,7 @@ class Hypercube : public GeometryND {
             return false;
         }
 
-        vector<PointND> hypercubeVerts(int n, float edge_len){
+        vector<PointND> hypercube_verts(int n, float edge_len){
             /** Si assuma i scritto in binario e l'ipercubo centrato nell'origine.
              * Ogni vertice in forma cartesiana è una permutazione con ripetizione di +edge_len/2 e -edge_len/2.
              * Pertanto, un vertice è esprimibile con un numero binario poiché anche quest'ultimo è una permutazione con ripetizione (di 0 e 1).
@@ -784,7 +783,7 @@ class Hypercube : public GeometryND {
             return verts;
         }
 
-        vector<SegmentND> hypercubeEdges(int n, vector<PointND> verts){
+        vector<SegmentND> hypercube_edges(int n, vector<PointND> verts){
             vector<SegmentND> edges;
             bool found;
             for(int i=0; i<n; i++){
@@ -803,7 +802,7 @@ class Hypercube : public GeometryND {
             return edges;
         }
 
-        vector<FaceND> hypercubeFaces(int n, vector<PointND> verts){
+        vector<FaceND> hypercube_faces(int n, vector<PointND> verts){
             vector<FaceND> faces;
 
             for(int i=0; i<n-1; i++){
@@ -869,16 +868,16 @@ class Simplex : public GeometryND{
     public:
         Simplex(int n, float edge_len) : GeometryND(
             n,
-            simplexVerts(n, edge_len),
-            simplexEdges(n, simplexVerts(n, edge_len)),
-            simplexFaces(simplexVerts(n, edge_len))
+            simplex_verts(n, edge_len),
+            simplex_edges(n, simplex_verts(n, edge_len)),
+            simplex_faces(simplex_verts(n, edge_len))
         ) {}
 
         Simplex* clone() override {
             return new Simplex(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices;
             int k = this->verts.size();
             for(int i=0; i<k-1; i++){
@@ -891,7 +890,7 @@ class Simplex : public GeometryND{
         }
 
     private:
-        vector<PointND> simplexVerts(int n, float edge_len) {
+        vector<PointND> simplex_verts(int n, float edge_len) {
             PointND start = PointND::Zero(n);
             PointND end = PointND::Zero(n);
             start(0) = -.5 * edge_len;
@@ -899,7 +898,7 @@ class Simplex : public GeometryND{
             vector<PointND> simplex = {start, end};
             
             for(int i=2; i<=n; i++){
-                PointND bar = barFromPoints(simplex);
+                PointND bar = bar_from_points(simplex);
                 PointND next = PointND::Zero(n);
 
                 for(int k=0; k<i-1; k++){
@@ -909,7 +908,7 @@ class Simplex : public GeometryND{
                 float dist_v0_bar = distance(start, bar);
                 next(i-1) = sqrt(edge_len * edge_len - dist_v0_bar * dist_v0_bar);
                 simplex.push_back(next);
-                bar = barFromPoints(simplex);
+                bar = bar_from_points(simplex);
                 
                 for(PointND& v : simplex){
                     v -= bar;
@@ -918,7 +917,7 @@ class Simplex : public GeometryND{
             return simplex;
         }
 
-        vector<SegmentND> simplexEdges(int dimensions, const vector<PointND> &vertices) {
+        vector<SegmentND> simplex_edges(int dimensions, const vector<PointND> &vertices) {
             vector<SegmentND> edges;
             vector<int> verticesUsed;
 
@@ -934,12 +933,12 @@ class Simplex : public GeometryND{
             return edges;
         }
 
-        vector<FaceND> simplexFaces(const vector<PointND> &vertices) {
+        vector<FaceND> simplex_faces(const vector<PointND> &vertices) {
             vector<FaceND> faces;
             vector<vector<PointND>> tris = combinations(vertices, 3);
 
             for (auto &face_verts : tris) {
-                vector<SegmentND> face_edges = simplexEdges(2, face_verts);
+                vector<SegmentND> face_edges = simplex_edges(2, face_verts);
                 faces.emplace_back(face_verts);
             }
             return faces;
@@ -950,16 +949,16 @@ class Orthoplex : public GeometryND {
     public:
         Orthoplex(int n, float edge_len) : GeometryND(
             n,
-            orthoplexVerts(n, edge_len),
-            orthoplexEdges(n, orthoplexVerts(n, edge_len)),
-            orthoplexFaces(n, orthoplexVerts(n, edge_len))
+            orthoplex_verts(n, edge_len),
+            orthoplex_edges(n, orthoplex_verts(n, edge_len)),
+            orthoplex_faces(n, orthoplex_verts(n, edge_len))
         ) {}
 
         Orthoplex* clone() override {
             return new Orthoplex(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices;
             int k = this->verts.size();
             for(int i=0; i<k-1; i++){
@@ -974,7 +973,7 @@ class Orthoplex : public GeometryND {
         }
 
     private:
-        vector<PointND> orthoplexVerts(int n, float edge_len){
+        vector<PointND> orthoplex_verts(int n, float edge_len){
             float r = edge_len * sqrt(2.0f)/ 2.0f;
             vector<PointND> verts;
             verts.reserve(2*n);
@@ -991,7 +990,7 @@ class Orthoplex : public GeometryND {
         }
 
         
-    vector<SegmentND> orthoplexEdges(int n, const vector<PointND>& verts){
+    vector<SegmentND> orthoplex_edges(int n, const vector<PointND>& verts){
         vector<SegmentND> edges;
         const int V = verts.size();
 
@@ -1014,7 +1013,7 @@ class Orthoplex : public GeometryND {
         return edges;
     }
 
-    vector<FaceND> orthoplexFaces(int n, const vector<PointND>& verts){
+    vector<FaceND> orthoplex_faces(int n, const vector<PointND>& verts){
         vector<FaceND> faces;
         const auto TRIS = combinations(verts, 3);
 
@@ -1050,7 +1049,7 @@ class Joint : public GeometryND {
         GeometryND end;
 
         Joint(const GeometryND& _start, const GeometryND& _end) : start(_start), end(_end), GeometryND(evaluateN(_start), {}, {}, {}) {
-            if( !(_start.similarTo(_end)) ) throw invalid_argument("'start' and 'end' must be similar.");
+            if( !(_start.similar_to(_end)) ) throw invalid_argument("'start' and 'end' must be similar.");
 
             this->n = _start.n; // E' indifferente con _end.n
             int vsize = _start.verts.size(); // E' indifferente con _end.verts.size()
@@ -1169,16 +1168,16 @@ class Hypersphere : public GeometryND {
             this->radius *= s(0);
         }
 
-        void extendIn(const int n) override {
-            GeometryND::extendIn(n);
+        void extend_in(const int n) override {
+            GeometryND::extend_in(n);
             Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
-            PointND extended = extendPoint(PointND(c), n);
+            PointND extended = extend_point(PointND(c), n);
             center.assign(extended.data(), extended.data() + extended.size());
         }
 
         void project(int n) override {
             Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
-            PointND c_proj = projectPoint(PointND(c), n);
+            PointND c_proj = project_point(PointND(c), n);
             center.assign(c_proj.data(), c_proj.data() + c_proj.size());
 
             GeometryND::project(n);
@@ -1186,18 +1185,18 @@ class Hypersphere : public GeometryND {
 
         void project(int n, float cam_dist) override {
             Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
-            PointND c_proj = projectPoint(PointND(c), n, cam_dist);
+            PointND c_proj = project_point(PointND(c), n, cam_dist);
             center.assign(c_proj.data(), c_proj.data() + c_proj.size());
 
             GeometryND::project(n, cam_dist);
         }
 
-        float maxVertexDist() override {
+        float max_vertex_dist() override {
             Eigen::Map<const Eigen::VectorXf> c(center.data(), center.size());
             return c.norm() + radius; // exact analytic value
         }
 
-        bool similarTo(const GeometryND& other) const override {
+        bool similar_to(const GeometryND& other) const override {
             return true; // It's always true for hyperspheres.
         }
 
@@ -1208,7 +1207,7 @@ class Hypersphere : public GeometryND {
         // correctly for ANY GeometryND made of verts/edges — including this
         // one — because it operates generically on the mesh returned here.
         // -----------------------------------------------------------------
-        GeometryND getAbsoluteCrossSection(vector<float> n_vec, float d) override {
+        GeometryND get_absolute_cross_section(vector<float> n_vec, float d) override {
             if ((int)n_vec.size() != this->n)
                 throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
             if (this->n < 2)
@@ -1231,7 +1230,7 @@ class Hypersphere : public GeometryND {
             // Orthonormal basis of the hyperplane's direction space (n x (n-1)):
             // columns are all orthogonal to n_eigen, so any point c + B*y
             // automatically satisfies n_eigen . (c + B*y) = d.
-            Eigen::MatrixXf B = orthonormalComplement(n_eigen);
+            Eigen::MatrixXf B = orthonormal_complement(n_eigen);
 
             // Canonical (n-1)-dimensional sphere mesh, in LOCAL coordinates
             // (this is the same private generator the constructor already uses).
@@ -1264,7 +1263,7 @@ class Hypersphere : public GeometryND {
         // Needed to embed the canonical (n-1)-sphere mesh onto the actual
         // cutting hyperplane in ambient coordinates.
         // -----------------------------------------------------------------
-        static Eigen::MatrixXf orthonormalComplement(const Eigen::VectorXf& v) {
+        static Eigen::MatrixXf orthonormal_complement(const Eigen::VectorXf& v) {
             const int DIM = static_cast<int>(v.size());
 
             Eigen::MatrixXf A(1, DIM);
@@ -1322,7 +1321,7 @@ class Hypersphere : public GeometryND {
                 result.edges.insert(result.edges.end(), section.edges.begin(), section.edges.end());
 
                 if (hasPrevious) {
-                    auto connectors = connectAdjacentHsSections(&previousSection, section);
+                    auto connectors = connect_adjacent_hs_sections(&previousSection, section);
                     result.edges.insert(result.edges.end(), connectors.begin(), connectors.end());
                 }
 
@@ -1334,12 +1333,12 @@ class Hypersphere : public GeometryND {
 
         static GeometryND circle(float radius, float d_theta, const vector<float> &pointstamp) {
             GeometryND circle(2);
-            circle.verts = circleVerts(radius, d_theta, pointstamp);
-            circle.edges = circleEdges(circle.verts);
+            circle.verts = circle_verts(radius, d_theta, pointstamp);
+            circle.edges = circle_edges(circle.verts);
             return circle;
         }
 
-        static vector<PointND> circleVerts(float radius, float d_theta, const vector<float> &pointstamp){
+        static vector<PointND> circle_verts(float radius, float d_theta, const vector<float> &pointstamp){
             std::vector<PointND> points;
 
             for (float theta = 0; theta < 2.0 * M_PI; theta += d_theta) {
@@ -1359,7 +1358,7 @@ class Hypersphere : public GeometryND {
             return points;
         }
 
-        static vector<SegmentND> circleEdges(const vector<PointND> &verts) {
+        static vector<SegmentND> circle_edges(const vector<PointND> &verts) {
             vector<SegmentND> edges;
             int circle_size = verts.size();
             for (int v = 0; v < circle_size; v++) {
@@ -1369,7 +1368,7 @@ class Hypersphere : public GeometryND {
             return edges;
         }
 
-        static vector<SegmentND> connectAdjacentHsSections(const GeometryND *previousHypersphereSection, const GeometryND &hypersphereSection) {
+        static vector<SegmentND> connect_adjacent_hs_sections(const GeometryND *previousHypersphereSection, const GeometryND &hypersphereSection) {
             vector<SegmentND> edges;
 
             if (previousHypersphereSection == nullptr) return edges;
@@ -1459,14 +1458,14 @@ class HypersphericalGeometry : public GeometryND {
             for(Hypersphere& hs : this->hspheres) hs.project(n, cam_dist);
         }
 
-        GeometryND getAbsoluteCrossSection(vector<float> n, float d) override {
+        GeometryND get_absolute_cross_section(vector<float> n, float d) override {
             if((int)n.size() != this->n)
                 throw invalid_argument("Normal vector must have the same number of dimensions as the geometry.");
 
             // Sezione "generica": copre i joint, le cui facce (quad) sono già
             // in this->faces (popolate nel costruttore) - riusa la logica
             // già scritta in GeometryND, bypassando la dispatch virtuale.
-            GeometryND jointsSection = GeometryND::getAbsoluteCrossSection(n, d);
+            GeometryND jointsSection = GeometryND::get_absolute_cross_section(n, d);
             return jointsSection;
 
             /* vector<PointND> sectionVerts = jointsSection.verts;
@@ -1498,8 +1497,8 @@ class LowHypersphere : public GeometryND {
 
         LowHypersphere(int n, float radius, int subdivs) : GeometryND(
             n,
-            lowHypersphereVerts(n, radius, subdivs),
-            lowHypersphereEdges(lowHypersphereVerts(n, radius, subdivs), subdivs)
+            low_hypersphere_verts(n, radius, subdivs),
+            low_hypersphere_edges(low_hypersphere_verts(n, radius, subdivs), subdivs)
         ) {
             this->subdivs = subdivs;
         }
@@ -1508,7 +1507,7 @@ class LowHypersphere : public GeometryND {
             return new LowHypersphere(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices;
             int geo_size = this->verts.size();
             for(int c=0; c + this->subdivs <= geo_size; c+=this->subdivs) {
@@ -1522,21 +1521,21 @@ class LowHypersphere : public GeometryND {
             return indices;
         }
 
-        static vector<PointND> lowHypersphereVerts(int n, float radius, int subdivs) {
+        static vector<PointND> low_hypersphere_verts(int n, float radius, int subdivs) {
             vector<PointND> verts;
             for(int i=0; i<n-1; i++) {
                 for(int j=i+1; j<n; j++) {
                     char x_i = AXIS_IDS[i];
                     char x_j = AXIS_IDS[j];
                     string plane = string(1,x_i) + string(1,x_j);
-                    vector<PointND> c = circleVerts(n, radius, plane, subdivs);
+                    vector<PointND> c = circle_verts(n, radius, plane, subdivs);
                     verts.insert(verts.end(), c.begin(), c.end());
                 }
             }
             return verts;
         }
 
-        static vector<PointND> circleVerts(int n, float radius, string plane, int subdivs){
+        static vector<PointND> circle_verts(int n, float radius, string plane, int subdivs){
             std::vector<PointND> points;
             int i = AXIS_IDS.find(plane[0]);
             int j = AXIS_IDS.find(plane[1]);
@@ -1551,19 +1550,19 @@ class LowHypersphere : public GeometryND {
             return points;
         }
 
-        static vector<SegmentND> lowHypersphereEdges(const vector<PointND> &lhs_verts, int subdivs) {
+        static vector<SegmentND> low_hypersphere_edges(const vector<PointND> &lhs_verts, int subdivs) {
             vector<SegmentND> edges;
             int lhs_size = lhs_verts.size();
 
             for(int c_i=0; c_i + subdivs <= lhs_size; c_i+=subdivs) {
                 vector<PointND> c = vector<PointND>(lhs_verts.begin() + c_i, lhs_verts.begin() + c_i + subdivs);
-                vector<SegmentND> c_edges = circleEdges(c);
+                vector<SegmentND> c_edges = circle_edges(c);
                 edges.insert(edges.end(), c_edges.begin(), c_edges.end());
             }
             return edges;
         }
 
-        static vector<SegmentND> circleEdges(const vector<PointND> &circle) {
+        static vector<SegmentND> circle_edges(const vector<PointND> &circle) {
             vector<SegmentND> edges;
             int c_size = circle.size();
 
@@ -1586,11 +1585,11 @@ HypersphericalGeometry hypertorus(int n, float Radius, float radius, int subdivs
 
     vector<float> center(n-1, 0.0f);
     Hypersphere slice(n-1, center, radius, subdivsPerSphere);
-    slice.extendIn(n);
+    slice.extend_in(n);
 
     if(n > 2) {
         const string plane0 = string(1, AXIS_IDS[1]) + string(1, AXIS_IDS[n-1]);
-        const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
+        const MatrixXf R0 = create_rotation_matrix(n, {plane0}, {M_PI_2});
         slice.transform(R0);
     }
 
@@ -1601,7 +1600,7 @@ HypersphericalGeometry hypertorus(int n, float Radius, float radius, int subdivs
 
     float theta = (2.0f * M_PI / static_cast<float>(subdivs));
     const string dplane = "xy";
-    const MatrixXf dR = createRotationMatrix(n, {dplane}, {theta});
+    const MatrixXf dR = create_rotation_matrix(n, {dplane}, {theta});
     
     for (int i=1; i<subdivs; i++) {
         slice.transform(dR);
@@ -1618,8 +1617,8 @@ class LowHypertorus : public GeometryND {
 
         LowHypertorus(int n, float Radius, float r_tube, int subdivs_R, int subdivs_r) : GeometryND(
             n,
-            lowHypertorusVerts(n, Radius, r_tube, subdivs_R, subdivs_r),
-            lowHypertorusEdges(lowHypertorusVerts(n, Radius, r_tube, subdivs_R, subdivs_r), subdivs_R, subdivs_r)
+            low_hypertorus_verts(n, Radius, r_tube, subdivs_R, subdivs_r),
+            low_hypertorus_edges(low_hypertorus_verts(n, Radius, r_tube, subdivs_R, subdivs_r), subdivs_R, subdivs_r)
         ) {
             this->subdivs_R = subdivs_R;
             this->subdivs_r = subdivs_r;
@@ -1630,7 +1629,7 @@ class LowHypertorus : public GeometryND {
             return new LowHypertorus(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices;
             int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
             int t = this->subdivs_R * section_size;
@@ -1658,18 +1657,18 @@ class LowHypertorus : public GeometryND {
         }
     
     private:
-        vector<PointND> lowHypertorusVerts(int n, float Radius, float r_tube, int subdivs_R, int subdivs_r){
+        vector<PointND> low_hypertorus_verts(int n, float Radius, float r_tube, int subdivs_R, int subdivs_r){
             vector<PointND> verts;
             LowHypersphere slice(n-1, r_tube, subdivs_r);
-            slice.extendIn(n);
+            slice.extend_in(n);
             string plane = string(1, 'y') + string(1, AXIS_IDS[n-1]);
-            MatrixXf R1 = createRotationMatrix(n, {plane}, {M_PI/2});
+            MatrixXf R1 = create_rotation_matrix(n, {plane}, {M_PI/2});
             slice.transform(R1);
             PointND t = PointND::Zero(n);
             t(0) = Radius;
             slice.translate(t);
             float d_theta = 2.0 * M_PI / static_cast<float>(subdivs_R);
-            MatrixXf R2 = createRotationMatrix(n, {"xy"}, {d_theta});
+            MatrixXf R2 = create_rotation_matrix(n, {"xy"}, {d_theta});
 
             if(n>2)
                 for(int i=0; i<subdivs_R; i++){
@@ -1683,7 +1682,7 @@ class LowHypertorus : public GeometryND {
                     r(axis) = sign * r_tube;
                     r = R1 * r;
                     PointND uR = t / Radius;
-                    vector<PointND> c = LowHypersphere::circleVerts(n, Radius + r.dot(uR), "xy", subdivs_R);
+                    vector<PointND> c = LowHypersphere::circle_verts(n, Radius + r.dot(uR), "xy", subdivs_R);
                     if(r.dot(t) < EPS && r.dot(t) > -EPS)
                         for(PointND& v : c) v += r;
                     verts.insert(verts.end(), c.begin(), c.end());
@@ -1693,14 +1692,14 @@ class LowHypertorus : public GeometryND {
             return verts;
         }
 
-        static vector<SegmentND> lowHypertorusEdges(const vector<PointND> &verts, int subdivs_R, int subdivs_r) {
+        static vector<SegmentND> low_hypertorus_edges(const vector<PointND> &verts, int subdivs_R, int subdivs_r) {
             vector<SegmentND> edges;
             int n = verts[0].size();
             int k = verts.size();
             int section_size = (n-1) * (n-2) / 2 * subdivs_r;
 
             for(int i=0; i+section_size <= subdivs_R * section_size && section_size!=0; i+=section_size) {
-                vector<SegmentND> section_edges = LowHypersphere::lowHypersphereEdges(
+                vector<SegmentND> section_edges = LowHypersphere::low_hypersphere_edges(
                     vector<PointND>(verts.begin() + i, verts.begin() + i + section_size),
                     subdivs_r
                 );
@@ -1709,7 +1708,7 @@ class LowHypertorus : public GeometryND {
 
             for(int i = subdivs_R * section_size; i+subdivs_R<k; i+=subdivs_R) {
                 vector<PointND> c = vector<PointND>(verts.begin() + i, verts.begin() + i + subdivs_R);
-                vector<SegmentND> c_edges = LowHypersphere::circleEdges(c);
+                vector<SegmentND> c_edges = LowHypersphere::circle_edges(c);
                 edges.insert(edges.end(), c_edges.begin(), c_edges.end());
             }
             return edges;
@@ -1722,10 +1721,10 @@ HypersphericalGeometry hyperspherinder(int n, float radius, float height, int su
 
     vector<float> center(n-1, 0.0f);
     Hypersphere slice(n-1, center, radius, subdivs);
-    slice.extendIn(n);
+    slice.extend_in(n);
 
     const string plane0 = string(1, AXIS_IDS[0]) + string(1, AXIS_IDS[n-1]);
-    const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
+    const MatrixXf R0 = create_rotation_matrix(n, {plane0}, {M_PI_2});
     slice.transform(R0);
 
     VectorXf t = VectorXf::Zero(n); t(0) = height / 2.0f;
@@ -1740,10 +1739,10 @@ HypersphericalGeometry hyperspherinder(int n, float radius, float height, int su
 Joint hypercone(int n, float radius, float height, int subdivs) {
     vector<float> center(n-1, 0.0f);
     Hypersphere slice(n-1, center, radius, subdivs);
-    slice.extendIn(n);
+    slice.extend_in(n);
 
     const string plane0 = string(1, AXIS_IDS[0]) + string(1, AXIS_IDS[n-1]);
-    const MatrixXf R0 = createRotationMatrix(n, {plane0}, {M_PI_2});
+    const MatrixXf R0 = create_rotation_matrix(n, {plane0}, {M_PI_2});
     slice.transform(R0);
 
     VectorXf t = VectorXf::Zero(n); t(0) = height / 3.0f;
@@ -1772,7 +1771,7 @@ class LowHyperspherinder : public GeometryND {
             return new LowHyperspherinder(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices;
             int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
 
@@ -1800,7 +1799,7 @@ class LowHyperspherinder : public GeometryND {
         vector<PointND> lowHyperspherinderVerts(int n, float radius, float height, int subdivs_r, int subdivs_h){
             vector<PointND> verts;
             LowHypersphere slice(n-1, radius, subdivs_r);
-            slice.extendIn(n);
+            slice.extend_in(n);
             PointND t0 = PointND::Zero(n);
             t0(n-1) = -height/2;
             slice.translate(t0);
@@ -1826,8 +1825,8 @@ class LowHypercone : public GeometryND {
         int subdivs_h;
         LowHypercone(int n, float radius, float height, int subdivs_r, int subdivs_h) : GeometryND(
             n,
-            lowHyperconeVerts(n, radius, height, subdivs_r, subdivs_h),
-            lowHyperconeEdges(lowHyperconeVerts(n, radius, height, subdivs_r, subdivs_h), subdivs_r, subdivs_h)
+            low_hypercone_verts(n, radius, height, subdivs_r, subdivs_h),
+            low_hypercone_edges(low_hypercone_verts(n, radius, height, subdivs_r, subdivs_h), subdivs_r, subdivs_h)
         ) {
             this->subdivs_r = subdivs_r;
             this->subdivs_h = subdivs_h;
@@ -1837,7 +1836,7 @@ class LowHypercone : public GeometryND {
             return new LowHypercone(*this);
         }
 
-        vector<int> getBufferEdgeIndices() override {
+        vector<int> get_buffer_edge_indices() override {
             vector<int> indices;
             int section_size = (this->n-1) * (this->n-2) / 2 * this->subdivs_r;
 
@@ -1862,10 +1861,10 @@ class LowHypercone : public GeometryND {
         }
 
     private:
-        vector<PointND> lowHyperconeVerts(int n, float radius, float height, int subdivs_r, int subdivs_h){
+        vector<PointND> low_hypercone_verts(int n, float radius, float height, int subdivs_r, int subdivs_h){
             vector<PointND> verts;
             LowHypersphere slice0(n-1, radius, subdivs_r);
-            slice0.extendIn(n);
+            slice0.extend_in(n);
             LowHypersphere slice = *(slice0.clone());
             PointND hpcone_bar = PointND::Zero(n);
             hpcone_bar(n-1) = height/3;
@@ -1885,7 +1884,7 @@ class LowHypercone : public GeometryND {
             return verts;
         }
 
-        vector<SegmentND> lowHyperconeEdges(const vector<PointND> &verts, int subdivs_r, int subdivs_h){
+        vector<SegmentND> low_hypercone_edges(const vector<PointND> &verts, int subdivs_r, int subdivs_h){
             vector<SegmentND> edges;
             return edges;
         }

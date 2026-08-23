@@ -76,7 +76,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .property("n", &SegmentND::n)
         .function("length", &SegmentND::length)
         .function("midpoint", &SegmentND::midpoint)
-        .function("extendIn", &SegmentND::extendIn)
+        .function("extendIn", &SegmentND::extend_in)
         .function("transform", &SegmentND::transform)
         .function("coincident", &SegmentND::coincident)
         .function("intersect", &SegmentND::intersect)
@@ -92,7 +92,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("bar", &FaceND::bar)
         .function("transform", &FaceND::transform)
         .function("coincident", &FaceND::coincident)
-        .function("extendIn", &FaceND::extendIn)
+        .function("extendIn", &FaceND::extend_in)
         .function("project", emscripten::select_overload<void(int)>(&FaceND::project))
         .function("projectWithCam", emscripten::select_overload<void(int, float)>(&FaceND::project));
 
@@ -109,14 +109,14 @@ EMSCRIPTEN_BINDINGS(my_module){
         .property("n", &GeometryND::n)
         .function("bar", &GeometryND::bar)
         .function("transform", &GeometryND::transform)
-        .function("extendIn", &GeometryND::extendIn)
+        .function("extendIn", &GeometryND::extend_in)
         .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
         .function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
-        .function("maxVertexDist", &GeometryND::maxVertexDist)
-        .function("getAbsoluteCrossSection", &GeometryND::getAbsoluteCrossSection)
-        .function("getRelativeCrossSection", &GeometryND::getRelativeCrossSection)
-        .function("getBufferVerts", &GeometryND::getBufferVerts)
-        .function("getBufferEdgeIndices", &GeometryND::getBufferEdgeIndices);
+        .function("maxVertexDist", &GeometryND::max_vertex_dist)
+        .function("getAbsoluteCrossSection", &GeometryND::get_absolute_cross_section)
+        .function("getRelativeCrossSection", &GeometryND::get_relative_cross_section)
+        .function("getBufferVerts", &GeometryND::get_buffer_verts)
+        .function("getBufferEdgeIndices", &GeometryND::get_buffer_edge_indices);
 
     // Binding per AxesND
     emscripten::class_<AxesND, emscripten::base<GeometryND>>("AxesND")
@@ -124,7 +124,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](AxesND& self) -> AxesND* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &AxesND::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &AxesND::get_buffer_edge_indices);
 
     // Binding per Hypercube
     emscripten::class_<Hypercube, emscripten::base<GeometryND>>("Hypercube")
@@ -132,7 +132,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](Hypercube& self) -> Hypercube* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &Hypercube::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &Hypercube::get_buffer_edge_indices);
 
     // Binding per Simplex
     emscripten::class_<Simplex, emscripten::base<GeometryND>>("Simplex")
@@ -140,7 +140,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](Simplex& self) -> Simplex* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &Simplex::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &Simplex::get_buffer_edge_indices);
 
     // Binding per Orthoplex
     emscripten::class_<Orthoplex, emscripten::base<GeometryND>>("Orthoplex")
@@ -148,7 +148,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](Orthoplex& self) -> Orthoplex* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &Orthoplex::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &Orthoplex::get_buffer_edge_indices);
 
     // Binding per Hypersphere
     emscripten::class_<Hypersphere, emscripten::base<GeometryND>>("Hypersphere")
@@ -180,7 +180,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](LowHypersphere& self) -> LowHypersphere* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &LowHypersphere::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &LowHypersphere::get_buffer_edge_indices);
     
     // Binding per LowHypertorus
     emscripten::class_<LowHypertorus, emscripten::base<GeometryND>>("LowHypertorus")
@@ -188,7 +188,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](LowHypertorus& self) -> LowHypertorus* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &LowHypertorus::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &LowHypertorus::get_buffer_edge_indices);
 
     // Binding per LowHyperspherinder
     emscripten::class_<LowHyperspherinder, emscripten::base<GeometryND>>("LowHyperspherinder")
@@ -196,7 +196,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](LowHyperspherinder& self) -> LowHyperspherinder* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &LowHyperspherinder::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &LowHyperspherinder::get_buffer_edge_indices);
 
     // Binding per LowHypercone
     emscripten::class_<LowHypercone, emscripten::base<GeometryND>>("LowHypercone")
@@ -204,13 +204,13 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("clone", emscripten::optional_override([](LowHypercone& self) -> LowHypercone* {
             return self.clone();
         }), emscripten::allow_raw_pointers())
-        .function("getBufferEdgeIndices", &LowHypercone::getBufferEdgeIndices);
+        .function("getBufferEdgeIndices", &LowHypercone::get_buffer_edge_indices);
 
     // Binding per funzioni utility
     emscripten::function("origin", &origin);
-    emscripten::function("projectPoint", emscripten::select_overload<PointND(const PointND, int)>(&projectPoint));
-    emscripten::function("projectPointWithCam", emscripten::select_overload<PointND(const PointND, int, float)>(&projectPoint));
-    emscripten::function("extendPoint", &extendPoint);
+    emscripten::function("projectPoint", emscripten::select_overload<PointND(const PointND, int)>(&project_point));
+    emscripten::function("projectPointWithCam", emscripten::select_overload<PointND(const PointND, int, float)>(&project_point));
+    emscripten::function("extendPoint", &extend_point);
     
     // FIX: Specifica esplicitamente il tipo di ritorno per distance
     emscripten::function("distance", emscripten::optional_override([](PointND p, PointND q) -> float {
@@ -233,8 +233,8 @@ EMSCRIPTEN_BINDINGS(my_module){
         }
     ));
     
-    emscripten::function("barFromPoints", &barFromPoints);
-    emscripten::function("createRotationMatrix", &createRotationMatrix);
+    emscripten::function("barFromPoints", &bar_from_points);
+    emscripten::function("createRotationMatrix", &create_rotation_matrix);
     emscripten::function("vectorFToJs", &vectorFToJs);
     emscripten::function("vectorIToJs", &vectorIToJs);
     emscripten::function("JsToVectorF", &JsToVectorF);
