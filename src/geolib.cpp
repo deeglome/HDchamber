@@ -58,12 +58,13 @@ PointND project_point(const PointND p_cam, const int low_ambient_dim) {
         throw std::runtime_error("Point too close to camera plane, division unstable.");
 
     const float fact = 1.0f / depth;
+    float shrink_fixer = pow(2.5f, p_cam.size() - low_ambient_dim); // Una legge da prendere con le pinze.
 
     PointND proj(low_ambient_dim);
     for (int i = 0; i < low_ambient_dim; ++i) {
         proj(i) = p_cam(i) * fact;
     }
-    return proj;
+    return proj * shrink_fixer;
 }
 
 PointND extend_point(const PointND p, const int high_ambient_dim) {
