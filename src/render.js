@@ -6,8 +6,9 @@ import { lerp } from 'three/src/math/MathUtils.js';
 let GEOLIB;
 export const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
-const THETA = Math.PI / 4;
-const PHI = Math.atan(Math.SQRT2);
+const THETA = 0 /* Math.PI / 4 */;
+const PHI = Math.PI/4 /* Math.atan(Math.SQRT2) */;
+const hypersphericals = [THETA, PHI, -Math.PI / 2, Math.PI/2, Math.PI/3]; // Ordine decrescente: [ang 6d, ang 5d, ang 4d]
 const MAIN_COLOR = 0x88ffdd;
 const AXIS_LEN = 2;
 const AXES_PALETTE = [
@@ -33,7 +34,7 @@ async function init() {
             case "LowHypersphere": return new GEOLIB.LowHypersphere(app.dimensions, 1.0, 32); break;
             case "Hypertorus": return GEOLIB.hypertorus(app.dimensions, 1.5, 0.5, Math.pow(2, 7-app.dimensions), Math.pow(2, 6-app.dimensions));
             case "LowHypertorus": return new GEOLIB.LowHypertorus(app.dimensions, 1.0, 0.2, 8, 8); break;
-            case "Hyperspherinder": return GEOLIB.hyperspherinder(app.dimensions, 0.5, 1.0, 8); break;
+            case "Hyperspherinder": return GEOLIB.hyperspherinder(app.dimensions, 0.5, 1.0, Math.pow(2, 7-app.dimensions)); break;
             case "LowHyperspherinder": return new GEOLIB.LowHyperspherinder(app.dimensions, 0.5, 1.0, 16, 6); break;
             case "Hypercone": return GEOLIB.hypercone(app.dimensions, 0.5, 1.0, Math.pow(2, 7-app.dimensions)); break;
             case "LowHypercone": return new GEOLIB.LowHypercone(app.dimensions, 0.5, 1.0, 16, 6); break;
@@ -49,10 +50,16 @@ async function init() {
         );
     }
 
-    function createAxes(dimensions, axisLength){
+    function hypercamR(dimensions, hypersphericals){
+        return GEOLIB.hypercamPosMatrix(dimensions, GEOLIB.JsToVectorF(hypersphericals), true);
+    }
+
+    const hypersphericalsSlice = (dimensions) => hypersphericals.slice(0, (dimensions-1));
+
+    function createAxes(dimensions, hypercamPos, axisLength){
         const axes = new GEOLIB.AxesND(dimensions, axisLength);
         if(dimensions >= THREE_DIMENSIONS){
-            axes.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+            axes.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
         } else {
             axes.extendIn(THREE_DIMENSIONS);
         }
@@ -216,6 +223,9 @@ async function init() {
         console.timeEnd('cancel')
 
         scene.clear();
+
+        const hypercamPos = hypercamR(app.dimensions, hypersphericalsSlice(app.dimensions));
+
         if(app.dimensions > THREE_DIMENSIONS && app.colorMapMode === "on")
             scene.add(colorMappedMesh);
         else
@@ -267,7 +277,7 @@ async function init() {
         console.log(app.dimensions, THREE_DIMENSIONS)
         if(app.dimensions >= THREE_DIMENSIONS){
             console.time('project')
-            proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+            proj.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
             console.timeEnd('project')
         } else {
             proj.extendIn(THREE_DIMENSIONS);
@@ -318,7 +328,7 @@ async function init() {
         let dR = R(app.dimensions, app.planes, d_theta);
         app.initialTime = Date.now();
 
-        let fixedAxes = createAxes(app.dimensions, AXIS_LEN);
+        let fixedAxes = createAxes(app.dimensions, hypercamPos, AXIS_LEN);
         bufAxes.setAttribute('position', new THREE.BufferAttribute(fixedAxes.vertices, THREE_DIMENSIONS));
         bufAxes.setAttribute('color', new THREE.BufferAttribute(fixedAxes.colors, 3));
         bufAxes.setIndex(new THREE.BufferAttribute(fixedAxes.indices, 1));
@@ -375,7 +385,7 @@ async function init() {
             const ndRawVertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts()));
 
             if(app.dimensions >= THREE_DIMENSIONS)
-                proj.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+                proj.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
             else
                 proj.extendIn(THREE_DIMENSIONS);
 
@@ -396,7 +406,7 @@ async function init() {
 
             let projAxes = rotatingAxes.clone();
             if(app.dimensions >= THREE_DIMENSIONS){
-                projAxes.projectWithCam(THREE_DIMENSIONS, CAM_DIST);
+                projAxes.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
             } else {
                 projAxes.extendIn(THREE_DIMENSIONS);
             }

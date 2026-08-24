@@ -79,9 +79,9 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("extendIn", &SegmentND::extend_in)
         .function("transform", &SegmentND::transform)
         .function("coincident", &SegmentND::coincident)
-        .function("intersect", &SegmentND::intersect)
-        .function("project", emscripten::select_overload<void(int)>(&SegmentND::project))
-        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&SegmentND::project));
+        .function("intersect", &SegmentND::intersect);
+        //.function("project", emscripten::select_overload<void(int)>(&SegmentND::project))
+        //.function("projectWithCam", emscripten::select_overload<void(int, float)>(&SegmentND::project));
 
     // Binding per FaceND
     emscripten::class_<FaceND>("FaceND")
@@ -92,9 +92,9 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("bar", &FaceND::bar)
         .function("transform", &FaceND::transform)
         .function("coincident", &FaceND::coincident)
-        .function("extendIn", &FaceND::extend_in)
-        .function("project", emscripten::select_overload<void(int)>(&FaceND::project))
-        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&FaceND::project));
+        .function("extendIn", &FaceND::extend_in);
+        //.function("project", emscripten::select_overload<void(int)>(&FaceND::project))
+        //.function("projectWithCam", emscripten::select_overload<void(int, float)>(&FaceND::project));
 
     // Binding per MatrixXf
     emscripten::class_<MatrixXf>("MatrixXf")
@@ -110,8 +110,9 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("bar", &GeometryND::bar)
         .function("transform", &GeometryND::transform)
         .function("extendIn", &GeometryND::extend_in)
-        .function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
-        .function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
+        //.function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
+        //.function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
+        .function("renderWithHypercam", &GeometryND::render_with_hypercam)
         .function("maxVertexDist", &GeometryND::max_vertex_dist)
         .function("getAbsoluteCrossSection", &GeometryND::get_absolute_cross_section)
         .function("getRelativeCrossSection", &GeometryND::get_relative_cross_section)
@@ -208,9 +209,9 @@ EMSCRIPTEN_BINDINGS(my_module){
 
     // Binding per funzioni utility
     emscripten::function("origin", &origin);
-    emscripten::function("projectPoint", emscripten::select_overload<PointND(const PointND, int)>(&project_point));
-    emscripten::function("projectPointWithCam", emscripten::select_overload<PointND(const PointND, int, float)>(&project_point));
+    //emscripten::function("projectPoint", emscripten::select_overload<PointND(const PointND, int)>(&project_point));
     emscripten::function("extendPoint", &extend_point);
+    emscripten::function("hypercamPosMatrix", &hypercam_pos_matrix);
     
     // FIX: Specifica esplicitamente il tipo di ritorno per distance
     emscripten::function("distance", emscripten::optional_override([](PointND p, PointND q) -> float {

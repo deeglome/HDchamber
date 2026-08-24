@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <Eigen/Dense>
 #include <vector>
+#include <algorithm>
 #include <thread>
 #include <cmath>
 
@@ -22,30 +23,52 @@ PointND origin(const int ambient_dim) {
     return p;
 }
 
-PointND project_point(const PointND p, const int low_ambient_dim) {
-    if (p.size() < low_ambient_dim) throw invalid_argument("Cannot project a Point from "+to_string(p.size())+" to "+to_string(low_ambient_dim)+" dimensions. Try to extend it.");
-    if (p.size() == low_ambient_dim) return p;
-    if (p.size() == low_ambient_dim) return p;
-    return p.head(low_ambient_dim);
+// Porta un punto dal frame mondo al frame camera: rotazione + traslazione.
+// R deve essere una matrice ortonormale NxN (colonne = base della camera:
+// right, up, over, ..., camera_axis).
+PointND to_camera_space(const PointND& p, const Eigen::MatrixXf& R, const float cam_distance) {
+    if (p.size() != R.rows())
+        throw std::invalid_argument("Point dimension (" + std::to_string(p.size()) +
+            ") does not match rotation matrix dimension (" + std::to_string(R.rows()) + ").");
+
+    // world -> camera frame: R^T porta gli assi camera ad allinearsi ai canonici (R ortogonale => R^T = R^-1)
+    PointND p_cam = R.transpose() * p;
+
+    // trasla lungo l'asse camera_axis (l'ultima componente nel frame camera)
+    p_cam(p_cam.size() - 1) -= cam_distance;
+
+    return p_cam;
 }
 
-PointND project_point(const PointND p, const int low_ambient_dim, const float cam_distance) {
+/* PointND project_point(const PointND p, const int low_ambient_dim) {
     if (p.size() < low_ambient_dim) throw invalid_argument("Cannot project a Point from "+to_string(p.size())+" to "+to_string(low_ambient_dim)+" dimensions. Try to extend it.");
     if (p.size() == low_ambient_dim) return p;
+    return p.head(low_ambient_dim);
+} */
+
+PointND project_point(const PointND p_cam, const int low_ambient_dim) {
+    if (p_cam.size() < low_ambient_dim) throw invalid_argument("Cannot project a Point from "+to_string(p_cam.size())+" to "+to_string(low_ambient_dim)+" dimensions. Try to extend it.");
+    if (p_cam.size() == low_ambient_dim) return p_cam;
    
-    float last = p(p.size() - 1);
-    float fact = 1.0f / (cam_distance + last);
+    // componente lungo camera_axis nel frame camera; il segno meno la converte
+    // in "distanza lungo forward" (forward = -camera_axis). Il punto è già nel frame della camera da ritenersi già trasformata.
+    const float depth = -p_cam(p_cam.size() - 1);
+
+    if (std::abs(depth) < EPS)
+        throw std::runtime_error("Point too close to camera plane, division unstable.");
+
+    const float fact = 1.0f / depth;
 
     PointND proj(low_ambient_dim);
     for (int i = 0; i < low_ambient_dim; ++i) {
-        proj(i) = p(i) * fact;
+        proj(i) = p_cam(i) * fact;
     }
     return proj;
 }
 
 PointND extend_point(const PointND p, const int high_ambient_dim) {
     if (high_ambient_dim > MAXDIM) throw out_of_range("'highAmbientDim' is out of range.");
-    if (high_ambient_dim < p.size()) throw new invalid_argument("Cannot extend a Point from "+to_string(p.size())+" to "+to_string(high_ambient_dim)+" dimensions. Try to project it.");
+    if (high_ambient_dim < p.size()) throw invalid_argument("Cannot extend a Point from "+to_string(p.size())+" to "+to_string(high_ambient_dim)+" dimensions. Try to project it.");
     PointND q = PointND::Zero(high_ambient_dim);
     q.head(p.size()) = p;
     return q;
@@ -145,6 +168,41 @@ MatrixXf create_rotation_matrix(int n, vector<string> planes, vector<float> angl
         R = partialR * R;
     }
     return R;
+}
+
+// Costruisce, una volta sola, la sequenza di matrici di rotazione per ridurre
+// un punto da 'from_ambient_dim' a 'to_ambient_dim'. Non dipende dal punto:
+// va ricalcolata solo quando cambiano gli angoli (es. l'utente ruota la
+// hypercam), non ad ogni vertice/frame.
+MatrixXf hypercam_pos_matrix(const int ambient_dim, const vector<float>& hypersphericals, bool yphiwise = true) {
+    if (hypersphericals.size() != (size_t)(ambient_dim - 1))
+        throw invalid_argument("Expected " + to_string(ambient_dim - 1) + " hyperspherical angles, got " + to_string(hypersphericals.size()) + ".");
+
+    vector<string> planes;
+    for (int n = 1; n < ambient_dim; ++n)
+        planes.push_back(string(1, AXIS_IDS[n-1]) + string(1, AXIS_IDS[n]));
+
+    MatrixXf R = create_rotation_matrix(ambient_dim, planes, hypersphericals);
+    if(!yphiwise) return R;
+
+    MatrixXf R_fix = create_rotation_matrix(ambient_dim, {"yz", "xy"}, {-hypersphericals[1], -hypersphericals[0]});
+    return R_fix * R;
+}
+
+
+// Applica la sequenza di stadi (rotazione + traslazione + perspective divide)
+// a un singolo punto. Va richiamata per ogni punto della geometria, perché
+// il perspective divide dipende dal punto stesso e non è precomputabile.
+PointND apply_hypercam(const PointND& p, const int to_ambient_dim, const MatrixXf& R_total, const float camera_distance) {
+    PointND current = R_total * p;   // TUTTE le rotazioni, in un colpo, nell'ordine giusto
+
+    while (current.size() > to_ambient_dim) {
+        int n = current.size();
+        current(n - 1) -= camera_distance;   // trasla lungo l'asse corrente più esterno
+        current = project_point(current, n - 1);
+    }
+
+    return current;
 }
 
 class SegmentND {
@@ -288,7 +346,7 @@ class SegmentND {
             return !(*this == s);
         }
 
-        void project(int n)
+        /* void project(int n)
         {
             start = project_point(start, n);
             end = project_point(end, n);
@@ -299,6 +357,12 @@ class SegmentND {
             start = project_point(start, n, cam_dist);
             end = project_point(end, n, cam_dist);
             this->n = n;
+        } */
+
+        void render_with_hypercam(const int to_ambient_dim, const MatrixXf& R_total, const int camera_distance) {
+            this->start = apply_hypercam(this->start, to_ambient_dim, R_total, camera_distance);
+            this->end = apply_hypercam(this->end, to_ambient_dim, R_total, camera_distance);
+            this->n = to_ambient_dim;
         }
 };
 
@@ -395,7 +459,7 @@ class FaceND {
             this->n = n;
         }
 
-        void project(int n){
+        /* void project(int n){
             for (SegmentND &s : edges) s.project(n);
             for (PointND &v : verts) v = project_point(v, n);
             this->n = n;
@@ -405,6 +469,12 @@ class FaceND {
             for (PointND &v : verts) v = project_point(v, n, cam_dist);
             for (SegmentND &s : edges) s.project(n, cam_dist);
             this->n = n;
+        } */
+
+        void render_with_hypercam(const int to_ambient_dim, const MatrixXf& R_total, const int camera_distance) {
+            for (SegmentND& s : this->edges) s.render_with_hypercam(to_ambient_dim, R_total, camera_distance);
+            for (PointND& v : this->verts) v = apply_hypercam(v, to_ambient_dim, R_total, camera_distance);
+            this->n = to_ambient_dim;
         }
 
         // Una faccia è uguale/congruente ad un'altra faccia 'f' se essa è sovrapponibile mediante isometrie, trasformazioni che conservano distanze e angoli.
@@ -507,18 +577,25 @@ class GeometryND {
             this->n = n;
         }
 
-        virtual void project(int n){
+        /* virtual void project(int n){
             for(FaceND& f : this->faces) f.project(n);
             for(SegmentND& s : this->edges) s.project(n);
             for(PointND& v : this->verts) v = project_point(v, n);
             this->n = n;
-        }
+        } */
 
-        virtual void project(int n, float cam_dist){
+        /* virtual void project(int n, float cam_dist){
             for(FaceND& f : this->faces) f.project(n, cam_dist);
             for(SegmentND& s : this->edges) s.project(n, cam_dist);
             for(PointND& v : this->verts) v = project_point(v, n, cam_dist);
             this->n = n;
+        } */
+
+        void render_with_hypercam(const int to_ambient_dim, const MatrixXf& R_total, const float camera_distance) {
+            for (FaceND& f : this->faces) f.render_with_hypercam(to_ambient_dim, R_total, camera_distance);
+            for (SegmentND& s : this->edges) s.render_with_hypercam(to_ambient_dim, R_total, camera_distance);
+            for (PointND& v : this->verts) v = apply_hypercam(v, to_ambient_dim, R_total, camera_distance);
+            this->n = to_ambient_dim;
         }
 
         virtual float max_vertex_dist(){
@@ -1175,21 +1252,21 @@ class Hypersphere : public GeometryND {
             center.assign(extended.data(), extended.data() + extended.size());
         }
 
-        void project(int n) override {
+        /* void project(int n) override {
             Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
             PointND c_proj = project_point(PointND(c), n);
             center.assign(c_proj.data(), c_proj.data() + c_proj.size());
 
             GeometryND::project(n);
-        }
+        } */
 
-        void project(int n, float cam_dist) override {
+        /* void project(int n, float cam_dist) override {
             Eigen::Map<Eigen::VectorXf> c(center.data(), center.size());
             PointND c_proj = project_point(PointND(c), n, cam_dist);
             center.assign(c_proj.data(), c_proj.data() + c_proj.size());
 
             GeometryND::project(n, cam_dist);
-        }
+        } */
 
         float max_vertex_dist() override {
             Eigen::Map<const Eigen::VectorXf> c(center.data(), center.size());
@@ -1448,7 +1525,7 @@ class HypersphericalGeometry : public GeometryND {
             for(Hypersphere& hs : this->hspheres) hs.scale(s);
         }
 
-        void project(int n) override {
+        /* void project(int n) override {
             GeometryND::project(n);
             for(Hypersphere& hs : this->hspheres) hs.project(n);
         }
@@ -1456,7 +1533,7 @@ class HypersphericalGeometry : public GeometryND {
         void project(int n, float cam_dist) override {
             GeometryND::project(n, cam_dist);
             for(Hypersphere& hs : this->hspheres) hs.project(n, cam_dist);
-        }
+        } */
 
         GeometryND get_absolute_cross_section(vector<float> n, float d) override {
             if((int)n.size() != this->n)
