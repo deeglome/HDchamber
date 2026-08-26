@@ -6,9 +6,12 @@ import { lerp } from 'three/src/math/MathUtils.js';
 let GEOLIB;
 export const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
-const THETA = 0 /* Math.PI / 4 */;
-const PHI = Math.PI/4 /* Math.atan(Math.SQRT2) */;
-const hypersphericals = [THETA, PHI, -Math.PI / 2, Math.PI/2, Math.PI/3]; // Ordine decrescente: [ang 6d, ang 5d, ang 4d]
+const DFT_THETA = Math.PI / 6;
+const DFT_PHI = Math.PI/3 /* Math.atan(Math.SQRT2);
+/* const THETA = Math.PI / 6;
+const PHI = Math.PI/3 /* Math.atan(Math.SQRT2);
+const hypersphericals = [THETA, PHI, 0, 0, 0]; // Vettore delle coordinate ipersferiche (salvo rho) che descrivono univocamente la posizione della camera nello spazio nD.
+*/
 const MAIN_COLOR = 0x88ffdd;
 const AXIS_LEN = 2;
 const AXES_PALETTE = [
@@ -21,6 +24,12 @@ const AXES_PALETTE = [
 ];
 export const RENDER_FUNCS = {};
 let animationId;
+
+let onCameraChange = () => {}; // no-op di default
+
+RENDER_FUNCS.setOnCameraChange = (callback) => {
+    onCameraChange = callback;
+};
 
 async function init() {
     GEOLIB = await createGeolib();
@@ -54,7 +63,7 @@ async function init() {
         return GEOLIB.hypercamPosMatrix(dimensions, GEOLIB.JsToVectorF(hypersphericals), true);
     }
 
-    const hypersphericalsSlice = (dimensions) => hypersphericals.slice(0, (dimensions-1));
+    const hypersphericalsSlice = (app) => app.camera.hypersphericals.slice(0, app.dimensions - 1);
 
     function createAxes(dimensions, hypercamPos, axisLength){
         const axes = new GEOLIB.AxesND(dimensions, axisLength);
@@ -119,18 +128,20 @@ async function init() {
         camera.position.setFromSphericalCoords(radius, phi, theta);
         // camera.lookAt(0, 0, 0); ridondante se poi chiami controls.update()
     }
-    
+
     RENDER_FUNCS.setCameraSpherical = (app, radius, theta, phi) => {
         const camera = app.isOrtho ? oCamera : pCamera;
         const controls = app.isOrtho ? oControls : pControls;
 
-        app.camera.spherical.radius = radius;
-        app.camera.zoom = CAM_DIST / radius; // <-- tieni zoom coerente
-        app.camera.spherical.theta = theta;
-        app.camera.spherical.phi = phi;
+        app.camera.radius = radius;
+        app.camera.zoom = CAM_DIST / radius;
+        app.camera.hypersphericals[0] = theta;
+        app.camera.hypersphericals[1] = phi;
 
         setCameraOnSphere(camera, radius, theta, phi);
-        controls.update(); // fondamentale: risincronizza lo stato interno di OrbitControls
+        controls.update();
+
+        onCameraChange(); // notifica chi ha registrato il callback, senza sapere chi è
     };
 
     let cachedObjGeo = null;
@@ -175,8 +186,8 @@ async function init() {
     );
     const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 15);
 
-    setCameraOnSphere(oCamera, CAM_DIST, THETA, PHI);
-    setCameraOnSphere(pCamera, CAM_DIST, THETA, PHI);
+    setCameraOnSphere(oCamera, CAM_DIST, DFT_THETA, DFT_PHI);
+    setCameraOnSphere(pCamera, CAM_DIST, DFT_THETA, DFT_PHI);
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -224,7 +235,7 @@ async function init() {
 
         scene.clear();
 
-        const hypercamPos = hypercamR(app.dimensions, hypersphericalsSlice(app.dimensions));
+        const hypercamPos = hypercamR(app.dimensions, hypersphericalsSlice(app));
 
         if(app.dimensions > THREE_DIMENSIONS && app.colorMapMode === "on")
             scene.add(colorMappedMesh);
@@ -342,7 +353,9 @@ async function init() {
         console.time('declare tic()')
         function tic(){
             controls.update();
-            app.camera.spherical = getCameraSpherical(camera);
+            const liveSpherical = getCameraSpherical(camera);
+            app.camera.hypersphericals[0] = liveSpherical.theta;
+            app.camera.hypersphericals[1] = liveSpherical.phi;
 
             app.finalTime = Date.now();
             let next_dt = app.deltaTime() / 1000;

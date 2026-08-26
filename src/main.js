@@ -23,7 +23,19 @@ const APP = {
   animationId: {},
   selectedObj: null,
   crossSectionMode: {status: "off", hyperplaneNormal: "", hyperplaneOffset: 0},
-  camera: {spherical: {radius: 3, phi: 0, theta: 0}, zoom: 1.00},
+  camera: {
+    hypersphericals: Array(MAX_DIMENSION - 1).fill(0), // [theta, phi, psi3, psi4, psi5]
+    radius: 3,
+    zoom: 1.00,
+    // Restituisce SOLO la slice leggibile da Three.js (radius, theta, phi)
+    spherical() {
+      return {
+        radius: this.radius,
+        theta: this.hypersphericals[0] || 0,
+        phi: this.hypersphericals[1] || 0
+      };
+    }
+  },
   isOrtho: false,
   axesMode: "off",
   colorMapMode: "off",
@@ -917,93 +929,121 @@ function setPauseBtn(){
 
 /*
 * =============
-* CAMERA BUTTON
+* HYPERCAMERA BUTTON
 * =============
 */
-function initSphericalP(prop, symbol, min, max, value){
-  const sphericalP = document.createElement("p");
-  sphericalP.classList.add("spherical-p");
-  sphericalP.innerHTML = symbol;
+const HYPERCAM_LABELS = ["\u03B8", "\u03A6", "\u03C8\u2083", "\u03C8\u2084", "\u03C8\u2085"]; // θ, Φ, ψ3, ψ4, ψ5
+
+function activeHypersphericalCount(dimensions){
+  return Math.max(0, dimensions - 1);
+}
+
+function initHypercamInput(value){
+  const input = document.createElement("input");
+  input.setAttribute("type", "number");
+  input.setAttribute("min", 0);
+  input.setAttribute("max", APP.angleMeasurement === "radian" ? 2*Math.PI : 360);
+  input.setAttribute("step", THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI));
+  input.setAttribute("value", value);
+  input.classList.add("hypercam-input");
+  return input;
+}
+
+function initHypercamSlider(value){
+  const slider = document.createElement("input");
+  slider.classList.add("hypercam-slider", "slider");
+  slider.setAttribute("type", "range");
+  slider.setAttribute("min", 0);
+  slider.setAttribute("max", APP.angleMeasurement === "radian" ? 2*Math.PI : 360);
+  slider.setAttribute("step", THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI));
+  slider.setAttribute("value", value);
+  return slider;
+}
+
+function initRhoInput(value){
+  const rhoP = document.createElement("p");
+  rhoP.classList.add("spherical-p", "rho-p");
+  rhoP.innerHTML = "\u03C1";
 
   const input = document.createElement("input");
   input.setAttribute("type", "number");
-  input.setAttribute("min", min);
-  if(max !== undefined) input.setAttribute("max", max);
+  input.setAttribute("min", 0);
   input.setAttribute("value", value);
 
-  input.addEventListener("keydown", (event)=>{
+  input.addEventListener("keydown", (event) => {
     if(event.key === "Enter"){
-      input.value = clamp(input.value, min, max);
-      APP.camera.spherical[prop] = input.value;
-      RENDER_FUNCS.setCameraSpherical(APP, APP.camera.spherical.radius, APP.camera.spherical.theta, APP.camera.spherical.phi);
-    } 
-  })
-  
-  sphericalP.appendChild(input);
-  return sphericalP;
+      APP.camera.radius = parseFloat(input.value);
+      const { theta, phi } = APP.camera.spherical();
+      RENDER_FUNCS.setCameraSpherical(APP, APP.camera.radius, theta, phi);
+    }
+  });
+
+  rhoP.appendChild(input);
+  return rhoP;
 }
 
-function setSphericalInputs(dropmenu){
-  const sphericalInputs = document.createElement("ul");
-  sphericalInputs.classList.add("spherical-inputs");
+function updateHypercamValue(input, index){
+  let angle = arg(APP.angleMeasurement === "radian" ? input.value * 1 : input.value * Math.PI / 180);
+  input.value = APP.angleMeasurement === "radian" ? angle : angle * 180 / Math.PI;
+  APP.camera.hypersphericals[index] = angle;
+  updateAndRender();
+}
 
-  const rhoSymbol = "\u03C1";
-  console.log(APP);
-  const rhoP = initSphericalP("radius", rhoSymbol, 0, undefined, APP.camera.spherical.radius);
-  
-  const thetaSymbol = "\u03B8";
-  const thetaP = initSphericalP("theta", thetaSymbol, -Math.PI, Math.PI, APP.camera.spherical.theta);
+function setHypercamList(dropmenu){
+  const hypercamUl = dropmenu.querySelector("ul.hypersphericals");
+  hypercamUl.innerHTML = "";
 
-  const phiSymbol = "\u03A6";
-  const phiP = initSphericalP("phi", phiSymbol, 0, Math.PI, APP.camera.spherical.phi);
+  HYPERCAM_LABELS.forEach((label, index) => {
+    const item = document.createElement("li");
+    item.classList.add("hypercam-angle", `psi-${index}`);
 
-  sphericalInputs.appendChild(rhoP);
-  sphericalInputs.appendChild(thetaP);
-  sphericalInputs.appendChild(phiP);
+    const header = document.createElement("div");
+    header.classList.add("hypercam-header");
 
-  dropmenu.appendChild(sphericalInputs);
+    const labelSpan = document.createElement("span");
+    labelSpan.innerHTML = label;
+    header.appendChild(labelSpan);
+
+    const value = APP.camera.hypersphericals[index] || 0;
+    const input = initHypercamInput(value);
+    header.appendChild(input);
+    item.appendChild(header);
+
+    const slider = initHypercamSlider(value);
+    item.appendChild(slider);
+
+    item.classList.toggle("hidden", index >= activeHypersphericalCount(APP.dimensions));
+
+    input.addEventListener("keydown", (event) => {
+      if(event.key === "Enter") updateHypercamValue(input, index);
+    });
+    slider.addEventListener("input", () => updateHypercamValue(slider, index));
+
+    hypercamUl.appendChild(item);
+  });
+}
+
+// sync
+
+function setHypercamHandler(){
+  const dropmenu = document.querySelector(".camera + .dropmenu");
+  setHypercamList(dropmenu);
+
+  if(!dropmenu.querySelector(".rho-p")){
+    const rhoP = initRhoInput(APP.camera.radius);
+    const hypercamUl = dropmenu.querySelector("ul.hypersphericals");
+    hypercamUl.parentNode.insertBefore(rhoP, hypercamUl);
+  }
 }
 
 function setRapidCameraAssetBtns(){
 
 }
 
-let sphericalSyncId = null;
-
-function setSphericalInputsSync() {
-  cancelAnimationFrame(sphericalSyncId);
-
-  const rhoInput = document.querySelector(".spherical-inputs .spherical-p:nth-child(1) input");
-  const thetaInput = document.querySelector(".spherical-inputs .spherical-p:nth-child(2) input");
-  const phiInput = document.querySelector(".spherical-inputs .spherical-p:nth-child(3) input");
-
-  function frame() {
-    const { radius, theta, phi } = APP.camera.spherical;
-
-    if (rhoInput && document.activeElement !== rhoInput) {
-      rhoInput.value = radius;
-    }
-    if (thetaInput && document.activeElement !== thetaInput) {
-      thetaInput.value = theta;
-    }
-    if (phiInput && document.activeElement !== phiInput) {
-      phiInput.value = phi;
-    }
-
-    APP.camera.spherical = { radius, theta, phi }; // tieni anche lo stato logico coerente
-
-    updateDeveloperDataDiv(developerDataDiv);
-    sphericalSyncId = requestAnimationFrame(frame);
-  }
-  sphericalSyncId = requestAnimationFrame(frame);
-}
-
 function setCameraBtn(dropmenu){
   const cameraBtn = document.querySelector(".camera.button");
 
   cameraBtn.addEventListener("click", ()=>{
-    
-    console.log("Query selector dorpmenu", dropmenu)
     toggleDropmenuDisplay(dropmenu, "flex");
   });
 }
@@ -1012,9 +1052,32 @@ function setCameraOptions(){
   const camera = {
     dropmenu: document.querySelector(".camera + .dropmenu")
   };
-  setSphericalInputs(camera.dropmenu);
+  setHypercamHandler();
   setRapidCameraAssetBtns();
   setCameraBtn(camera.dropmenu);
+}
+
+let hypercamSyncId = null;
+
+function setHypercamSync(){
+  cancelAnimationFrame(hypercamSyncId);
+
+  function frame(){
+    HYPERCAM_LABELS.forEach((_, index) => {
+      const inputEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-input`);
+      const sliderEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-slider`);
+      const value = APP.camera.hypersphericals[index] || 0;
+      const displayValue = APP.angleMeasurement === "radian" ? value : value * 180 / Math.PI;
+
+      if(sliderEl && document.activeElement !== sliderEl) sliderEl.value = displayValue;
+      if(inputEl && document.activeElement !== inputEl) inputEl.value = displayValue;
+
+      const item = document.querySelector(`.hypercam-angle.psi-${index}`);
+      if(item) item.classList.toggle("hidden", index >= activeHypersphericalCount(APP.dimensions));
+    });
+    hypercamSyncId = requestAnimationFrame(frame);
+  }
+  hypercamSyncId = requestAnimationFrame(frame);
 }
 
 /*
@@ -1082,8 +1145,9 @@ function addGuiHandlers() {
   setZoomOutBtn();
   setSliderSync();
   setCameraOptions();
-  setSphericalInputsSync();
+  setHypercamSync();
   setDeveloperModeBtn();
+  RENDER_FUNCS.setOnCameraChange(updateAndRender);
 }
 
 addWindowEvents();
