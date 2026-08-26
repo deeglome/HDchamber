@@ -217,7 +217,7 @@ function setMeshSelectorDropmenu({ dropmenu, meshButtons }) {
 
   meshes.forEach((meshLabel) => {
     const mesh = document.createElement("li");
-    mesh.classList.add("button", "mesh");
+    mesh.classList.add("button", "text", "xs", "mesh");
     mesh.innerHTML = meshLabel;
     dropmenu.appendChild(mesh);
   });

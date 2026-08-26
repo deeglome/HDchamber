@@ -21,59 +21,59 @@
   <body>
     <ul class="left buttons">
       <li>
-        <a class="button esc" href="javascript:history.go(-1)">
+        <a class="button icon m esc" href="javascript:history.go(-1)">
           <div class="icon" style="--icon-url: url('/icons/back.svg');" role="img" aria-label="Go back"></div>
         </a>
       </li>
       <li>
-        <button class="button rotation-handler" title="Edit rotations">
+        <button class="button icon m rotation-handler" title="Edit rotations">
           <div class="icon" style="--icon-url: url('/icons/rotation-icon.png');" role="img" aria-label="Rotation icon"></div>
         </button>
         <div class="dropmenu left">
           <ul class="planes"></ul>
           <ul class="tools buttons">
             <li>
-              <button class="button small random-btn">
+              <button class="button icon xs random-btn">
                 <div class="icon" style="--icon-url: url('/icons/random.svg');" role="img" aria-label="Random rotation" title="Generate a random rotation!"></div>
               </button>
             </li>
             <li>
-              <button class="button small clear-btn">
+              <button class="button icon xs clear-btn">
                 <div class="icon" style="--icon-url: url('/icons/clear.svg');" role="img" aria-label="Clear rotation"></div>
               </button>
             </li>
             <li>
-              <button class="button small radian-btn active">Radian</button>
+              <button class="button text xs radian-btn active">Radian</button>
             </li>
             <li>
-              <button class="button small degree-btn">Degree</button>
+              <button class="button text xs degree-btn">Degree</button>
           </li>
           </ul>
         </div>
       </li>
       <li class="meshes-handler" title="Select a mesh to render!">
-        <button class="button">
+        <button class="button icon m">
           <div class="icon" style="--icon-url: url('/icons/box_btn.svg');" role="img" aria-label="Box button"></div>
         </button>
         <ul class="dropmenu left"></ul>
       </li>
       <li>
-        <button class="button projection-mode" title="Enable orthogonal projection">
+        <button class="button icon m projection-mode" title="Enable orthogonal projection">
           <div class="icon" style="--icon-url: url('/icons/ortho.png');" role="img" aria-label="orto_off"></div>
         </button>
       </li>
       <li>
-        <button class="button pause-btn" title="Pause">
+        <button class="button icon m pause-btn" title="Pause">
           <div class="icon" style="--icon-url: url('/icons/pause.svg');" role="img" aria-label="Pause icon"></div>
         </button>
       </li>
       <li>
-        <button class="button zoom-in-btn" title="Zoom In">
+        <button class="button icon m zoom-in-btn" title="Zoom In">
           <div class="icon" style="--icon-url: url('/icons/zoom_in.svg');" role="img" aria-label="Zoom In icon"></div>
         </button>
       </li>
       <li>
-        <button class="button zoom-out-btn" title="Zoom Out">
+        <button class="button icon m zoom-out-btn" title="Zoom Out">
           <div class="icon" style="--icon-url: url('/icons/zoom_out.svg');" role="img" aria-label="Zoom Out icon"></div>
         </button>
       </li>
@@ -82,7 +82,7 @@
 
     <ul class="right buttons">
       <li>
-        <button class="button wiki" title="Open the Wiki">
+        <button class="button icon m wiki" title="Open the Wiki">
           <div style="--icon-url: url('/icons/wiki.png');" class="icon" role="img" aria-label="Open the Wiki"></div>
         </button>
         <div class="wikipage">
@@ -91,7 +91,7 @@
         </div>
       </li>
       <li>
-        <button class="button dimensions-handler" title="Select the number of dimensions to render!">
+        <button class="button icon m dimensions-handler" title="Select the number of dimensions to render!">
           <div class="icon" style="--icon-url: url('/icons/dimension_btn.svg');" role="img" aria-label="Dimension Button"></div>
         </button>
         <div class="dropmenu right">
@@ -101,12 +101,12 @@
         </div>
       </li>
       <li>
-        <button class="button color-map-mode" title="Enable Color Map mode">
+        <button class="button icon m color-map-mode" title="Enable Color Map mode">
           <div class="icon" style="--icon-url: url('/icons/color-map.svg');" role="img" aria-label="Last coordinate icon"></div>
         </button>
       </li>
       <li>
-        <button class="button cross-section-mode" title="Enable cross-section mode">
+        <button class="button icon m cross-section-mode" title="Enable cross-section mode">
           <div class="icon" style="--icon-url: url('/icons/cross_section_view_on_btn.svg');" role="img" aria-label="Cross-section mode icon"></div>
         </button>
         <div class="dropmenu right">
@@ -116,33 +116,33 @@
             <ul class="animation-toolbar buttons hidden">
               <li>To: <div class="to hyperplane"></div></li>
               <li>Duration (s): <input type="number" value="15" class="duration"></li>
-              <li><button class="button">Animate</button></li>
+              <li><button class="button text xs">Animate</button></li>
             </ul>
 
             <p><strong>Animation Toolbar state</strong></p>
 
-            <ul class="animation-toolbar-states buttons">
-              <button class="button active">Closed</button>
-              <button class="button">Open</button>
+            <ul class="animation-toolbar-states buttons row">
+              <button class="button text xs active">Closed</button>
+              <button class="button text xs">Open</button>
             </ul>
 
             <p><strong>Section Mode state</strong></p>
 
-            <ul class="cross-section-mode-states states buttons">
-              <li><button class="button small active" data-state="off">Off</button></li>
-              <li><button class="button small" data-state="absolute">Absolute</button></li>
-              <li><button class="button small" data-state="relative">Relative</button></li>
+            <ul class="cross-section-mode-states states buttons row">
+              <li><button class="button text xs active" data-state="off">Off</button></li>
+              <li><button class="button text xs" data-state="absolute">Absolute</button></li>
+              <li><button class="button text xs" data-state="relative">Relative</button></li>
             </ul>
           </div>
         </div>
       </li>
       <li>
-        <button class="button axes" title="Enable fixed axes">
+        <button class="button icon m axes" title="Enable fixed axes">
           <div class="icon" style="--icon-url: url('/icons/cartesian_axes_view_locked_btn.svg');" role="img" aria-label="Axes icon"></div>
         </button>
       </li>
       <li>
-        <button class="button camera" title="Camera options">
+        <button class="button icon m camera" title="Camera options">
           <div class="icon" style="--icon-url: url('/icons/camera.png');" role="img" aria-label="Camera icon"></div>
         </button>
         <div class="dropmenu right">
@@ -150,7 +150,7 @@
         </div>
       </li>
       <li>
-        <button class="button developer-mode" title="Developer Mode">
+        <button class="button icon m developer-mode" title="Developer Mode">
           <div class="icon" style="--icon-url: url('/icons/developer_mode.svg');" role="img" aria-label="Developer Mode icon"></div>
         </button>
       </li>
