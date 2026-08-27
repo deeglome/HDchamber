@@ -34,14 +34,6 @@ legend {
   width: 100vw;
 }
 
-.hidden {
-  display: none;
-}
-
-.transparent {
-  opacity: 0;
-}
-
 ul {
   list-style: none;
   padding: 0;
@@ -63,13 +55,6 @@ p ul {
 
 .buttons.right {
   float: right;
-}
-
-.buttons.row {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
 }
 
 .buttons li {
@@ -233,7 +218,7 @@ input[type=number]::-webkit-outer-spin-button {
   padding-left: 0;
 }
 
-.rotation-plane{
+.slider {
   border: 1px solid var(--text-color);
   width: 150px;
   display: inline-block;
@@ -242,7 +227,7 @@ input[type=number]::-webkit-outer-spin-button {
   box-sizing: border-box;
 }
 
-.plane-header{
+.slider > .header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -362,6 +347,31 @@ legend {
 }
 .developer-data p {
   margin: 0;
+}
+
+/* MULTIPURPOSE CLASSES */
+
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.transparent {
+  opacity: 0;
 }
 
 @media screen and (max-width: 800px) {
