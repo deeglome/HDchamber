@@ -1,10 +1,11 @@
 import { RENDER_FUNCS, THREE_DIMENSIONS} from "./render.js";
 import { animate } from "popmotion";
+import { DEG2RAD, degToRad } from "three/src/math/MathUtils.js";
 
 // VARIABILI GLOBALI PER L'APPLICAZIONE
 const MIN_DIMENSION = 2;
 const MAX_DIMENSION = 6;
-const OMEGA0 = Math.PI / 4; // rad/s
+const OMEGA0 = 45; // deg/s
 const AXIS_IDENTIFIERS = "xyzwvu";
 
 const APP = {
@@ -39,7 +40,7 @@ const APP = {
   isOrtho: false,
   axesMode: "off",
   colorMapMode: "off",
-  angleMeasurement: "radian"
+  angleMeasurement: "degree"
 };
 
 async function fetchWiki() {
@@ -326,7 +327,8 @@ function evenlyDistributedMaxK() {
   return MAX_K_TOT / Math.sqrt(rots(APP.dimensions));
 }
 
-const THETA_STEP = Math.PI / 10;
+const THETA_STEP = 5;
+const K_STEP = 0.05;
 
 function setPlanes({planes, kValues, theta, options, dropmenu}) {
   const planesMap = new Map();
@@ -350,32 +352,18 @@ function setPlanes({planes, kValues, theta, options, dropmenu}) {
     planeSpan.innerHTML = `${plane.toUpperCase()}`;
     planeHeader.appendChild(planeSpan);
 
-    const thetaInput = initInput(
-      "number",
-      0,
-      APP.angleMeasurement === "radian" ? 2*Math.PI : 360,
-      rotationState.angle,
-      THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI),
-      "theta-input"
-    );
+    const thetaInput = initInput("number", 0, 360, rotationState.angle, THETA_STEP, "theta-input");
 
     planeHeader.appendChild(thetaInput);
 
     const maxK = evenlyDistributedMaxK();
-    const kInput = initInput("number", -maxK, +maxK, rotationState.k, 0.01, ["k-input"]);
+    const kInput = initInput("number", -maxK, +maxK, rotationState.k, K_STEP, "k-input");
 
     planeHeader.appendChild(kInput);
 
     rotationPlane.appendChild(planeHeader);
 
-    const slider = initInput(
-      "range",
-      0,
-      APP.angleMeasurement === "radian" ? 2*Math.PI : 360,
-      rotationState.angle,
-      THETA_STEP,
-      "theta-slider"
-    );
+    const slider = initInput("range", 0, 360, rotationState.angle, THETA_STEP, "theta-slider");
 
     rotationPlane.appendChild(slider);
 
@@ -405,14 +393,14 @@ function setKInputs({planes, kValues, kInputs}) {
 }
 
 function arg(value){
-  while(value < 0) value += 2*Math.PI;
-  while(value > 2*Math.PI) value -= 2*Math.PI;
+  while(value < 0) value += 360;
+  while(value > 360) value -= 360;
   return value;
 }
 
 function updateThetaValue(input, index, theta){
-  let angle = arg(APP.angleMeasurement === "radian" ? input.value*1 : input.value * Math.PI / 180);
-  input.value = APP.angleMeasurement === "radian" ? angle : angle * 180 / Math.PI;
+  let angle = arg(input.value*1);
+  input.value = angle;
   theta[index] = angle;
   APP.theta = theta;
   APP.initialTime = Date.now();
@@ -447,10 +435,10 @@ function setSliderSync() {
       const inputEl = document.querySelector(`.rotation-plane.${plane} .theta-input`);
       const sliderEl = document.querySelector(`.rotation-plane.${plane} .theta-slider`);
       if (sliderEl && document.activeElement !== sliderEl) {
-        sliderEl.value = APP.angleMeasurement === "radian" ? APP.theta[i] : APP.theta[i] * 180 / Math.PI;
+        sliderEl.value = APP.theta[i];
       }
       if (inputEl && document.activeElement !== inputEl) {
-        inputEl.value = APP.angleMeasurement === "radian" ? APP.theta[i] : APP.theta[i] * 180 / Math.PI; 
+        inputEl.value = APP.theta[i]; 
       }
     });
     updateDeveloperDataDiv(developerDataDiv);
@@ -498,64 +486,29 @@ function setClearRotationsBtn(handler){
   });
 }
 
-function convertToDisplay(radians) {
-  return APP.angleMeasurement === "degree" ? radians * 180 / Math.PI : radians;
-}
-
 function refreshThetaControlsForUnit() {
-  const isDegree = APP.angleMeasurement === "degree";
-  const max = isDegree ? 360 : 2 * Math.PI;
-  const step = isDegree ? 18 : THETA_STEP; // step coerente con l'unità
+  const max = 360;
+  const step = 18; // step coerente con l'unità
 
   APP.planes.forEach((plane, i) => {
     const sliderEl = document.querySelector(`.rotation-plane.${plane} .theta-slider`);
     if (sliderEl) {
       sliderEl.max = max;
       sliderEl.step = step;
-      sliderEl.value = convertToDisplay(APP.theta[i]);
+      sliderEl.value = APP.theta[i];
     }
 
     const inputEl = document.querySelector(`.rotation-plane.${plane} .theta-input`);
     if (inputEl) {
       inputEl.step = step;
-      inputEl.value = convertToDisplay(APP.theta[i]);
+      inputEl.value = APP.theta[i];
     }
-  });
-}
-
-function setRadianBtn(handler){
-  const radianBtn = handler.dropmenu.querySelector(".radian-btn");
-  const degreeBtn = handler.dropmenu.querySelector(".degree-btn");
-
-  radianBtn.addEventListener("click", ()=>{
-    radianBtn.classList.add("active");
-    degreeBtn.classList.remove("active");
-    
-    APP.angleMeasurement = "radian";
-
-    refreshThetaControlsForUnit()
-  });
-}
-
-function setDegreeBtn(handler){
-  const radianBtn = handler.dropmenu.querySelector(".radian-btn");
-  const degreeBtn = handler.dropmenu.querySelector(".degree-btn");
-
-  degreeBtn.addEventListener("click", ()=>{
-    radianBtn.classList.remove("active");
-    degreeBtn.classList.add("active");
-
-    APP.angleMeasurement = "degree";
-
-    refreshThetaControlsForUnit();
   });
 }
 
 function setTools(handler){
   setRandomRotationBtn(handler);
   setClearRotationsBtn(handler);
-  setRadianBtn(handler);
-  setDegreeBtn(handler);
 }
 
 function setPlanesDropmenu(handler) {
@@ -949,8 +902,8 @@ function initHypercamInput(value){
   const input = document.createElement("input");
   input.setAttribute("type", "number");
   input.setAttribute("min", 0);
-  input.setAttribute("max", APP.angleMeasurement === "radian" ? 2*Math.PI : 360);
-  input.setAttribute("step", THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI));
+  input.setAttribute("max", 360);
+  input.setAttribute("step", THETA_STEP);
   input.setAttribute("value", value);
   input.classList.add("hypercam-input");
   return input;
@@ -961,8 +914,8 @@ function initHypercamSlider(value){
   slider.classList.add("hypercam-slider");
   slider.setAttribute("type", "range");
   slider.setAttribute("min", 0);
-  slider.setAttribute("max", APP.angleMeasurement === "radian" ? 2*Math.PI : 360);
-  slider.setAttribute("step", THETA_STEP * (APP.angleMeasurement === "radian" ? 1 : 180 / Math.PI));
+  slider.setAttribute("max", 360);
+  slider.setAttribute("step", THETA_STEP);
   slider.setAttribute("value", value);
   return slider;
 }
@@ -990,8 +943,8 @@ function initRhoInput(value){
 }
 
 function updateHypercamValue(input, index){
-  let angle = arg(APP.angleMeasurement === "radian" ? input.value * 1 : input.value * Math.PI / 180);
-  input.value = APP.angleMeasurement === "radian" ? angle : angle * 180 / Math.PI;
+  let angle = arg(input.value * 1);
+  input.value = angle;
   APP.camera.hypersphericals[index] = angle;
   updateAndRender();
 }
@@ -1074,7 +1027,7 @@ function setHypercamSync(){
       const inputEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-input`);
       const sliderEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-slider`);
       const value = APP.camera.hypersphericals[index] || 0;
-      const displayValue = APP.angleMeasurement === "radian" ? value : value * 180 / Math.PI;
+      const displayValue = value;
 
       if(sliderEl && document.activeElement !== sliderEl) sliderEl.value = displayValue;
       if(inputEl && document.activeElement !== inputEl) inputEl.value = displayValue;

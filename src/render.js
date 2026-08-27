@@ -1,13 +1,14 @@
 import * as THREE from 'three'
+import { MathUtils } from 'three';
 import createGeolib from './geolib.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { lerp } from 'three/src/math/MathUtils.js';
+import { degToRad, lerp, radToDeg } from 'three/src/math/MathUtils.js';
 
 let GEOLIB;
 export const THREE_DIMENSIONS = 3;
 const CAM_DIST = 3;
-const DFT_THETA = Math.PI / 6;
-const DFT_PHI = Math.PI/3 /* Math.atan(Math.SQRT2);
+const DFT_THETA = 30;
+const DFT_PHI = 60 /* Math.atan(Math.SQRT2);
 /* const THETA = Math.PI / 6;
 const PHI = Math.PI/3 /* Math.atan(Math.SQRT2);
 const hypersphericals = [THETA, PHI, 0, 0, 0]; // Vettore delle coordinate ipersferiche (salvo rho) che descrivono univocamente la posizione della camera nello spazio nD.
@@ -186,8 +187,8 @@ async function init() {
     );
     const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 15);
 
-    setCameraOnSphere(oCamera, CAM_DIST, DFT_THETA, DFT_PHI);
-    setCameraOnSphere(pCamera, CAM_DIST, DFT_THETA, DFT_PHI);
+    setCameraOnSphere(oCamera, CAM_DIST, degToRad(DFT_THETA), degToRad(DFT_PHI));
+    setCameraOnSphere(pCamera, CAM_DIST, degToRad(DFT_THETA), degToRad(DFT_PHI));
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -335,7 +336,7 @@ async function init() {
         }
 
         let dt = 0.1;
-        let d_theta = app.omega().map(o => o * dt);
+        let d_theta = app.omega().map(o => degToRad(o * dt));
         let dR = R(app.dimensions, app.planes, d_theta);
         app.initialTime = Date.now();
 
@@ -354,8 +355,8 @@ async function init() {
         function tic(){
             controls.update();
             const liveSpherical = getCameraSpherical(camera);
-            app.camera.hypersphericals[0] = liveSpherical.theta;
-            app.camera.hypersphericals[1] = liveSpherical.phi;
+            app.camera.hypersphericals[0] = radToDeg(liveSpherical.theta);
+            app.camera.hypersphericals[1] = radToDeg(liveSpherical.phi);
 
             app.finalTime = Date.now();
             let next_dt = app.deltaTime() / 1000;
@@ -363,15 +364,15 @@ async function init() {
             if(error(next_dt, dt) > 0.20){
                 console.log("Aggiorno dR!");
                 dt = next_dt;
-                d_theta = app.omega().map(o => o * dt);
+                d_theta = app.omega().map(o => degToRad(o * dt));
                 dR = R(app.dimensions, app.planes, d_theta);
             }
 
             // --- SYNC: aggiorna l'angolo assoluto accumulato per ogni piano ---
             const omegas = app.omega();
             for (let i = 0; i < app.theta.length; i++) {
-                const updated = (app.theta[i] + omegas[i] * next_dt) % (2 * Math.PI);
-                app.theta[i] = updated < 0 ? updated + 2 * Math.PI : updated;
+                const updated = (app.theta[i] + omegas[i] * next_dt) % 360;
+                app.theta[i] = Math.round((updated < 0 ? updated + 360 : updated) * 1000) / 1000;
             }
             // -----------------------------------------------------------------
 
