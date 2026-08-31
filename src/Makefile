@@ -3,11 +3,12 @@ SRC = main.cpp
 OUT = main
 EIGEN = /usr/include/eigen3
 EMSDK = ~/emsdk
+HYPER := HyperCam.cpp
 
 all: clean wasm
 
 wasm: wasm.cpp
-	bash -c "source $(EMSDK)/emsdk_env.sh && em++ wasm.cpp \
+	bash -c "source $(EMSDK)/emsdk_env.sh && em++ wasm.cpp $(HYPER) \
 	-I$(EIGEN) \
 	-lembind \
 	-s WASM=1 \
