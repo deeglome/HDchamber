@@ -185,7 +185,7 @@ async function init() {
         0.1,
         5
     );
-    const pCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 15);
+    const pCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 15);
 
     setCameraOnSphere(oCamera, CAM_DIST, degToRad(DFT_THETA), degToRad(DFT_PHI));
     setCameraOnSphere(pCamera, CAM_DIST, degToRad(DFT_THETA), degToRad(DFT_PHI));
