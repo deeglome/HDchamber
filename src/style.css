@@ -168,11 +168,30 @@ input[type=number]::-webkit-outer-spin-button {
   margin: 0; 
 }
 
+::-webkit-scrollbar{
+  width: 8px;
+  height: 8px;
+  background-color: var(--bg-color2);
+}
+::-webkit-scrollbar-track{
+  background-color: transparent;
+}
+::-webkit-scrollbar-thumb{
+  width: 5px;
+  background-color: var(--text-color);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-corner{
+  background-color: #0c0;
+}
+
 .dropmenu {
   min-width: 300px;
   width: max-content;
   max-width: 600px;
-  min-height: 20px;
+  min-height: 50px;
+  max-height: 250px;
+  overflow-y: scroll;
   background-color: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(5px);
   border-radius: 3px;
