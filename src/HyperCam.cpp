@@ -10,6 +10,7 @@ namespace Hyper
     namespace
     {
         constexpr float EPS = 1e-6f;
+        constexpr size_t N = 6;
         constexpr float CAMDIST = 3.0f;
         const std::string AXIS_IDS = "xyzwvu";
 
@@ -70,83 +71,89 @@ namespace Hyper
         }
     }
 
-    HyperCam::HyperCam(size_t ambdim_, const std::vector<float>& hyperspherical_pos_, size_t destdim_)
-        : ambdim(ambdim_), destdim(destdim_)
+    HyperCam::HyperCam(size_t ambient_dim, const std::vector<float>& hyperspherical_pos)
     {
-        const size_t num_stages = ambdim - destdim; // riduzioni fino a 3D: N->N-1->...->3
-
-        if (hyperspherical_pos_.empty())
+        if (ambient_dim > N)
+            throw std::invalid_argument(
+                 "Expected lower ambient_dim: " + std::to_string(ambient_dim) + ">" + std::to_string(N) + ".");
+        this->ambient_dim = ambient_dim;
+        
+        if (hyperspherical_pos.empty())
         {
-            hyperspherical_pos = std::vector<float>(ambdim, 0.0f);
-            hyperspherical_pos[0] = CAMDIST;
+            this->hyperspherical_pos = std::vector<float>(this->ambient_dim, 0.0f);
+            this->hyperspherical_pos[0] = CAMDIST;
         }
         else
-            hyperspherical_pos = hyperspherical_pos_;
+            this->hyperspherical_pos = hyperspherical_pos;
 
-        if (hyperspherical_pos.size() != ambdim)
+        if (this->hyperspherical_pos.size() != this->ambient_dim)
             throw std::invalid_argument(
-                "Expected " + std::to_string(num_stages) + " hyperspherical angles, got " +
-                std::to_string(hyperspherical_pos.size()) + ".");
+                "Expected " + std::to_string(this->ambient_dim) + " hyperspherical coords, got " +
+                std::to_string(this->hyperspherical_pos.size()) + ".");
+        
+        update_cam_matrix();
+    }
 
-        stages.reserve(num_stages);
+    void HyperCam::set_hyperspherical_pos(const std::vector<float>& pos)
+    {
+        if(this->hyperspherical_pos.size() != pos.size())
+            throw std::invalid_argument(
+                "Expected " + std::to_string(this->ambient_dim) + " hyperspherical coords, got " +
+                std::to_string(pos.size()) + ".");
+        
+        this->hyperspherical_pos = pos;
+    }
 
-        for (size_t stage = 0; stage < num_stages; ++stage)
+    void HyperCam::update_cam_matrix()
+    {
+        std::vector<std::string> planes;
+        for (int n = 1; n < this->ambient_dim; ++n)
+            planes.push_back(std::string(1, AXIS_IDS[n-1]) + std::string(1, AXIS_IDS[n]));
+
+        std::vector<float> angles = std::vector<float>(this->hyperspherical_pos.begin() + 1, this->hyperspherical_pos.end());
+        this->cam_matrix = create_rotation_matrix(this->ambient_dim, planes, angles);
+    }
+
+    Eigen::VectorXf HyperCam::render(const Eigen::VectorXf& p) const
+    {
+        if( p.size() != this->ambient_dim )
+            throw std::invalid_argument(
+                "Expected a " + std::to_string(this->ambient_dim) + "-dimensional point, got a " + std::to_string(p.size()) + "-dimensional one.");
+        Eigen::VectorXf p_rend = p;
+        // Bring back cam to origin.
+        p_rend = cam_matrix.transpose() * p_rend;
+        p_rend(p_rend.size() - 1) -= hyperspherical_pos[0];
+        // Project in ambient_dim - 1.
+        p_rend = perspective_divide(p_rend, this->ambient_dim-1);
+        return p_rend;
+    }
+
+    std::vector<HyperCam> get_cam_chain(const size_t from_ambient_dim, const size_t to_render_dim, std::vector<float> hyperspherical_pos)
+    {
+        std::vector<HyperCam> chain;
+        for(size_t i=0; i < from_ambient_dim - to_render_dim; i++)
         {
-            int n = static_cast<int>(ambdim) - static_cast<int>(stage); // dimensione corrente a questo stadio
-
-            // ruota nel piano formato dagli ultimi due assi rimasti (n-2, n-1)
-            std::string plane = std::string(1, AXIS_IDS[n - 2]) + std::string(1, AXIS_IDS[n - 1]);
-            MatrixXf R = create_rotation_matrix(n, {plane}, {hyperspherical_pos[stage]});
-
-            // fix di convenzione (Y-up di Three.js), applicato solo al primo
-            // stadio, dove il piano xy/yz esiste ancora nella sua forma "piena"
-            if (stage == 0 && n >= 3)
-            {
-                float theta = hyperspherical_pos.size() > 0 ? hyperspherical_pos[0] : 0.0f;
-                float phi = hyperspherical_pos.size() > 1 ? hyperspherical_pos[1] : 0.0f;
-                MatrixXf R_fix = create_rotation_matrix(n, {"yz", "xy"}, {-phi, -theta});
-                R = R_fix * R;
-            }
-
-            stages.push_back(R);
+            std::vector<float> hs_pos;
+            if( !hyperspherical_pos.empty() )
+                hs_pos = std::vector<float>(hyperspherical_pos.begin(), hyperspherical_pos.end() - i);
+            size_t n = from_ambient_dim - i;
+            chain.push_back( Hyper::HyperCam(n, hs_pos) );
         }
+        return chain;
     }
 
-    std::vector<MatrixXf> HyperCam::get_stages(size_t start, size_t end) const
+    std::vector<size_t> update_cam_chain(std::vector<HyperCam>& cam_chain, std::vector<bool>& dirty_flags)
     {
-        if (start > end || end > stages.size())
-            throw std::out_of_range("Invalid stage range requested.");
+        if (cam_chain.size() != dirty_flags.size())
+            throw std::invalid_argument("cam_chain and dirty_flags must have the same size.");
 
-        return std::vector<MatrixXf>(stages.begin() + start, stages.begin() + end);
-    }
-
-    VectorXf HyperCam::project(const VectorXf& p, size_t to_ambient_dim) const
-    {
-        if (static_cast<size_t>(p.size()) != ambdim)
-            throw std::invalid_argument("Point dimension does not match camera's ambient dimension.");
-        if (to_ambient_dim > ambdim)
-            throw std::invalid_argument("Cannot project to a higher dimension than the ambient one.");
-
-        VectorXf current = p;
-
-        for (const MatrixXf& R : stages)
-        {
-            if (static_cast<size_t>(current.size()) <= to_ambient_dim) break;
-
-            int n = static_cast<int>(current.size());
-            if (R.rows() != n)
-                throw std::invalid_argument("Stage matrix dimension mismatch.");
-
-            current = R * current;              // rotazione di questo stadio
-            current(n - 1) -= hyperspherical_pos[0];           // traslazione lungo l'asse camera
-            current = perspective_divide(current, n - 1); // riduzione di una dimensione
+        std::vector<size_t> updated;
+        for (size_t i = 0; i < cam_chain.size(); ++i) {
+            if (!dirty_flags[i]) continue;
+            cam_chain[i].update_cam_matrix();
+            dirty_flags[i] = false;
+            updated.push_back(i);
         }
-
-        return current;
-    }
-
-    std::vector<HyperCam> get_cams_chain()
-    {
-        return {};
+        return updated;
     }
 }

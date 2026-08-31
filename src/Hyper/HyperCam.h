@@ -8,22 +8,30 @@ namespace Hyper
     class HyperCam
     {
         public:
-        HyperCam(size_t ambdim, const std::vector<float>& hyperspherical_pos = {}, size_t destdim = 3);
+        HyperCam(size_t ambient_dim, const std::vector<float>& hyperspherical_pos = {});
 
-        size_t get_ambient_dim() const { return ambdim; }
-        size_t get_destination_dim() const { return destdim; }
+        size_t get_ambient_dim() const { return ambient_dim; }
+        size_t get_render_dim() const { return ambient_dim-1; }
         float get_cam_distance() const { return hyperspherical_pos[0]; }
         const std::vector<float>& get_hyperspherical_pos() const { return hyperspherical_pos; }
-        const std::vector<Eigen::MatrixXf>& get_stages_all() const { return stages; }
-        std::vector<Eigen::MatrixXf> get_stages(size_t start, size_t end) const;
-        std::vector<HyperCam> get_cams_chain() const;
+        Eigen::MatrixXf get_cam_matrix() const { return cam_matrix; };
 
-        Eigen::VectorXf project(const Eigen::VectorXf& p, size_t to_ambient_dim) const;
+        void set_hyperspherical_pos(const std::vector<float>& pos);
+
+        void update_cam_matrix();
+        Eigen::VectorXf render(const Eigen::VectorXf& p) const;
 
         private:
-        size_t ambdim;
-        size_t destdim;
+        size_t ambient_dim;
         std::vector<float> hyperspherical_pos;
-        std::vector<Eigen::MatrixXf> stages;
+
+        /**
+         * A matrix that maps the camera from its canonical position (the one where `hyperspherical_pos = (ρ,0,0,...,0)`) to its current position described by `hyperspherical_pos`.
+         * `cam_matrix ^ -1 == cam_matrix ^ T` (it's a rotation matrix. Therefore it's orthogonal).
+         */
+        Eigen::MatrixXf cam_matrix;
     };
+
+    std::vector<HyperCam> get_cam_chain(const size_t from_ambient_dim, const size_t to_render_dim, std::vector<float> hyperspherical_pos = {});
+    std::vector<size_t> update_cam_chain(std::vector<HyperCam>& cam_chain, std::vector<bool>& dirty_flags);
 }
