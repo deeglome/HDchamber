@@ -112,7 +112,7 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("extendIn", &GeometryND::extend_in)
         //.function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
         //.function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
-        .function("renderWithHypercam", &GeometryND::render_with_hypercam)
+        .function("renderWithCamChain", &GeometryND::render_with_cam_chain)
         .function("maxVertexDist", &GeometryND::max_vertex_dist)
         .function("getAbsoluteCrossSection", &GeometryND::get_absolute_cross_section)
         .function("getRelativeCrossSection", &GeometryND::get_relative_cross_section)

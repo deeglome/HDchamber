@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <thread>
 #include <cmath>
+#include <optional>
+#include "Hyper/HyperCam.h"
 
 using namespace std;
 using namespace Eigen;
@@ -191,19 +193,18 @@ MatrixXf hypercam_pos_matrix(const int ambient_dim, const vector<float>& hypersp
 }
 
 
-// Applica la sequenza di stadi (rotazione + traslazione + perspective divide)
-// a un singolo punto. Va richiamata per ogni punto della geometria, perché
-// il perspective divide dipende dal punto stesso e non è precomputabile.
-PointND apply_hypercam(const PointND& p, const int to_ambient_dim, const MatrixXf& R_total, const float camera_distance) {
-    PointND current = R_total * p;   // TUTTE le rotazioni, in un colpo, nell'ordine giusto
-
-    while (current.size() > to_ambient_dim) {
-        int n = current.size();
-        current(n - 1) -= camera_distance;   // trasla lungo l'asse corrente più esterno
-        current = project_point(current, n - 1);
+// Applica l'intera catena di camere indipendenti a un punto, una alla volta.
+// Ogni HyperCam riduce di UNA sola dimensione (ambient_dim -> render_dim);
+// il punto in uscita da una camera diventa l'input della successiva.
+PointND apply_cam_chain(const PointND& p, const vector<Hyper::HyperCam>& cam_chain, size_t i) {
+    PointND q = p;
+    for(; i < cam_chain.size(); i++)
+    {
+        if ((size_t)q.size() != cam_chain[i].get_ambient_dim())
+            throw invalid_argument("Point dimension does not match this stage's ambient_dim in the camera chain.");
+        q = cam_chain[i].render(q);
     }
-
-    return current;
+    return q;
 }
 
 class SegmentND {
@@ -360,10 +361,10 @@ class SegmentND {
             this->n = n;
         } */
 
-        void render_with_hypercam(const int to_ambient_dim, const MatrixXf& R_total, const int camera_distance) {
-            this->start = apply_hypercam(this->start, to_ambient_dim, R_total, camera_distance);
-            this->end = apply_hypercam(this->end, to_ambient_dim, R_total, camera_distance);
-            this->n = to_ambient_dim;
+        void render_with_cam_chain(const vector<Hyper::HyperCam>& cam_chain, size_t i) {
+            this->start = apply_cam_chain(this->start, cam_chain, i);
+            this->end   = apply_cam_chain(this->end, cam_chain, i);
+            this->n     = cam_chain.back().get_render_dim();
         }
 };
 
@@ -472,10 +473,10 @@ class FaceND {
             this->n = n;
         } */
 
-        void render_with_hypercam(const int to_ambient_dim, const MatrixXf& R_total, const int camera_distance) {
-            for (SegmentND& s : this->edges) s.render_with_hypercam(to_ambient_dim, R_total, camera_distance);
-            for (PointND& v : this->verts) v = apply_hypercam(v, to_ambient_dim, R_total, camera_distance);
-            this->n = to_ambient_dim;
+        void render_with_cam_chain(const vector<Hyper::HyperCam>& cam_chain, size_t i) {
+            for(auto& s : this->edges) s.render_with_cam_chain(cam_chain, i);
+            for(auto& v : this->verts) v = apply_cam_chain(v, cam_chain, i);
+            this->n = cam_chain.back().get_render_dim();
         }
 
         // Una faccia è uguale/congruente ad un'altra faccia 'f' se essa è sovrapponibile mediante isometrie, trasformazioni che conservano distanze e angoli.
@@ -592,11 +593,18 @@ class GeometryND {
             this->n = n;
         } */
 
-        void render_with_hypercam(const int to_ambient_dim, const MatrixXf& R_total, const float camera_distance) {
-            for (FaceND& f : this->faces) f.render_with_hypercam(to_ambient_dim, R_total, camera_distance);
-            for (SegmentND& s : this->edges) s.render_with_hypercam(to_ambient_dim, R_total, camera_distance);
-            for (PointND& v : this->verts) v = apply_hypercam(v, to_ambient_dim, R_total, camera_distance);
-            this->n = to_ambient_dim;
+        void render_with_cam_chain(const vector<Hyper::HyperCam>& cam_chain, size_t first_dirty = 0, std::optional<GeometryND> cached_proj = std::nullopt) {
+            size_t i = 0;
+
+            if (first_dirty > 0 && cached_proj.has_value()) {
+                *this = *cached_proj;
+                i = first_dirty;
+            }
+
+            for(auto& s : this->edges) s.render_with_cam_chain(cam_chain, i);
+            for(auto& f : this->faces) f.render_with_cam_chain(cam_chain, i);
+            for(auto& v : this->verts) v = apply_cam_chain(v, cam_chain, i);
+            this->n = cam_chain.back().get_render_dim();
         }
 
         virtual float max_vertex_dist(){
