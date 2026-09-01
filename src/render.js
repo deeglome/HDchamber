@@ -60,10 +60,6 @@ async function init() {
         );
     }
 
-    function hypercamR(dimensions, hypersphericals){
-        return GEOLIB.hypercamPosMatrix(dimensions, GEOLIB.JsToVectorF(hypersphericals), true);
-    }
-
     function initCamChain(app){
         // Costruisce la catena di camere intermedie da app.dimensions fino a
         // THREE_DIMENSIONS + 1 (4D): l'ultimo passaggio 4D -> 3D resta escluso
@@ -76,7 +72,7 @@ async function init() {
 
     const hypersphericalsSlice = (app) => app.camera.hypersphericals.slice(0, app.dimensions - 1);
 
-    function createAxes(dimensions, hypercamPos, axisLength){
+    function createAxes(dimensions, axisLength){
         const axes = new GEOLIB.AxesND(dimensions, axisLength);
         if(dimensions > THREE_DIMENSIONS){
             axes.renderWithCamChain(cachedCamChain, 0, undefined);
@@ -248,8 +244,6 @@ async function init() {
 
         scene.clear();
 
-        const hypercamPos = hypercamR(app.dimensions, hypersphericalsSlice(app));
-
         if(app.dimensions > THREE_DIMENSIONS && app.colorMapMode === "on")
             scene.add(colorMappedMesh);
         else
@@ -359,7 +353,7 @@ async function init() {
         let dR = R(app.dimensions, app.planes, d_theta);
         app.initialTime = Date.now();
 
-        let fixedAxes = createAxes(app.dimensions, hypercamPos, AXIS_LEN);
+        let fixedAxes = createAxes(app.dimensions, AXIS_LEN);
         bufAxes.setAttribute('position', new THREE.BufferAttribute(fixedAxes.vertices, THREE_DIMENSIONS));
         bufAxes.setAttribute('color', new THREE.BufferAttribute(fixedAxes.colors, 3));
         bufAxes.setIndex(new THREE.BufferAttribute(fixedAxes.indices, 1));
@@ -374,8 +368,9 @@ async function init() {
         function tic(){
             controls.update();
             const liveSpherical = getCameraSpherical(camera);
-            app.camera.hypersphericals[0] = radToDeg(liveSpherical.theta);
-            app.camera.hypersphericals[1] = radToDeg(liveSpherical.phi);
+            app.camChain.at(-1).hyperspherical_pos[0] = liveSpherical.radius;
+            app.camChain.at(-1).hyperspherical_pos[1] = liveSpherical.theta > 0 ? radToDeg(liveSpherical.theta) : radToDeg(liveSpherical.theta) + 360;
+            app.camChain.at(-1).hyperspherical_pos[2] = radToDeg(liveSpherical.phi);
 
             app.finalTime = Date.now();
             let next_dt = app.deltaTime() / 1000;

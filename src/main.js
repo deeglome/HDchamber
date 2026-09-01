@@ -1048,7 +1048,7 @@ function setHypercamSync(){
     HYPERCAM_LABELS.forEach((_, index) => {
       const inputEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-input`);
       const sliderEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-slider`);
-      const value = APP.camera.hypersphericals[index] || 0;
+      const value = APP.camChain.at(-1).hyperspherical_pos[index] || 0;
       const displayValue = value;
 
       if(sliderEl && document.activeElement !== sliderEl) sliderEl.value = displayValue;
@@ -1121,7 +1121,7 @@ function initCamChainRhoInput(stageIndex, value) {
 }
 
 function buildCamChainStageTitle(stageIndex) {
-  const ambientDim = stageAmbientDim(stageIndex);
+  const ambientDim = stageAmbientDim(stageIndex) + 1;
   const title = document.createElement("div");
   title.classList.add("camchain-title", "header");
   title.innerHTML = `Camera ${ambientDim}D`;
@@ -1129,7 +1129,7 @@ function buildCamChainStageTitle(stageIndex) {
 }
 
 function buildCamChainStage(stageIndex) {
-  const ambientDim = stageAmbientDim(stageIndex);
+  const ambientDim = stageAmbientDim(stageIndex) + 1;
   const numAngles = ambientDim - 1;
 
   const li = document.createElement("li");
@@ -1219,17 +1219,42 @@ function setCamChainSync() {
   cancelAnimationFrame(camChainSyncId);
 
   function frame() {
+    const lastIndex = APP.camChain.length - 1;
+
     APP.camChain.forEach((stage, stageIndex) => {
+      const isBaseCamera = stageIndex === lastIndex; // ambient_dim === 3, il vecchio "hypercam"
+
+      // --- RHO (index 0 di hyperspherical_pos) ---
+      const rhoSelector = isBaseCamera
+        ? ".hypercamera-coords .rho-p input"
+        : `.camchain-stage.stage-${stageIndex} .camchain-rho-input`;
+      const rhoInputEl = document.querySelector(rhoSelector);
+      if (rhoInputEl && document.activeElement !== rhoInputEl) {
+        rhoInputEl.value = stage.hyperspherical_pos[0];
+      }
+
+      // --- ANGOLI (index >= 1 di hyperspherical_pos) ---
       stage.hyperspherical_pos.forEach((value, angleIndex) => {
-        if (angleIndex === 0) return;
-        const selector = `.camchain-stage.stage-${stageIndex} .camchain-angle.angle-${angleIndex}`;
-        const inputEl = document.querySelector(`${selector} .camchain-input`);
-        const sliderEl = document.querySelector(`${selector} .camchain-slider`);
+        if (angleIndex === 0) return; // già gestito sopra come rho
+
+        let inputEl, sliderEl;
+
+        if (isBaseCamera) {
+          const psiIndex = angleIndex - 1; // 1->psi-0 (θ), 2->psi-1 (Φ)
+          const selector = `.hypercam-angle.psi-${psiIndex}`;
+          inputEl = document.querySelector(`${selector} .hypercam-input`);
+          sliderEl = document.querySelector(`${selector} .hypercam-slider`);
+        } else {
+          const selector = `.camchain-stage.stage-${stageIndex} .camchain-angle.angle-${angleIndex}`;
+          inputEl = document.querySelector(`${selector} .camchain-input`);
+          sliderEl = document.querySelector(`${selector} .camchain-slider`);
+        }
 
         if (sliderEl && document.activeElement !== sliderEl) sliderEl.value = value;
         if (inputEl && document.activeElement !== inputEl) inputEl.value = value;
       });
     });
+
     camChainSyncId = requestAnimationFrame(frame);
   }
   camChainSyncId = requestAnimationFrame(frame);
@@ -1300,9 +1325,7 @@ function addGuiHandlers() {
   setZoomOutBtn();
   setSliderSync();
   setCameraOptions();
-  setHypercamSync();
   setDeveloperModeBtn();
-  setHypercamSync();
   setCamChainSync();
   RENDER_FUNCS.setOnCameraChange(updateAndRender);
 }
