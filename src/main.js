@@ -37,6 +37,7 @@ const APP = {
       };
     }
   },
+  camChain: [],
   isOrtho: false,
   axesMode: "off",
   colorMapMode: "off",
@@ -295,6 +296,11 @@ function setDimensionsInput(input) {
         APP.dimensions = APP.MAX_DIMENSIONS;
       }
       setRotationHandler();
+      setCamChainHandler();
+      APP.camChain.forEach((c, i) => {
+        console.log(`CAMERA ${APP.dimensions - i}D: `, c.hyperspherical_pos);
+      });
+
       setCrossSectionDropmenu(document.querySelector(".cross-section-mode + .dropmenu"));
       setCrossSectionHyperplane(document.querySelector(".cross-section-mode + .dropmenu"));
       updateAndRender();
@@ -983,11 +989,23 @@ function setHypercamList(dropmenu){
   });
 }
 
+function buildHypercamTitle() {
+  const title = document.createElement("div");
+  title.classList.add("camchain-title", "header", "hypercam-title");
+  title.innerHTML = `Camera ${APP.dimensions}D`;
+  return title;
+}
+
 // sync
 
 function setHypercamHandler(){
   const dropmenu = document.querySelector(".camera + .dropmenu");
   setHypercamList(dropmenu);
+
+  const hypercameraLi = dropmenu.querySelector(".hypercamera-coords");
+  if(!hypercameraLi.querySelector(".hypercam-title")){
+    hypercameraLi.insertBefore(buildHypercamTitle(), hypercameraLi.firstChild);
+  }
 
   if(!dropmenu.querySelector(".rho-p")){
     const rhoP = initRhoInput(APP.camera.radius);
@@ -1012,6 +1030,7 @@ function setCameraOptions(){
   const camera = {
     dropmenu: document.querySelector(".camera + .dropmenu")
   };
+  setCamChainHandler();
   setHypercamHandler();
   setRapidCameraAssetBtns();
   setCameraBtn(camera.dropmenu);
@@ -1023,6 +1042,9 @@ function setHypercamSync(){
   cancelAnimationFrame(hypercamSyncId);
 
   function frame(){
+    const titleEl = document.querySelector(".hypercamera-coords .hypercam-title");
+    if(titleEl) titleEl.innerHTML = `Camera ${APP.dimensions}D`;
+
     HYPERCAM_LABELS.forEach((_, index) => {
       const inputEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-input`);
       const sliderEl = document.querySelector(`.hypercam-angle.psi-${index} .hypercam-slider`);
@@ -1038,6 +1060,178 @@ function setHypercamSync(){
     hypercamSyncId = requestAnimationFrame(frame);
   }
   hypercamSyncId = requestAnimationFrame(frame);
+}
+
+/*
+* =============
+* CAM CHAIN (ipercamere intermedie)
+* =============
+*/
+
+// Numero di stadi intermedi = ambient_dim - THREE_DIMENSIONS, per ambient_dim da
+// APP.dimensions fino a THREE_DIMENSIONS+1 (l'ultimo stadio, 4D->3D, è escluso
+// perché già gestito dalla riga ".hypercamera-coords" esistente in HTML).
+function intermediateStagesCount(dimensions) {
+  return Math.max(0, dimensions - THREE_DIMENSIONS);
+}
+
+// Per ogni stadio intermedio, il numero di angoli è (ambient_dim - 1),
+// dove ambient_dim decresce da APP.dimensions-1 fino a 4.
+function stageAmbientDim(stageIndex) {
+  return APP.dimensions - 1 - stageIndex;
+}
+
+function initCamChainInput(value) {
+  return initInput("number", 0, 360, value, THETA_STEP, "camchain-input");
+}
+
+function initCamChainSlider(value) {
+  return initInput("range", 0, 360, value, THETA_STEP, "camchain-slider");
+}
+
+function updateCamChainValue(input, stageIndex, angleIndex) {
+  let angle = arg(input.value * 1);
+  input.value = angle;
+
+  APP.camChain[stageIndex].hyperspherical_pos[angleIndex] = angle;
+  APP.camChain[stageIndex].dirty = true;
+
+  updateAndRender();
+}
+
+function updateCamChainRadius(input, stageIndex) {
+  const value = parseFloat(input.value);
+  input.value = value;
+  APP.camChain[stageIndex].radius = value;
+  APP.camChain[stageIndex].dirty = true;
+  updateAndRender();
+}
+
+function initCamChainRhoInput(stageIndex, value) {
+  const rhoP = document.createElement("p");
+  rhoP.classList.add("spherical-p", "rho-p");
+  rhoP.innerHTML = "\u03C1";
+
+  const input = initInput("number", 0, 10, 3, 0.01, "camchain-rho-input", "keydown", (event) => {
+    if (event.key === "Enter") updateCamChainRadius(input, stageIndex);
+  });
+
+  rhoP.appendChild(input);
+  return rhoP;
+}
+
+function buildCamChainStageTitle(stageIndex) {
+  const ambientDim = stageAmbientDim(stageIndex);
+  const title = document.createElement("div");
+  title.classList.add("camchain-title", "header");
+  title.innerHTML = `Camera ${ambientDim}D`;
+  return title;
+}
+
+function buildCamChainStage(stageIndex) {
+  const ambientDim = stageAmbientDim(stageIndex);
+  const numAngles = ambientDim - 1;
+
+  const li = document.createElement("li");
+  li.classList.add("camchain-stage", `stage-${stageIndex}`);
+
+  li.appendChild(buildCamChainStageTitle(stageIndex));
+
+  const stageRadius = APP.camChain[stageIndex]?.radius ?? 1;
+  li.appendChild(initCamChainRhoInput(stageIndex, stageRadius));
+
+  const ul = document.createElement("ul");
+  ul.classList.add("camchain-angles", "row");
+
+  for (let i = 1; i < ambientDim; i++) {
+    const item = document.createElement("li");
+    item.classList.add("camchain-angle", `angle-${i}`, "slider");
+
+    const header = document.createElement("div");
+    header.classList.add("camchain-header", "header");
+
+    const labelSpan = document.createElement("span");
+    labelSpan.innerHTML = HYPERCAM_LABELS[i-1] || `\u03C8${i-1}`;
+    header.appendChild(labelSpan);
+
+    const value = APP.camChain[stageIndex].hyperspherical_pos[i] || 0;
+    const input = initCamChainInput(value);
+    header.appendChild(input);
+    item.appendChild(header);
+
+    const slider = initCamChainSlider(value);
+    item.appendChild(slider);
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") updateCamChainValue(input, stageIndex, i);
+    });
+    slider.addEventListener("input", () => updateCamChainValue(slider, stageIndex, i));
+
+    ul.appendChild(item);
+  }
+
+  li.appendChild(ul);
+  return li;
+}
+
+function setCamChainList(dropmenu) {
+  const camChainUl = dropmenu.querySelector("ul.cam-chain");
+
+  // Rimuove tutti gli stage intermedi già presenti (mantiene la
+  // ".hypercamera-coords" fissa in HTML, la lascia intatta)
+  camChainUl.querySelectorAll(".camchain-stage").forEach((el) => el.remove());
+
+  const numStages = intermediateStagesCount(APP.dimensions);
+
+  // Ricostruisce APP.camChain con le coordinate correnti, se disponibili,
+  // altrimenti azzerate.
+  const newCamChain = [];
+  for (let s = 0; s <= numStages; s++) {
+    const ambientDim = stageAmbientDim(s) + 1;
+    const numAngles = ambientDim - 1;
+    const existing = APP.camChain[s];
+    const dftRadius = 3;
+
+    newCamChain.push({
+      ambient_dim: ambientDim,
+      hyperspherical_pos: existing && existing.hyperspherical_pos.length === numAngles + 1
+        ? existing.hyperspherical_pos
+        : [dftRadius, ...Array(numAngles).fill(0)],
+      dirty: true
+    });
+  }
+
+  APP.camChain = newCamChain;
+
+  for (let s = 0; s < numStages; s++) {
+    camChainUl.appendChild(buildCamChainStage(s));
+  }
+}
+
+function setCamChainHandler() {
+  const dropmenu = document.querySelector(".camera + .dropmenu");
+  setCamChainList(dropmenu);
+}
+
+let camChainSyncId = null;
+
+function setCamChainSync() {
+  cancelAnimationFrame(camChainSyncId);
+
+  function frame() {
+    APP.camChain.forEach((stage, stageIndex) => {
+      stage.hyperspherical_pos.forEach((value, angleIndex) => {
+        const selector = `.camchain-stage.stage-${stageIndex} .camchain-angle.angle-${angleIndex}`;
+        const inputEl = document.querySelector(`${selector} .camchain-input`);
+        const sliderEl = document.querySelector(`${selector} .camchain-slider`);
+
+        if (sliderEl && document.activeElement !== sliderEl) sliderEl.value = value;
+        if (inputEl && document.activeElement !== inputEl) inputEl.value = value;
+      });
+    });
+    camChainSyncId = requestAnimationFrame(frame);
+  }
+  camChainSyncId = requestAnimationFrame(frame);
 }
 
 /*
@@ -1107,6 +1301,8 @@ function addGuiHandlers() {
   setCameraOptions();
   setHypercamSync();
   setDeveloperModeBtn();
+  setHypercamSync();
+  setCamChainSync();
   RENDER_FUNCS.setOnCameraChange(updateAndRender);
 }
 

@@ -386,6 +386,10 @@ legend {
   align-items: center;
 }
 
+.dropmenu.col {
+  justify-content: flex-start;
+}
+
 .hidden {
   display: none;
 }
