@@ -64,12 +64,22 @@ async function init() {
         return GEOLIB.hypercamPosMatrix(dimensions, GEOLIB.JsToVectorF(hypersphericals), true);
     }
 
+    function initCamChain(app){
+        // Costruisce la catena di camere intermedie da app.dimensions fino a
+        // THREE_DIMENSIONS + 1 (4D): l'ultimo passaggio 4D -> 3D resta escluso
+        // di proposito, perché è già gestito da app.camera / hypercamR / OrbitControls.
+        console.log("app.dimensions: ", app.dimensions, "THREE_DIMENSIONS", THREE_DIMENSIONS);
+        const camChain = GEOLIB.getCamChain(app.dimensions, THREE_DIMENSIONS);
+
+        return camChain;
+    }
+
     const hypersphericalsSlice = (app) => app.camera.hypersphericals.slice(0, app.dimensions - 1);
 
     function createAxes(dimensions, hypercamPos, axisLength){
         const axes = new GEOLIB.AxesND(dimensions, axisLength);
-        if(dimensions >= THREE_DIMENSIONS){
-            axes.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
+        if(dimensions > THREE_DIMENSIONS){
+            axes.renderWithCamChain(cachedCamChain, 0, undefined);
         } else {
             axes.extendIn(THREE_DIMENSIONS);
         }
@@ -152,6 +162,8 @@ async function init() {
     let cachedType = null;
     let cachedDimensions = null;
     let cachedIndices = null;
+    let cachedCamChain = null;
+    let cachedCamChainDimensions = null; 
 
     const bufGeo = new THREE.BufferGeometry();
     const bufAxes = new THREE.BufferGeometry();
@@ -243,6 +255,13 @@ async function init() {
         else
             scene.add(monochromaticMesh);
 
+        // Ricostruisce la camchain SOLO quando cambia il numero di dimensioni
+        // (indipendente dal tipo di mesh selezionato).
+        if(app.dimensions > THREE_DIMENSIONS && app.dimensions !== cachedCamChainDimensions){
+            cachedCamChain = initCamChain(app);
+            cachedCamChainDimensions = app.dimensions;
+        }
+
         // It will be computed only if dimension or type has been changed.
         if(app.selectedObj !== cachedType || app.dimensions !== cachedDimensions){
             console.time('cachedGeo')
@@ -287,9 +306,9 @@ async function init() {
         }
 
         console.log(app.dimensions, THREE_DIMENSIONS)
-        if(app.dimensions >= THREE_DIMENSIONS){
+        if(app.dimensions > THREE_DIMENSIONS){
             console.time('project')
-            proj.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
+            proj.renderWithCamChain(cachedCamChain, 0, undefined);
             console.timeEnd('project')
         } else {
             proj.extendIn(THREE_DIMENSIONS);
@@ -398,8 +417,8 @@ async function init() {
 
             const ndRawVertices = new Float32Array(GEOLIB.vectorFToJs(proj.getBufferVerts()));
 
-            if(app.dimensions >= THREE_DIMENSIONS)
-                proj.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
+            if(app.dimensions > THREE_DIMENSIONS)
+                proj.renderWithCamChain(cachedCamChain, 0, undefined);
             else
                 proj.extendIn(THREE_DIMENSIONS);
 
@@ -419,8 +438,8 @@ async function init() {
             rotatingAxes.transform(dR);
 
             let projAxes = rotatingAxes.clone();
-            if(app.dimensions >= THREE_DIMENSIONS){
-                projAxes.renderWithHypercam(THREE_DIMENSIONS, hypercamPos, CAM_DIST);
+            if(app.dimensions > THREE_DIMENSIONS){
+                projAxes.renderWithCamChain(cachedCamChain, 0, undefined);
             } else {
                 projAxes.extendIn(THREE_DIMENSIONS);
             }
