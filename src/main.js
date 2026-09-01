@@ -24,19 +24,7 @@ const APP = {
   animationId: {},
   selectedObj: null,
   crossSectionMode: {status: "off", hyperplaneNormal: "", hyperplaneOffset: 0},
-  camera: {
-    hypersphericals: Array(MAX_DIMENSION - 1).fill(0), // [theta, phi, psi3, psi4, psi5]
-    radius: 3,
-    zoom: 1.00,
-    // Restituisce SOLO la slice leggibile da Three.js (radius, theta, phi)
-    spherical() {
-      return {
-        radius: this.radius,
-        theta: this.hypersphericals[0] || 0,
-        phi: this.hypersphericals[1] || 0
-      };
-    }
-  },
+  camera: { zoom: 1.00 },
   camChain: [],
   isOrtho: false,
   axesMode: "off",
@@ -938,9 +926,9 @@ function initRhoInput(value){
 
   input.addEventListener("keydown", (event) => {
     if(event.key === "Enter"){
-      APP.camera.radius = parseFloat(input.value);
-      const { theta, phi } = APP.camera.spherical();
-      RENDER_FUNCS.setCameraSpherical(APP, APP.camera.radius, theta, phi);
+      APP.camChain.at(-1).hyperspherical_pos[0] = parseFloat(input.value);
+      const [rho, theta, phi] = APP.camChain.at(-1).hyperspherical_pos;
+      RENDER_FUNCS.setCameraSpherical(APP, rho, degToRad(theta), degToRad(phi));
     }
   });
 
@@ -951,8 +939,17 @@ function initRhoInput(value){
 function updateHypercamValue(input, index){
   let angle = arg(input.value * 1);
   input.value = angle;
-  APP.camera.hypersphericals[index] = angle;
-  updateAndRender();
+
+  // indice UI (0=θ,1=Φ,...) → indice in hyperspherical_pos (0=rho, 1=θ, 2=Φ,...)
+  APP.camChain.at(-1).hyperspherical_pos[index + 1] = angle;
+
+  const threeCamSpherical = APP.camChain.at(-1).hyperspherical_pos;
+  RENDER_FUNCS.setCameraSpherical(
+    APP,
+    threeCamSpherical[0],
+    degToRad(threeCamSpherical[1]),
+    degToRad(threeCamSpherical[2])
+  );
 }
 
 function setHypercamList(dropmenu){
@@ -970,7 +967,7 @@ function setHypercamList(dropmenu){
     labelSpan.innerHTML = label;
     header.appendChild(labelSpan);
 
-    const value = APP.camera.hypersphericals[index] || 0;
+    const value = 0;// APP.camera.hypersphericals[index] || 0;
     const input = initHypercamInput(value, index);
     header.appendChild(input);
     item.appendChild(header);
@@ -1102,7 +1099,7 @@ function updateCamChainValue(input, stageIndex, angleIndex) {
 function updateCamChainRadius(input, stageIndex) {
   const value = parseFloat(input.value);
   input.value = value;
-  APP.camChain[stageIndex].radius = value;
+  APP.camChain[stageIndex].hyperspherical_pos[0] = value;
   APP.camChain[stageIndex].dirty = true;
   updateAndRender();
 }
@@ -1112,7 +1109,7 @@ function initCamChainRhoInput(stageIndex, value) {
   rhoP.classList.add("spherical-p", "rho-p");
   rhoP.innerHTML = "\u03C1";
 
-  const input = initInput("number", 0, 10, 3, 0.01, "camchain-rho-input", "keydown", (event) => {
+  const input = initInput("number", 0, 10, value, 0.01, "camchain-rho-input", "keydown", (event) => {
     if (event.key === "Enter") updateCamChainRadius(input, stageIndex);
   });
 

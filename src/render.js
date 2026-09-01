@@ -140,10 +140,10 @@ async function init() {
         const camera = app.isOrtho ? oCamera : pCamera;
         const controls = app.isOrtho ? oControls : pControls;
 
-        app.camera.radius = radius;
+        app.camChain.at(-1).hyperspherical_pos[0] = radius;
         app.camera.zoom = CAM_DIST / radius;
-        app.camera.hypersphericals[0] = theta;
-        app.camera.hypersphericals[1] = phi;
+        app.camChain.at(-1).hyperspherical_pos[1] = theta;
+        app.camChain.at(-1).hyperspherical_pos[2] = phi;
 
         setCameraOnSphere(camera, radius, theta, phi);
         controls.update();
