@@ -131,6 +131,8 @@ namespace Hyper
     std::vector<HyperCam> get_cam_chain(const size_t from_ambient_dim, const size_t to_render_dim, std::vector<float> hyperspherical_pos)
     {
         std::vector<HyperCam> chain;
+        if(from_ambient_dim - to_render_dim <= 0)
+            throw std::invalid_argument("from_ambient_dim must be greater than to_render_dim. Empty camera chain is not allowed.");
         for(size_t i=0; i < from_ambient_dim - to_render_dim; i++)
         {
             std::vector<float> hs_pos;
