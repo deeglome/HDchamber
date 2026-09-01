@@ -1,5 +1,6 @@
 #include<emscripten/bind.h>
 #include "geolib.cpp"
+#include "Hyper/HyperCam.h"
 
 emscripten::val vectorFToJs(vector<float> vec)
 {
@@ -112,7 +113,17 @@ EMSCRIPTEN_BINDINGS(my_module){
         .function("extendIn", &GeometryND::extend_in)
         //.function("project", emscripten::select_overload<void(int)>(&GeometryND::project))
         //.function("projectWithCam", emscripten::select_overload<void(int, float)>(&GeometryND::project))
-        .function("renderWithCamChain", &GeometryND::render_with_cam_chain)
+        .function("renderWithCamChain", emscripten::optional_override(
+            [](GeometryND& self, const std::vector<Hyper::HyperCam>& cam_chain, size_t first_dirty, emscripten::val cachedProjVal) {
+                std::optional<GeometryND> cached_proj = std::nullopt;
+
+                if (!cachedProjVal.isUndefined() && !cachedProjVal.isNull()) {
+                    cached_proj = cachedProjVal.as<GeometryND>();
+                }
+
+                self.render_with_cam_chain(cam_chain, first_dirty, cached_proj);
+            }
+        ))
         .function("maxVertexDist", &GeometryND::max_vertex_dist)
         .function("getAbsoluteCrossSection", &GeometryND::get_absolute_cross_section)
         .function("getRelativeCrossSection", &GeometryND::get_relative_cross_section)
@@ -241,6 +252,57 @@ EMSCRIPTEN_BINDINGS(my_module){
     emscripten::function("JsToVectorF", &JsToVectorF);
     emscripten::function("JsToVectorS", &JsToVectorS);
 
+    /*
+    ==================
+    == HYPERCAM ======
+    ==================
+    */
+
+    // Binding per Hyper::HyperCam
+    emscripten::class_<Hyper::HyperCam>("HyperCam")
+        .constructor<size_t, std::vector<float>>()
+        .function("getAmbientDim", &Hyper::HyperCam::get_ambient_dim)
+        .function("getRenderDim", &Hyper::HyperCam::get_render_dim)
+        .function("getCamDistance", &Hyper::HyperCam::get_cam_distance)
+        .function("getHypersphericalPos", &Hyper::HyperCam::get_hyperspherical_pos)
+        .function("getCamMatrix", &Hyper::HyperCam::get_cam_matrix)
+        .function("setHypersphericalPos", &Hyper::HyperCam::set_hyperspherical_pos)
+        .function("updateCamMatrix", &Hyper::HyperCam::update_cam_matrix)
+        .function("render", &Hyper::HyperCam::render);
+
+    // getCamChain: due overload esplicite, dato che embind non supporta default args
+    emscripten::function("getCamChain", emscripten::optional_override(
+        [](size_t from_ambient_dim, size_t to_render_dim) -> std::vector<Hyper::HyperCam> {
+            return Hyper::get_cam_chain(from_ambient_dim, to_render_dim);
+        }
+    ));
+
+    emscripten::function("getCamChain", emscripten::optional_override(
+        [](size_t from_ambient_dim, size_t to_render_dim, std::vector<float> hyperspherical_pos) -> std::vector<Hyper::HyperCam> {
+            return Hyper::get_cam_chain(from_ambient_dim, to_render_dim, hyperspherical_pos);
+        }
+    ));
+
+    // updateCamChain: dirty_flags passato come array JS nativo (val), per evitare vector<bool>
+    emscripten::function("updateCamChain", emscripten::optional_override(
+        [](std::vector<Hyper::HyperCam>& cam_chain, emscripten::val jsDirtyFlags) -> emscripten::val {
+            int length = jsDirtyFlags["length"].as<int>();
+            std::vector<bool> dirty_flags(length);
+            for (int i = 0; i < length; i++) {
+                dirty_flags[i] = jsDirtyFlags[i].as<bool>();
+            }
+
+            std::vector<size_t> updatedIndices = Hyper::update_cam_chain(cam_chain, dirty_flags);
+
+            emscripten::val result = emscripten::val::array();
+            for (size_t i = 0; i < updatedIndices.size(); i++) {
+                result.set(i, static_cast<unsigned>(updatedIndices[i]));
+            }
+            return result;
+        }
+    ));
+
+
     // Binding per vector types
     emscripten::register_vector<float>("VectorFloat");
     emscripten::register_vector<int>("VectorInt");
@@ -249,5 +311,5 @@ EMSCRIPTEN_BINDINGS(my_module){
     emscripten::register_vector<FaceND>("VectorFaceND");
     emscripten::register_vector<std::string>("VectorString");
     emscripten::register_vector<Joint>("VectorJoint");
-
+    emscripten::register_vector<Hyper::HyperCam>("VectorHyperCam");
 }
