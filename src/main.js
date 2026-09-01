@@ -904,23 +904,23 @@ function activeHypersphericalCount(dimensions){
   return Math.max(0, dimensions - 1);
 }
 
-function initHypercamInput(value){
+function initHypercamInput(value, index){
   const input = document.createElement("input");
   input.setAttribute("type", "number");
   input.setAttribute("min", 0);
-  input.setAttribute("max", 360);
+  input.setAttribute("max", index === 0 ? 360 : 180);
   input.setAttribute("step", THETA_STEP);
   input.setAttribute("value", value);
   input.classList.add("hypercam-input");
   return input;
 }
 
-function initHypercamSlider(value){
+function initHypercamSlider(value, index){
   const slider = document.createElement("input");
   slider.classList.add("hypercam-slider");
   slider.setAttribute("type", "range");
   slider.setAttribute("min", 0);
-  slider.setAttribute("max", 360);
+  slider.setAttribute("max", index === 0 ? 360 : 180);
   slider.setAttribute("step", THETA_STEP);
   slider.setAttribute("value", value);
   return slider;
@@ -971,11 +971,11 @@ function setHypercamList(dropmenu){
     header.appendChild(labelSpan);
 
     const value = APP.camera.hypersphericals[index] || 0;
-    const input = initHypercamInput(value);
+    const input = initHypercamInput(value, index);
     header.appendChild(input);
     item.appendChild(header);
 
-    const slider = initHypercamSlider(value);
+    const slider = initHypercamSlider(value, index);
     item.appendChild(slider);
 
     item.classList.toggle("hidden", index >= activeHypersphericalCount(APP.dimensions));
@@ -1081,12 +1081,12 @@ function stageAmbientDim(stageIndex) {
   return APP.dimensions - 1 - stageIndex;
 }
 
-function initCamChainInput(value) {
-  return initInput("number", 0, 360, value, THETA_STEP, "camchain-input");
+function initCamChainInput(value, i) {
+  return initInput("number", 0, i===1 ? 360 : 180, value, THETA_STEP, "camchain-input");
 }
 
-function initCamChainSlider(value) {
-  return initInput("range", 0, 360, value, THETA_STEP, "camchain-slider");
+function initCamChainSlider(value, i) {
+  return initInput("range", 0, i===1 ? 360 : 180, value, THETA_STEP, "camchain-slider");
 }
 
 function updateCamChainValue(input, stageIndex, angleIndex) {
@@ -1155,11 +1155,11 @@ function buildCamChainStage(stageIndex) {
     header.appendChild(labelSpan);
 
     const value = APP.camChain[stageIndex].hyperspherical_pos[i] || 0;
-    const input = initCamChainInput(value);
+    const input = initCamChainInput(value, i);
     header.appendChild(input);
     item.appendChild(header);
 
-    const slider = initCamChainSlider(value);
+    const slider = initCamChainSlider(value, i);
     item.appendChild(slider);
 
     input.addEventListener("keydown", (event) => {
@@ -1221,6 +1221,7 @@ function setCamChainSync() {
   function frame() {
     APP.camChain.forEach((stage, stageIndex) => {
       stage.hyperspherical_pos.forEach((value, angleIndex) => {
+        if (angleIndex === 0) return;
         const selector = `.camchain-stage.stage-${stageIndex} .camchain-angle.angle-${angleIndex}`;
         const inputEl = document.querySelector(`${selector} .camchain-input`);
         const sliderEl = document.querySelector(`${selector} .camchain-slider`);
