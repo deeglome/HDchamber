@@ -60,12 +60,30 @@ async function init() {
         );
     }
 
+    function toVectorVectorFloat(GEOLIB, arr2d) {
+        const outer = new GEOLIB.VectorVectorFloat();
+        arr2d.forEach(row => {
+            const inner = new GEOLIB.VectorFloat();
+            row.forEach(v => inner.push_back(v));
+            outer.push_back(inner);
+            inner.delete(); // push_back di un vector<T> per valore ne fa una copia in C++: l'oggetto JS temporaneo va liberato manualmente
+        });
+        return outer;
+    }
+
     function initCamChain(app){
         // Costruisce la catena di camere intermedie da app.dimensions fino a
         // THREE_DIMENSIONS + 1 (4D): l'ultimo passaggio 4D -> 3D resta escluso
         // di proposito, perché è già gestito da app.camera / hypercamR / OrbitControls.
+        const hyperspherical_pos_list_js = [];
+        app.camChain.forEach(cam => {
+            hyperspherical_pos_list_js.push(cam.hyperspherical_pos);
+        });
+
+        const hyperspherical_pos_list = toVectorVectorFloat(GEOLIB, hyperspherical_pos_list_js);
+
         console.log("app.dimensions: ", app.dimensions, "THREE_DIMENSIONS", THREE_DIMENSIONS);
-        const camChain = GEOLIB.getCamChain(app.dimensions, THREE_DIMENSIONS);
+        const camChain = GEOLIB.getCamChain(app.dimensions, THREE_DIMENSIONS, hyperspherical_pos_list);
 
         return camChain;
     }
@@ -251,9 +269,10 @@ async function init() {
 
         // Ricostruisce la camchain SOLO quando cambia il numero di dimensioni
         // (indipendente dal tipo di mesh selezionato).
-        if(app.dimensions > THREE_DIMENSIONS && app.dimensions !== cachedCamChainDimensions){
+        if(app.dimensions > THREE_DIMENSIONS){
             cachedCamChain = initCamChain(app);
             cachedCamChainDimensions = app.dimensions;
+            app.camChain.forEach(stage => stage.dirty = true); 
         }
 
         // It will be computed only if dimension or type has been changed.

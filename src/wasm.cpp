@@ -278,8 +278,8 @@ EMSCRIPTEN_BINDINGS(my_module){
     ));
 
     emscripten::function("getCamChain", emscripten::optional_override(
-        [](size_t from_ambient_dim, size_t to_render_dim, std::vector<float> hyperspherical_pos) -> std::vector<Hyper::HyperCam> {
-            return Hyper::get_cam_chain(from_ambient_dim, to_render_dim, hyperspherical_pos);
+        [](size_t from_ambient_dim, size_t to_render_dim, std::vector<std::vector<float>> hyperspherical_pos_list) -> std::vector<Hyper::HyperCam> {
+            return Hyper::get_cam_chain(from_ambient_dim, to_render_dim, hyperspherical_pos_list);
         }
     ));
 
@@ -305,6 +305,7 @@ EMSCRIPTEN_BINDINGS(my_module){
 
     // Binding per vector types
     emscripten::register_vector<float>("VectorFloat");
+    emscripten::register_vector<std::vector<float>>("VectorVectorFloat");
     emscripten::register_vector<int>("VectorInt");
     emscripten::register_vector<PointND>("VectorPointND");
     emscripten::register_vector<SegmentND>("VectorSegmentND");
