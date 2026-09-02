@@ -32,6 +32,6 @@ namespace Hyper
         Eigen::MatrixXf cam_matrix;
     };
 
-    std::vector<HyperCam> get_cam_chain(const size_t from_ambient_dim, const size_t to_render_dim, std::vector<float> hyperspherical_pos = {});
+    std::vector<HyperCam> get_cam_chain(const size_t from_ambient_dim, const size_t to_render_dim, std::vector<std::vector<float>> hyperspherical_pos_list = {});
     std::vector<size_t> update_cam_chain(std::vector<HyperCam>& cam_chain, std::vector<bool>& dirty_flags);
 }
