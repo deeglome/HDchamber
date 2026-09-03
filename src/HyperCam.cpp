@@ -107,8 +107,8 @@ namespace Hyper
     void HyperCam::update_cam_matrix()
     {
         std::vector<std::string> planes;
-        for (int n = 1; n < this->ambient_dim; ++n)
-            planes.push_back(std::string(1, AXIS_IDS[n-1]) + std::string(1, AXIS_IDS[n]));
+        for (int n = 0; n < this->ambient_dim - 1; ++n)
+            planes.push_back(std::string(1, AXIS_IDS[n]) + std::string(1, AXIS_IDS[this->ambient_dim - 1]));
 
         std::vector<float> angles = std::vector<float>(this->hyperspherical_pos.begin() + 1, this->hyperspherical_pos.end());
         this->cam_matrix = create_rotation_matrix(this->ambient_dim, planes, angles);
