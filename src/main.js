@@ -399,7 +399,7 @@ function updateThetaValue(input, index, theta){
   APP.theta = theta;
   APP.initialTime = Date.now();
 
-  RENDER_FUNCS.setAbsoluteTheta(APP, APP.theta); // R0 · v0
+  RENDER_FUNCS.setAbsoluteTheta(APP, APP.theta.map(t => degToRad(t))); // R0 · v0
   updateAndRender();
 }
 

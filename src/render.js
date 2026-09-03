@@ -77,7 +77,8 @@ async function init() {
         // di proposito, perché è già gestito da app.camera / hypercamR / OrbitControls.
         const hyperspherical_pos_list_js = [];
         app.camChain.forEach(cam => {
-            hyperspherical_pos_list_js.push(cam.hyperspherical_pos);
+            const rad_hyperspherical_pos = cam.hyperspherical_pos.map((t, i) => i!==0 ? degToRad(t) : t);
+            hyperspherical_pos_list_js.push(rad_hyperspherical_pos);
         });
 
         const hyperspherical_pos_list = toVectorVectorFloat(GEOLIB, hyperspherical_pos_list_js);
